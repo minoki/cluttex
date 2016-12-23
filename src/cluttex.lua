@@ -344,7 +344,7 @@ if options.output_directory == nil then
   options.output_directory = genOutputDirectory(inputfile_abs, jobname, options.engine)
 
   if not fsutil.isdir(options.output_directory) then
-    assert(filesys.mkdir(options.output_directory))
+    assert(fsutil.mkdir_rec(options.output_directory))
 
   elseif options.fresh then
     -- The output directory exists and --fresh is given:
