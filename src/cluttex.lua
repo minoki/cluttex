@@ -85,7 +85,8 @@ Options:
                                      xelatex, xetex, latex, etex, tex,
                                      platex, eptex, ptex,
                                      uplatex, euptex, uptex,
-  -o, --output=FILE.pdf        The name of output file.  [default: JOBNAME.pdf]
+  -o, --output=FILE            The name of output file.
+                                 [default: JOBNAME.pdf or JOBNAME.dvi]
       --fresh                  Clean intermediate files before running TeX.
                                  Cannot be used with --output-directory.
       --max-iterations=N       Maximum number of re-running TeX to resolve
@@ -108,6 +109,7 @@ Options:
       --interaction=STRING     [default: nonstopmode]
       --jobname=STRING
       --output-directory=DIR   [default: somewhere in the temporary directory]
+      --output-format=FORMAT   FORMAT is `pdf' or `dvi'.  [default: pdf]
 
 %s
 ]], arg[0] or 'texlua cluttex.lua', COPYRIGHT_NOTICE))
@@ -182,6 +184,10 @@ local option_and_params, non_option_index = parseoption(arg, {
   },
   {
     long = "output-directory",
+    param = true,
+  },
+  {
+    long = "output-format",
     param = true,
   },
   {
@@ -278,6 +284,11 @@ for _,option in ipairs(option_and_params) do
     assert(options.output_directory == nil, "multiple --output-directory options")
     options.output_directory = param
 
+  elseif name == "output-format" then
+    assert(options.output_format == nil, "multiple --output-format options")
+    assert(param == "pdf" or param == "dvi", "invalid argument for --output-format")
+    options.output_format = param
+
   elseif name == "tex-option" then
     table.insert(tex_extraoptions, shellutil.escape(param))
 
@@ -334,8 +345,18 @@ end
 local jobname = options.jobname or pathutil.basename(pathutil.trimext(inputfile))
 assert(jobname ~= "", "jobname cannot be empty")
 
+if options.output_format == nil then
+  options.output_format = "pdf"
+end
+local output_extension
+if options.output_format == "dvi" then
+  output_extension = engine.dvi_extension or "dvi"
+else
+  output_extension = "pdf"
+end
+
 if options.output == nil then
-  options.output = jobname .. ".pdf"
+  options.output = jobname .. "." .. output_extension
 end
 
 -- Prepare output directory
@@ -375,17 +396,21 @@ end
 
 local recorderfile = path_in_output_directory("fls")
 
-local command = engine:build_command(inputfile, {
-                                      interaction = options.interaction,
-                                      file_line_error = options.file_line_error,
-                                      halt_on_error = options.halt_on_error,
-                                      synctex = options.synctex,
-                                      output_directory = options.output_directory,
-                                      shell_escape = options.shell_escape,
-                                      shell_restricted = options.shell_restricted,
-                                      jobname = options.jobname,
-                                      extraoptions = tex_extraoptions,
-})
+local tex_options = {
+  interaction = options.interaction,
+  file_line_error = options.file_line_error,
+  halt_on_error = options.halt_on_error,
+  synctex = options.synctex,
+  output_directory = options.output_directory,
+  shell_escape = options.shell_escape,
+  shell_restricted = options.shell_restricted,
+  jobname = options.jobname,
+  extraoptions = tex_extraoptions,
+}
+if options.output_format ~= "pdf" and engine.supports_pdf_generation then
+  tex_options.output_format = options.output_format
+end
+local command = engine:build_command(inputfile, tex_options)
 
 local function create_missing_directories()
   -- Check log file
@@ -456,9 +481,9 @@ local function do_typeset_c()
   end
 
   -- Successful
-  if engine.supports_pdf_generation then
-    -- PDF file is generated in the output directory
-    local outfile = path_in_output_directory("pdf")
+  if options.output_format == "dvi" or engine.supports_pdf_generation then
+    -- Output file (DVI/PDF) is generated in the output directory
+    local outfile = path_in_output_directory(output_extension)
     coroutine.yield(fsutil.copy_command(outfile, options.output))
     if #dvipdfmx_extraoptions > 0 then
       io.stderr:write("cluttex warning: --dvipdfmx-option[s] are ignored.\n")
