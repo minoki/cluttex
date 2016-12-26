@@ -81,16 +81,16 @@ Usage:
 Options:
   -e, --engine=ENGINE          Specify which TeX engine to use.
                                  ENGINE is one of the following:
-                                     pdflatex, lualatex, xelatex,
-                                     pdftex, luatex, xetex,
-                                     uplatex, platex,
-                                     ptex, eptex, uptex, euptex.
+                                     pdflatex, pdftex, lualatex, luatex,
+                                     xelatex, xetex, latex, etex, tex,
+                                     platex, eptex, ptex,
+                                     uplatex, euptex, uptex,
   -o, --output=FILE.pdf        The name of output file.  [default: JOBNAME.pdf]
       --fresh                  Clean intermediate files before running TeX.
                                  Cannot be used with --output-directory.
       --max-iterations=N       Maximum number of re-running TeX to resolve
                                  cross-references.  [default: 5]
-      --[no-]change-directory  Change directory to the output before running TeX.
+      --[no-]change-directory  Change directory before running TeX.
       --watch                  Watch input files for change.  Requires fswatch
                                  program to be installed.
       --tex-option=OPTION      Pass OPTION to TeX as a single option.
