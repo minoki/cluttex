@@ -390,6 +390,18 @@ if options.change_directory then
   os.setenv("TEXINPUTS", original_wd .. ":" .. TEXINPUTS)
 end
 
+-- Set `max_print_line' environment variable if not already set.
+if os.getenv("max_print_line") == nil then
+  os.setenv("max_print_line", "2048")
+end
+-- TODO: error_line, half_error_line
+--[[
+  According to texmf.cnf:
+    45 < error_line < 255,
+    30 < half_error_line < error_line - 15,
+    60 <= max_print_line.
+]]
+
 local function path_in_output_directory(ext)
   return pathutil.join(options.output_directory, jobname .. "." .. ext)
 end
