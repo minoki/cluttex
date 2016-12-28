@@ -424,11 +424,7 @@ if options.output_format ~= "pdf" and engine.supports_pdf_generation then
 end
 local command = engine:build_command(inputfile, tex_options)
 
-local function create_missing_directories()
-  -- Check log file
-  local logfile = assert(io.open(path_in_output_directory("log")))
-  local execlog = logfile:read("*a")
-  logfile:close()
+local function create_missing_directories(execlog)
   if string.find(execlog, "I can't write on file", 1, true) then
     -- There is a possibility that there are some subfiles under subdirectories.
     -- Directories for sub-auxfiles are not created automatically, so we need to provide them.
@@ -441,6 +437,33 @@ local function create_missing_directories()
     end
   end
   return false
+end
+
+local function run_epstopdf(execlog)
+  local run = false
+  if options.shell_escape ~= false then -- (possibly restricted) \write18 enabled
+    for outfile, infile in string.gmatch(execlog, "%(epstopdf%)%s*Command: <r?epstopdf %-%-outfile=([%w%-/]+%.pdf) ([%w%-/]+%.eps)>") do
+      local infile_abs = pathutil.abspath(infile, original_wd)
+      if fsutil.isfile(infile_abs) then -- input file exists
+        local outfile_abs = pathutil.abspath(outfile, options.output_directory)
+        if CLUTTEX_VERBOSITY >= 1 then
+          io.stderr:write("cluttex: Running epstopdf on ", infile, ".\n")
+        end
+        local outdir = pathutil.dirname(outfile_abs)
+        if not fsutil.isdir(outdir) then
+          assert(fsutil.mkdir_rec(outdir))
+        end
+        local command = string.format("epstopdf --outfile=%s %s", shellutil.escape(outfile_abs), shellutil.escape(infile_abs))
+        io.stderr:write("EXEC ", command, "\n")
+        local success = os.execute(command)
+        if type(success) == "number" then -- Lua 5.1 or LuaTeX
+          success = success == 0
+        end
+        run = run or success
+      end
+    end
+  end
+  return run
 end
 
 -- Run TeX command (*tex, *latex)
@@ -462,12 +485,13 @@ local function single_run(auxstatus)
 
   local recovered = false
   local function recover()
-    if create_missing_directories() then
-      recovered = true
-      return true
-    else
-      return false
-    end
+    -- Check log file
+    local logfile = assert(io.open(path_in_output_directory("log")))
+    local execlog = logfile:read("*a")
+    logfile:close()
+    recovered = create_missing_directories(execlog)
+    recovered = run_epstopdf(execlog) or recovered
+    return recovered
   end
   coroutine.yield(command, recover) -- Execute the command
   if recovered then
