@@ -18,12 +18,14 @@ Options:
 * `-e`, `--engine=ENGINE`
   Specify which TeX engine to use.
   `ENGINE` is one of the following:
-    `pdflatex`, `lualatex`, `xelatex`,
-    `pdftex`, `luatex`, `xetex`,
-    `uplatex`, `platex`,
-    `ptex`, `eptex`, `uptex`, `euptex`.
-* `-o`, `--output=FILE.pdf`
-  The name of output file.  [default: `JOBNAME.pdf`]
+    `pdflatex`, `pdftex`,
+    `lualatex`, `luatex`,
+    `xelatex`, `xetex`,
+    `latex`, `etex`, `tex`,
+    `platex`, `eptex`, `ptex`,
+    `uplatex`, `euptex`, `uptex`.
+* `-o`, `--output=FILE`
+  The name of output file.  [default: `JOBNAME.FORMAT`]
 * `--fresh`
   Clean intermediate files before running TeX.
   Cannot be used with `--output-directory`.
@@ -60,3 +62,6 @@ Options:
 * `--jobname=STRING`
 * `--output-directory=DIR`
   [default: somewhere in the temporary directory]
+* `--output-format=FORMAT`
+  Set output format (`pdf` or `dvi`).
+  [default: `pdf`]
