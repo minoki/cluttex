@@ -1,6 +1,6 @@
 #!/usr/bin/env texlua
 --[[
-  Copyright 2016 ARATA Mizuki
+  Copyright 2016,2018 ARATA Mizuki
 
   This file is part of ClutTeX.
 
@@ -55,7 +55,7 @@ local function genOutputDirectory(...)
 end
 
 local COPYRIGHT_NOTICE = [[
-Copyright (C) 2016  ARATA Mizuki
+Copyright (C) 2016,2018  ARATA Mizuki
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
