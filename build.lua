@@ -66,6 +66,10 @@ local modules = {
     name = "texrunner.luatexinit",
     path = "texrunner/luatexinit.lua",
   },
+  {
+    name = "texrunner.recovery",
+    path = "texrunner/recovery.lua",
+  },
 }
 
 local function strip_test_code(code)

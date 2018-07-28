@@ -1118,6 +1118,88 @@ return {
   create_initialization_script = create_initialization_script
 }
 end
+package.preload["texrunner.recovery"] = function(...)
+--[[
+  Copyright 2018 ARATA Mizuki
+
+  This file is part of ClutTeX.
+
+  ClutTeX is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  ClutTeX is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with ClutTeX.  If not, see <http://www.gnu.org/licenses/>.
+]]
+
+local io = io
+local string = string
+local parse_aux_file = require "texrunner.auxfile".parse_aux_file
+local pathutil       = require "texrunner.pathutil"
+local fsutil         = require "texrunner.fsutil"
+local shellutil      = require "texrunner.shellutil"
+
+local function create_missing_directories(args)
+  if string.find(args.execlog, "I can't write on file", 1, true) then
+    -- There is a possibility that there are some subfiles under subdirectories.
+    -- Directories for sub-auxfiles are not created automatically, so we need to provide them.
+    local report = parse_aux_file(args.auxfile, args.options.output_directory)
+    if report.made_new_directory then
+      if CLUTTEX_VERBOSITY >= 1 then
+        io.stderr:write("cluttex: Created missing directories.\n")
+      end
+      return true
+    end
+  end
+  return false
+end
+
+local function run_epstopdf(args)
+  local run = false
+  if args.options.shell_escape ~= false then -- (possibly restricted) \write18 enabled
+    for outfile, infile in string.gmatch(args.execlog, "%(epstopdf%)%s*Command: <r?epstopdf %-%-outfile=([%w%-/]+%.pdf) ([%w%-/]+%.eps)>") do
+      local infile_abs = pathutil.abspath(infile, args.original_wd)
+      if fsutil.isfile(infile_abs) then -- input file exists
+        local outfile_abs = pathutil.abspath(outfile, args.options.output_directory)
+        if CLUTTEX_VERBOSITY >= 1 then
+          io.stderr:write("cluttex: Running epstopdf on ", infile, ".\n")
+        end
+        local outdir = pathutil.dirname(outfile_abs)
+        if not fsutil.isdir(outdir) then
+          assert(fsutil.mkdir_rec(outdir))
+        end
+        local command = string.format("epstopdf --outfile=%s %s", shellutil.escape(outfile_abs), shellutil.escape(infile_abs))
+        io.stderr:write("EXEC ", command, "\n")
+        local success = os.execute(command)
+        if type(success) == "number" then -- Lua 5.1 or LuaTeX
+          success = success == 0
+        end
+        run = run or success
+      end
+    end
+  end
+  return run
+end
+
+local function try_recovery(args)
+  local recovered = false
+  recovered = create_missing_directories(args)
+  recovered = run_epstopdf(args) or recovered
+  return recovered
+end
+
+return {
+  create_missing_directories = create_missing_directories,
+  run_epstopdf = run_epstopdf,
+  try_recovery = try_recovery,
+}
+end
 --[[
   Copyright 2016,2018 ARATA Mizuki
 
@@ -1157,9 +1239,9 @@ local fsutil      = require "texrunner.fsutil"
 local shellutil   = require "texrunner.shellutil"
 local reruncheck  = require "texrunner.reruncheck"
 local parseoption = require "texrunner.option".parseoption
-local parse_aux_file = require "texrunner.auxfile".parse_aux_file
 local KnownEngines = require "texrunner.tex_engine"
 local luatexinit  = require "texrunner.luatexinit"
+local recoverylib = require "texrunner.recovery"
 
 -- arguments: input file name, jobname, etc...
 local function genOutputDirectory(...)
@@ -1552,48 +1634,6 @@ end
 
 local command = engine:build_command(inputfile, tex_options)
 
-local function create_missing_directories(execlog)
-  if string.find(execlog, "I can't write on file", 1, true) then
-    -- There is a possibility that there are some subfiles under subdirectories.
-    -- Directories for sub-auxfiles are not created automatically, so we need to provide them.
-    local report = parse_aux_file(path_in_output_directory("aux"), options.output_directory)
-    if report.made_new_directory then
-      if CLUTTEX_VERBOSITY >= 1 then
-        io.stderr:write("cluttex: Created missing directories.\n")
-      end
-      return true
-    end
-  end
-  return false
-end
-
-local function run_epstopdf(execlog)
-  local run = false
-  if options.shell_escape ~= false then -- (possibly restricted) \write18 enabled
-    for outfile, infile in string.gmatch(execlog, "%(epstopdf%)%s*Command: <r?epstopdf %-%-outfile=([%w%-/]+%.pdf) ([%w%-/]+%.eps)>") do
-      local infile_abs = pathutil.abspath(infile, original_wd)
-      if fsutil.isfile(infile_abs) then -- input file exists
-        local outfile_abs = pathutil.abspath(outfile, options.output_directory)
-        if CLUTTEX_VERBOSITY >= 1 then
-          io.stderr:write("cluttex: Running epstopdf on ", infile, ".\n")
-        end
-        local outdir = pathutil.dirname(outfile_abs)
-        if not fsutil.isdir(outdir) then
-          assert(fsutil.mkdir_rec(outdir))
-        end
-        local command = string.format("epstopdf --outfile=%s %s", shellutil.escape(outfile_abs), shellutil.escape(infile_abs))
-        io.stderr:write("EXEC ", command, "\n")
-        local success = os.execute(command)
-        if type(success) == "number" then -- Lua 5.1 or LuaTeX
-          success = success == 0
-        end
-        run = run or success
-      end
-    end
-  end
-  return run
-end
-
 -- Run TeX command (*tex, *latex)
 -- should_rerun, newauxstatus = single_run([auxstatus])
 local function single_run(auxstatus)
@@ -1617,8 +1657,12 @@ local function single_run(auxstatus)
     local logfile = assert(io.open(path_in_output_directory("log")))
     local execlog = logfile:read("*a")
     logfile:close()
-    recovered = create_missing_directories(execlog)
-    recovered = run_epstopdf(execlog) or recovered
+    recovered = recoverylib.try_recovery{
+      execlog = execlog,
+      auxfile = path_in_output_directory("aux"),
+      options = options,
+      original_wd = original_wd,
+    }
     return recovered
   end
   coroutine.yield(command, recover) -- Execute the command
