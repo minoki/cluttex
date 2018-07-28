@@ -109,11 +109,18 @@ local function handle_xetex_options(self, args, options)
   end
 end
 
+local function handle_luatex_options(self, args, options)
+  if options.lua_initialization_script then
+    table.insert(args, "--lua="..options.lua_initialization_script)
+  end
+  handle_pdftex_options(self, args, options)
+end
+
 local KnownEngines = {
   ["pdftex"]   = engine("pdftex", true, handle_pdftex_options),
   ["pdflatex"] = engine("pdflatex", true, handle_pdftex_options),
-  ["luatex"]   = engine("luatex", true, handle_pdftex_options),
-  ["lualatex"] = engine("lualatex", true, handle_pdftex_options),
+  ["luatex"]   = engine("luatex", true, handle_luatex_options),
+  ["lualatex"] = engine("lualatex", true, handle_luatex_options),
   ["xetex"]    = engine("xetex", true, handle_xetex_options),
   ["xelatex"]  = engine("xelatex", true, handle_xetex_options),
   ["tex"]      = engine("tex", false),

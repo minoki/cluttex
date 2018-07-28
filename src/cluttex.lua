@@ -40,6 +40,7 @@ local reruncheck  = require "texrunner.reruncheck"
 local parseoption = require "texrunner.option".parseoption
 local parse_aux_file = require "texrunner.auxfile".parse_aux_file
 local KnownEngines = require "texrunner.tex_engine"
+local luatexinit  = require "texrunner.luatexinit"
 
 -- arguments: input file name, jobname, etc...
 local function genOutputDirectory(...)
@@ -422,6 +423,14 @@ local tex_options = {
 if options.output_format ~= "pdf" and engine.supports_pdf_generation then
   tex_options.output_format = options.output_format
 end
+
+-- Setup LuaTeX initialization script
+if options.engine == "luatex" or options.engine == "lualatex" then
+  local initscriptfile = path_in_output_directory("cluttexinit.lua")
+  luatexinit.create_initialization_script(initscriptfile, tex_options)
+  tex_options.lua_initialization_script = initscriptfile
+end
+
 local command = engine:build_command(inputfile, tex_options)
 
 local function create_missing_directories(execlog)

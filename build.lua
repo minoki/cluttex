@@ -62,6 +62,10 @@ local modules = {
     name = "texrunner.auxfile",
     path = "texrunner/auxfile.lua",
   },
+  {
+    name = "texrunner.luatexinit",
+    path = "texrunner/luatexinit.lua",
+  },
 }
 
 local function strip_test_code(code)
