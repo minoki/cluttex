@@ -431,15 +431,20 @@ if options.engine == "luatex" or options.engine == "lualatex" then
   tex_options.lua_initialization_script = initscriptfile
 end
 
-local command = engine:build_command(inputfile, tex_options)
-
 -- Run TeX command (*tex, *latex)
 -- should_rerun, newauxstatus = single_run([auxstatus])
 local function single_run(auxstatus)
+  local minted = false
   if fsutil.isfile(recorderfile) then
     -- Recorder file already exists
     local filelist = reruncheck.parse_recorder_file(recorderfile)
     auxstatus = reruncheck.collectfileinfo(filelist, auxstatus)
+    for _,v in ipairs(filelist) do
+      if string.match(v.path, "minted/minted%.sty$") then
+        minted = true
+        break
+      end
+    end
   else
     -- This is the first execution
     if auxstatus ~= nil then
@@ -449,6 +454,12 @@ local function single_run(auxstatus)
     auxstatus = {}
   end
   --local timestamp = os.time()
+
+  if minted and not (tex_options.tex_injection and string.find(tex_options.tex_injection,"minted") == nil) then
+    tex_options.tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_options.tex_injection or "", options.output_directory)
+  end
+
+  local command = engine:build_command(inputfile, tex_options)
 
   local recovered = false
   local function recover()

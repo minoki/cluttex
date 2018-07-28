@@ -82,7 +82,11 @@ function engine_meta:build_command(inputfile, options)
       table.insert(command, v)
     end
   end
-  table.insert(command, shellutil.escape(inputfile))
+  if type(options.tex_injection) == "string" then
+    table.insert(command, shellutil.escape(options.tex_injection .. "\\input " .. inputfile)) -- TODO: what if filename contains spaces?
+  else
+    table.insert(command, shellutil.escape(inputfile))
+  end
   return table.concat(command, " ")
 end
 

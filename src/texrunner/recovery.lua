@@ -66,10 +66,15 @@ local function run_epstopdf(args)
   return run
 end
 
+local function check_minted(args)
+  return string.find(args.execlog, "Package minted Error: Missing Pygments output; \\inputminted was") ~= nil
+end
+
 local function try_recovery(args)
   local recovered = false
   recovered = create_missing_directories(args)
   recovered = run_epstopdf(args) or recovered
+  recovered = check_minted(args) or recovered
   return recovered
 end
 
