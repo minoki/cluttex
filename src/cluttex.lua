@@ -392,7 +392,7 @@ end
 
 -- Set `max_print_line' environment variable if not already set.
 if os.getenv("max_print_line") == nil then
-  os.setenv("max_print_line", "2048")
+  os.setenv("max_print_line", "65536")
 end
 -- TODO: error_line, half_error_line
 --[[
