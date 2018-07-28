@@ -1054,6 +1054,7 @@ local function create_initialization_script(filename, options)
 local print = print
 local io_open = io.open
 local io_write = io.write
+local os_execute = os.execute
 local texio_write = texio.write
 local texio_write_nl = texio.write_nl
 local function start_file_cb(category, filename)
@@ -1113,6 +1114,11 @@ io.open = function(...)
   else
     return io_open(...)
   end
+end
+os.execute = function(...)
+  texio_write_nl("log", string.format("CLUTTEX_EXEC %s", ...))
+  texio_write_nl("log", "")
+  return os_execute(...)
 end
 ]==])
   initscript:close()
