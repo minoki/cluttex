@@ -39,6 +39,8 @@ engine:build_command(inputfile, options)
     extraoptions: a list of strings
     output_format: "pdf" or "dvi"
     draftmode: boolean
+    tex_injection: string
+    lua_initialization_script: string (LuaTeX only)
 engine.executable: string
 engine.supports_pdf_generation: boolean
 engine.dvi_extension: string
@@ -115,7 +117,7 @@ end
 
 local function handle_luatex_options(self, args, options)
   if options.lua_initialization_script then
-    table.insert(args, "--lua="..options.lua_initialization_script)
+    table.insert(args, "--lua="..shellutil.escape(options.lua_initialization_script))
   end
   handle_pdftex_options(self, args, options)
 end
