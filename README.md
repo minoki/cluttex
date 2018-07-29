@@ -44,6 +44,10 @@ Options:
   Print version information and exit.
 * `-V`, `--verbose`
   Be more verbose.
+* `--color=WHEN`
+  Make ClutTeX's message colorful.
+  `WHEN` is one of `always`, `auto`, or `never`.
+  [default: `auto`]
 * `--tex-option=OPTION`
   Pass `OPTION` to TeX as a single option.
 * `--tex-options=OPTIONs`

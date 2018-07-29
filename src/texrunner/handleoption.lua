@@ -15,9 +15,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-local pathutil    = require "texrunner.pathutil"
-local parseoption = require "texrunner.option".parseoption
+local pathutil     = require "texrunner.pathutil"
+local parseoption  = require "texrunner.option".parseoption
 local KnownEngines = require "texrunner.tex_engine"
+local message      = require "texrunner.message"
 
 local function usage(arg)
   io.write(string.format([[
@@ -50,6 +51,8 @@ Options:
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
+      --color=WHEN             Make ClutTeX's message colorful. WHEN is one of
+                                 `always', `auto', or `never'.  [default: auto]
 
       --[no-]shell-escape
       --shell-restricted
@@ -106,6 +109,10 @@ local option_spec = {
   {
     short = "V",
     long = "verbose",
+  },
+  {
+    long = "color",
+    param = true,
   },
   -- Options for TeX
   {
@@ -239,6 +246,11 @@ local function handle_cluttex_options(arg)
     elseif name == "verbose" then
       CLUTTEX_VERBOSITY = CLUTTEX_VERBOSITY + 1
 
+    elseif name == "color" then
+      assert(options.color == nil, "multiple --collor options")
+      options.color = param
+      message.set_colors(options.color)
+
     elseif name == "change-directory" then
       assert(options.change_directory == nil, "multiple --change-directory options")
       options.change_directory = param
@@ -303,13 +315,17 @@ local function handle_cluttex_options(arg)
     end
   end
 
+  if options.color == nil then
+    message.set_colors("auto")
+  end
+
   -- Handle non-options (i.e. input file)
   if non_option_index > #arg then
     -- No input file given
     usage(arg)
     os.exit(1)
   elseif non_option_index < #arg then
-    io.stderr("cluttex: Multiple input files are not supported.\n")
+    message.error("Multiple input files are not supported.")
     os.exit(1)
   end
   local inputfile = arg[non_option_index]
@@ -324,12 +340,12 @@ local function handle_cluttex_options(arg)
   end
 
   if options.engine == nil then
-    io.stderr:write("cluttex: Engine not specified.\n")
+    message.error("Engine not specified.")
     os.exit(1)
   end
   local engine = KnownEngines[options.engine]
   if not engine then
-    io.stderr:write("cluttex: Unknown engine name '", options.engine, "'.\n")
+    message.error("Unknown engine name '", options.engine, "'.")
     os.exit(1)
   end
 

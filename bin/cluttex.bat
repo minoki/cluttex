@@ -822,6 +822,7 @@ local filesys = require "lfs"
 local md5 = require "md5"
 local fsutil = require "texrunner.fsutil"
 local pathutil = require "texrunner.pathutil"
+local message = require "texrunner.message"
 
 local function md5sum_file(path)
   local f = assert(io.open(path, "rb"))
@@ -897,7 +898,7 @@ local function parse_recorder_file(file, options)
       end
 
     else
-      io.stderr:write("cluttex warning: Unrecognized line in recorder file '", file, "': ", l, "\n")
+      message.warning("Unrecognized line in recorder file '", file, "': ", l)
     end
   end
   return filelist
@@ -936,7 +937,7 @@ local function comparefileinfo(filelist, auxstatus)
           if auxstatus[path].mtime < mtime then
             -- Input file was updated during execution
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: Input file '", fileinfo.path, "' was modified (by user, or some external commands).\n")
+              message.info("Input file '", fileinfo.path, "' was modified (by user, or some external commands).")
             end
             newauxstatus[path] = {mtime = mtime}
             return true, newauxstatus
@@ -966,12 +967,12 @@ local function comparefileinfo(filelist, auxstatus)
           end
           if really_modified then
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: File '", fileinfo.path, "' was modified (", modified_because, ").\n")
+              message.info("File '", fileinfo.path, "' was modified (", modified_because, ").")
             end
             should_rerun = true
           else
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: File '", fileinfo.path, "' unmodified (size and md5sum).\n")
+              message.info("File '", fileinfo.path, "' unmodified (size and md5sum).")
             end
           end
         else
@@ -997,9 +998,9 @@ local function comparefileinfo(filelist, auxstatus)
           end
           if CLUTTEX_VERBOSITY >= 1 then
             if should_rerun then
-              io.stderr:write("cluttex: New auxiliary file '", fileinfo.path, "'.\n")
+              message.info("New auxiliary file '", fileinfo.path, "'.")
             else
-              io.stderr:write("cluttex: Ignoring almost-empty auxiliary file '", fileinfo.path, "'.\n")
+              message.info("Ignoring almost-empty auxiliary file '", fileinfo.path, "'.")
             end
           end
         end
@@ -1189,6 +1190,7 @@ local parse_aux_file = require "texrunner.auxfile".parse_aux_file
 local pathutil       = require "texrunner.pathutil"
 local fsutil         = require "texrunner.fsutil"
 local shellutil      = require "texrunner.shellutil"
+local message        = require "texrunner.message"
 
 local function create_missing_directories(args)
   if string.find(args.execlog, "I can't write on file", 1, true) then
@@ -1197,7 +1199,7 @@ local function create_missing_directories(args)
     local report = parse_aux_file(args.auxfile, args.options.output_directory)
     if report.made_new_directory then
       if CLUTTEX_VERBOSITY >= 1 then
-        io.stderr:write("cluttex: Created missing directories.\n")
+        message.info("Created missing directories.")
       end
       return true
     end
@@ -1213,14 +1215,14 @@ local function run_epstopdf(args)
       if fsutil.isfile(infile_abs) then -- input file exists
         local outfile_abs = pathutil.abspath(outfile, args.options.output_directory)
         if CLUTTEX_VERBOSITY >= 1 then
-          io.stderr:write("cluttex: Running epstopdf on ", infile, ".\n")
+          message.info("Running epstopdf on ", infile, ".")
         end
         local outdir = pathutil.dirname(outfile_abs)
         if not fsutil.isdir(outdir) then
           assert(fsutil.mkdir_rec(outdir))
         end
         local command = string.format("epstopdf --outfile=%s %s", shellutil.escape(outfile_abs), shellutil.escape(infile_abs))
-        io.stderr:write("EXEC ", command, "\n")
+        message.exec(command)
         local success = os.execute(command)
         if type(success) == "number" then -- Lua 5.1 or LuaTeX
           success = success == 0
@@ -1268,9 +1270,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-local pathutil    = require "texrunner.pathutil"
-local parseoption = require "texrunner.option".parseoption
+local pathutil     = require "texrunner.pathutil"
+local parseoption  = require "texrunner.option".parseoption
 local KnownEngines = require "texrunner.tex_engine"
+local message      = require "texrunner.message"
 
 local function usage(arg)
   io.write(string.format([[
@@ -1303,6 +1306,8 @@ Options:
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
+      --color=WHEN             Make ClutTeX's message colorful. WHEN is one of
+                                 `always', `auto', or `never'.  [default: auto]
 
       --[no-]shell-escape
       --shell-restricted
@@ -1359,6 +1364,10 @@ local option_spec = {
   {
     short = "V",
     long = "verbose",
+  },
+  {
+    long = "color",
+    param = true,
   },
   -- Options for TeX
   {
@@ -1492,6 +1501,11 @@ local function handle_cluttex_options(arg)
     elseif name == "verbose" then
       CLUTTEX_VERBOSITY = CLUTTEX_VERBOSITY + 1
 
+    elseif name == "color" then
+      assert(options.color == nil, "multiple --collor options")
+      options.color = param
+      message.set_colors(options.color)
+
     elseif name == "change-directory" then
       assert(options.change_directory == nil, "multiple --change-directory options")
       options.change_directory = param
@@ -1556,13 +1570,17 @@ local function handle_cluttex_options(arg)
     end
   end
 
+  if options.color == nil then
+    message.set_colors("auto")
+  end
+
   -- Handle non-options (i.e. input file)
   if non_option_index > #arg then
     -- No input file given
     usage(arg)
     os.exit(1)
   elseif non_option_index < #arg then
-    io.stderr("cluttex: Multiple input files are not supported.\n")
+    message.error("Multiple input files are not supported.")
     os.exit(1)
   end
   local inputfile = arg[non_option_index]
@@ -1577,12 +1595,12 @@ local function handle_cluttex_options(arg)
   end
 
   if options.engine == nil then
-    io.stderr:write("cluttex: Engine not specified.\n")
+    message.error("Engine not specified.")
     os.exit(1)
   end
   local engine = KnownEngines[options.engine]
   if not engine then
-    io.stderr:write("cluttex: Unknown engine name '", options.engine, "'.\n")
+    message.error("Unknown engine name '", options.engine, "'.")
     os.exit(1)
   end
 
@@ -1650,11 +1668,143 @@ int fileno(void *stream);
   if succ then
     return M
   end
+
+else
+  -- Windows: not supported
 end
+
 return {
   isatty = function(file)
     return false
   end,
+}
+end
+package.preload["texrunner.message"] = function(...)
+--[[
+  Copyright 2018 ARATA Mizuki
+
+  This file is part of ClutTeX.
+
+  ClutTeX is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  ClutTeX is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with ClutTeX.  If not, see <http://www.gnu.org/licenses/>.
+]]
+
+local use_colors = false
+
+local function set_colors(mode)
+  if mode == "always" then
+    use_colors = true
+  elseif mode == "never" then
+    use_colors = false
+  elseif mode == "auto" then
+    use_colors = require "texrunner.isatty".isatty(io.stderr)
+  else
+    error "The value of --color option must be one of 'auto', 'always', or 'never'."
+  end
+end
+
+-- ESCAPE: hex 1B = dec 27 = oct 33
+
+local CMD = {
+  reset      = "\027[0m",
+  underline  = "\027[4m",
+  fg_black   = "\027[30m",
+  fg_red     = "\027[31m",
+  fg_green   = "\027[32m",
+  fg_yellow  = "\027[33m",
+  fg_blue    = "\027[34m",
+  fg_magenta = "\027[35m",
+  fg_cyan    = "\027[36m",
+  fg_white   = "\027[37m",
+  fg_reset   = "\027[39m",
+  bg_black   = "\027[40m",
+  bg_red     = "\027[41m",
+  bg_green   = "\027[42m",
+  bg_yellow  = "\027[43m",
+  bg_blue    = "\027[44m",
+  bg_magenta = "\027[45m",
+  bg_cyan    = "\027[46m",
+  bg_white   = "\027[47m",
+  bg_reset   = "\027[49m",
+  fg_x_black   = "\027[90m",
+  fg_x_red     = "\027[91m",
+  fg_x_green   = "\027[92m",
+  fg_x_yellow  = "\027[93m",
+  fg_x_blue    = "\027[94m",
+  fg_x_magenta = "\027[95m",
+  fg_x_cyan    = "\027[96m",
+  fg_x_white   = "\027[97m",
+  bg_x_black   = "\027[100m",
+  bg_x_red     = "\027[101m",
+  bg_x_green   = "\027[102m",
+  bg_x_yellow  = "\027[103m",
+  bg_x_blue    = "\027[104m",
+  bg_x_magenta = "\027[105m",
+  bg_x_cyan    = "\027[106m",
+  bg_x_white   = "\027[107m",
+}
+
+local function exec_msg(commandline)
+  if use_colors then
+    io.stderr:write(CMD.fg_x_white, CMD.bg_red, "[EXEC]", CMD.reset, " ", CMD.fg_red, commandline, CMD.reset, "\n")
+  else
+    io.stderr:write("[EXEC] ", commandline, "\n")
+  end
+end
+
+local function error_msg(...)
+  local message = table.concat({...}, "")
+  if use_colors then
+    io.stderr:write(CMD.fg_x_white, CMD.bg_red, "[ERROR]", CMD.reset, " ", CMD.fg_red, message, CMD.reset, "\n")
+  else
+    io.stderr:write("[ERROR] ", message, "\n")
+  end
+end
+
+local function warn_msg(...)
+  local message = table.concat({...}, "")
+  if use_colors then
+    io.stderr:write(CMD.fg_x_white, CMD.bg_red, "[WARN]", CMD.reset, " ", CMD.fg_blue, message, CMD.reset, "\n")
+  else
+    io.stderr:write("[WARN] ", message, "\n")
+  end
+end
+
+local function diag_msg(...)
+  local message = table.concat({...}, "")
+  if use_colors then
+    io.stderr:write(CMD.fg_x_white, CMD.bg_red, "[DIAG]", CMD.reset, " ", CMD.fg_blue, message, CMD.reset, "\n")
+  else
+    io.stderr:write("[DIAG] ", message, "\n")
+  end
+end
+
+local function info_msg(...)
+  local message = table.concat({...}, "")
+  if use_colors then
+    io.stderr:write(CMD.fg_x_white, CMD.bg_red, "[INFO]", CMD.reset, " ", CMD.fg_magenta, message, CMD.reset, "\n")
+  else
+    io.stderr:write("[INFO] ", message, "\n")
+  end
+end
+
+return {
+  set_colors = set_colors,
+  exec  = exec_msg,
+  error = error_msg,
+  warn  = warn_msg,
+  diag  = diag_msg,
+  info  = info_msg,
 }
 end
 --[[
@@ -1692,6 +1842,7 @@ local shellutil   = require "texrunner.shellutil"
 local reruncheck  = require "texrunner.reruncheck"
 local luatexinit  = require "texrunner.luatexinit"
 local recoverylib = require "texrunner.recovery"
+local message     = require "texrunner.message"
 local handle_cluttex_options = require "texrunner.handleoption".handle_cluttex_options
 
 -- arguments: input file name, jobname, etc...
@@ -1738,14 +1889,14 @@ if options.output_directory == nil then
     -- The output directory exists and --fresh is given:
     -- Remove all files in the output directory
     if CLUTTEX_VERBOSITY >= 1 then
-      io.stderr:write("cluttex: Cleaning '", options.output_directory, "'...\n")
+      message.info("Cleaning '", options.output_directory, "'...")
     end
     assert(fsutil.remove_rec(options.output_directory))
     assert(filesys.mkdir(options.output_directory))
   end
 
 elseif options.fresh then
-  io.stderr:write("cluttex: --fresh and --output-directory cannot be used together.\n")
+  message.error("--fresh and --output-directory cannot be used together.")
   os.exit(1)
 end
 
@@ -1815,7 +1966,7 @@ local function single_run(auxstatus, iteration)
   else
     -- This is the first execution
     if auxstatus ~= nil then
-      io.stderr:write("cluttex: Recorder file was not generated during the execution!\n")
+      message.error("Recorder file was not generated during the execution!")
       os.exit(1)
     end
     auxstatus = {}
@@ -1891,7 +2042,7 @@ local function single_run(auxstatus, iteration)
     local execlog = logfile:read("*a")
     logfile:close()
     if string.match(execlog, "No file [^\n]+%.ind%.") then
-      io.stderr:write("cluttex: You may want to set --makeindex option.\n")
+      message.diag("You may want to set --makeindex option.")
     end
   end
 
@@ -1910,7 +2061,7 @@ local function do_typeset_c()
   until not should_rerun or iteration >= options.max_iterations
 
   if should_rerun then
-    io.stderr:write("cluttex warning: LaTeX should be run once more.\n")
+    message.warn("LaTeX should be run once more.")
   end
 
   -- Successful
@@ -1919,7 +2070,7 @@ local function do_typeset_c()
     local outfile = path_in_output_directory(output_extension)
     coroutine.yield(fsutil.copy_command(outfile, options.output))
     if #options.dvipdfmx_extraoptions > 0 then
-      io.stderr:write("cluttex warning: --dvipdfmx-option[s] are ignored.\n")
+      message.warn("--dvipdfmx-option[s] are ignored.")
     end
 
   else
@@ -1937,7 +2088,7 @@ end
 local function do_typeset()
   -- Execute the command string yielded by do_typeset_c
   for command, recover in coroutine.wrap(do_typeset_c) do
-    io.stderr:write("EXEC ", command, "\n")
+    message.exec(command)
     local success, termination, status_or_signal = os.execute(command)
     if type(success) == "number" then -- Lua 5.1 or LuaTeX
       local code = success
@@ -1947,18 +2098,18 @@ local function do_typeset()
     end
     if not success and not (recover and recover()) then
       if termination == "exit" then
-        io.stderr:write("cluttex: Command exited abnormally: exit status ", tostring(status_or_signal), "\n")
+        message.error("Command exited abnormally: exit status ", tostring(status_or_signal))
       elseif termination == "signal" then
-        io.stderr:write("cluttex: Command exited abnormally: signal ", tostring(status_or_signal), "\n")
+        message.error("Command exited abnormally: signal ", tostring(status_or_signal))
       else
-        io.stderr:write("cluttex: Command exited abnormally: ", tostring(status_or_signal), "\n")
+        message.error("Command exited abnormally: ", tostring(status_or_signal))
       end
       return false, termination, status_or_signal
     end
   end
   -- Successful
   if CLUTTEX_VERBOSITY >= 1 then
-    io.stderr:write("cluttex: Command exited successfully\n")
+    message.info("Command exited successfully")
   end
   return true
 end
@@ -1978,7 +2129,7 @@ if options.watch then
     table.insert(fswatch_command, shellutil.escape(path))
   end
   if CLUTTEX_VERBOSITY >= 1 then
-    io.stderr:write("EXEC ", table.concat(fswatch_command, " "), "\n")
+    message.exec(table.concat(fswatch_command, " "))
   end
   local fswatch = assert(io.popen(table.concat(fswatch_command, " "), "r"))
   for l in fswatch:lines() do

@@ -78,6 +78,10 @@ local modules = {
     name = "texrunner.isatty",
     path = "texrunner/isatty.lua",
   },
+  {
+    name = "texrunner.message",
+    path = "texrunner/message.lua",
+  },
 }
 
 local imported_globals = {"io", "os", "string", "table", "package", "require", "assert", "error", "ipairs", "type", "select", "arg"}

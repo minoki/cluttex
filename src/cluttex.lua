@@ -39,6 +39,7 @@ local shellutil   = require "texrunner.shellutil"
 local reruncheck  = require "texrunner.reruncheck"
 local luatexinit  = require "texrunner.luatexinit"
 local recoverylib = require "texrunner.recovery"
+local message     = require "texrunner.message"
 local handle_cluttex_options = require "texrunner.handleoption".handle_cluttex_options
 
 -- arguments: input file name, jobname, etc...
@@ -85,14 +86,14 @@ if options.output_directory == nil then
     -- The output directory exists and --fresh is given:
     -- Remove all files in the output directory
     if CLUTTEX_VERBOSITY >= 1 then
-      io.stderr:write("cluttex: Cleaning '", options.output_directory, "'...\n")
+      message.info("Cleaning '", options.output_directory, "'...")
     end
     assert(fsutil.remove_rec(options.output_directory))
     assert(filesys.mkdir(options.output_directory))
   end
 
 elseif options.fresh then
-  io.stderr:write("cluttex: --fresh and --output-directory cannot be used together.\n")
+  message.error("--fresh and --output-directory cannot be used together.")
   os.exit(1)
 end
 
@@ -162,7 +163,7 @@ local function single_run(auxstatus, iteration)
   else
     -- This is the first execution
     if auxstatus ~= nil then
-      io.stderr:write("cluttex: Recorder file was not generated during the execution!\n")
+      message.error("Recorder file was not generated during the execution!")
       os.exit(1)
     end
     auxstatus = {}
@@ -238,7 +239,7 @@ local function single_run(auxstatus, iteration)
     local execlog = logfile:read("*a")
     logfile:close()
     if string.match(execlog, "No file [^\n]+%.ind%.") then
-      io.stderr:write("cluttex: You may want to set --makeindex option.\n")
+      message.diag("You may want to use --makeindex option.")
     end
   end
 
@@ -257,7 +258,7 @@ local function do_typeset_c()
   until not should_rerun or iteration >= options.max_iterations
 
   if should_rerun then
-    io.stderr:write("cluttex warning: LaTeX should be run once more.\n")
+    message.warn("LaTeX should be run once more.")
   end
 
   -- Successful
@@ -266,7 +267,7 @@ local function do_typeset_c()
     local outfile = path_in_output_directory(output_extension)
     coroutine.yield(fsutil.copy_command(outfile, options.output))
     if #options.dvipdfmx_extraoptions > 0 then
-      io.stderr:write("cluttex warning: --dvipdfmx-option[s] are ignored.\n")
+      message.warn("--dvipdfmx-option[s] are ignored.")
     end
 
   else
@@ -284,7 +285,7 @@ end
 local function do_typeset()
   -- Execute the command string yielded by do_typeset_c
   for command, recover in coroutine.wrap(do_typeset_c) do
-    io.stderr:write("EXEC ", command, "\n")
+    message.exec(command)
     local success, termination, status_or_signal = os.execute(command)
     if type(success) == "number" then -- Lua 5.1 or LuaTeX
       local code = success
@@ -294,18 +295,18 @@ local function do_typeset()
     end
     if not success and not (recover and recover()) then
       if termination == "exit" then
-        io.stderr:write("cluttex: Command exited abnormally: exit status ", tostring(status_or_signal), "\n")
+        message.error("Command exited abnormally: exit status ", tostring(status_or_signal))
       elseif termination == "signal" then
-        io.stderr:write("cluttex: Command exited abnormally: signal ", tostring(status_or_signal), "\n")
+        message.error("Command exited abnormally: signal ", tostring(status_or_signal))
       else
-        io.stderr:write("cluttex: Command exited abnormally: ", tostring(status_or_signal), "\n")
+        message.error("Command exited abnormally: ", tostring(status_or_signal))
       end
       return false, termination, status_or_signal
     end
   end
   -- Successful
   if CLUTTEX_VERBOSITY >= 1 then
-    io.stderr:write("cluttex: Command exited successfully\n")
+    message.info("Command exited successfully")
   end
   return true
 end
@@ -325,7 +326,7 @@ if options.watch then
     table.insert(fswatch_command, shellutil.escape(path))
   end
   if CLUTTEX_VERBOSITY >= 1 then
-    io.stderr:write("EXEC ", table.concat(fswatch_command, " "), "\n")
+    message.exec(table.concat(fswatch_command, " "))
   end
   local fswatch = assert(io.popen(table.concat(fswatch_command, " "), "r"))
   for l in fswatch:lines() do

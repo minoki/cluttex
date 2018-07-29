@@ -23,6 +23,7 @@ local parse_aux_file = require "texrunner.auxfile".parse_aux_file
 local pathutil       = require "texrunner.pathutil"
 local fsutil         = require "texrunner.fsutil"
 local shellutil      = require "texrunner.shellutil"
+local message        = require "texrunner.message"
 
 local function create_missing_directories(args)
   if string.find(args.execlog, "I can't write on file", 1, true) then
@@ -31,7 +32,7 @@ local function create_missing_directories(args)
     local report = parse_aux_file(args.auxfile, args.options.output_directory)
     if report.made_new_directory then
       if CLUTTEX_VERBOSITY >= 1 then
-        io.stderr:write("cluttex: Created missing directories.\n")
+        message.info("Created missing directories.")
       end
       return true
     end
@@ -47,14 +48,14 @@ local function run_epstopdf(args)
       if fsutil.isfile(infile_abs) then -- input file exists
         local outfile_abs = pathutil.abspath(outfile, args.options.output_directory)
         if CLUTTEX_VERBOSITY >= 1 then
-          io.stderr:write("cluttex: Running epstopdf on ", infile, ".\n")
+          message.info("Running epstopdf on ", infile, ".")
         end
         local outdir = pathutil.dirname(outfile_abs)
         if not fsutil.isdir(outdir) then
           assert(fsutil.mkdir_rec(outdir))
         end
         local command = string.format("epstopdf --outfile=%s %s", shellutil.escape(outfile_abs), shellutil.escape(infile_abs))
-        io.stderr:write("EXEC ", command, "\n")
+        message.exec(command)
         local success = os.execute(command)
         if type(success) == "number" then -- Lua 5.1 or LuaTeX
           success = success == 0

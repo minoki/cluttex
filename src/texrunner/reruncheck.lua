@@ -23,6 +23,7 @@ local filesys = require "lfs"
 local md5 = require "md5"
 local fsutil = require "texrunner.fsutil"
 local pathutil = require "texrunner.pathutil"
+local message = require "texrunner.message"
 
 local function md5sum_file(path)
   local f = assert(io.open(path, "rb"))
@@ -98,7 +99,7 @@ local function parse_recorder_file(file, options)
       end
 
     else
-      io.stderr:write("cluttex warning: Unrecognized line in recorder file '", file, "': ", l, "\n")
+      message.warning("Unrecognized line in recorder file '", file, "': ", l)
     end
   end
   return filelist
@@ -137,7 +138,7 @@ local function comparefileinfo(filelist, auxstatus)
           if auxstatus[path].mtime < mtime then
             -- Input file was updated during execution
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: Input file '", fileinfo.path, "' was modified (by user, or some external commands).\n")
+              message.info("Input file '", fileinfo.path, "' was modified (by user, or some external commands).")
             end
             newauxstatus[path] = {mtime = mtime}
             return true, newauxstatus
@@ -167,12 +168,12 @@ local function comparefileinfo(filelist, auxstatus)
           end
           if really_modified then
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: File '", fileinfo.path, "' was modified (", modified_because, ").\n")
+              message.info("File '", fileinfo.path, "' was modified (", modified_because, ").")
             end
             should_rerun = true
           else
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: File '", fileinfo.path, "' unmodified (size and md5sum).\n")
+              message.info("File '", fileinfo.path, "' unmodified (size and md5sum).")
             end
           end
         else
@@ -198,9 +199,9 @@ local function comparefileinfo(filelist, auxstatus)
           end
           if CLUTTEX_VERBOSITY >= 1 then
             if should_rerun then
-              io.stderr:write("cluttex: New auxiliary file '", fileinfo.path, "'.\n")
+              message.info("New auxiliary file '", fileinfo.path, "'.")
             else
-              io.stderr:write("cluttex: Ignoring almost-empty auxiliary file '", fileinfo.path, "'.\n")
+              message.info("Ignoring almost-empty auxiliary file '", fileinfo.path, "'.")
             end
           end
         end
