@@ -6,7 +6,6 @@ local function create_initialization_script(filename, options)
   if type(options.halt_on_error) == "boolean" then
     initscript:write(string.format("texconfig.halt_on_error = %s\n", options.halt_on_error))
   end
-  initscript:write(string.format("local output_directory = %q\n", options.output_directory))
   initscript:write([==[
 local print = print
 local io_open = io.open
@@ -14,6 +13,28 @@ local io_write = io.write
 local os_execute = os.execute
 local texio_write = texio.write
 local texio_write_nl = texio.write_nl
+]==])
+
+  -- Packages coded in Lua doesn't follow -output-directory option and doesn't write command to the log file
+  initscript:write(string.format("local output_directory = %q\n", options.output_directory))
+  initscript:write([==[
+io.open = function(...)
+  local fname, mode = ...
+  -- luatexja-ruby
+  if mode == "w" and fname == tex.jobname .. ".ltjruby" then
+    return io_open(output_directory .. "/" .. fname, "w")
+  else
+    return io_open(...)
+  end
+end
+os.execute = function(...)
+  texio_write_nl("log", string.format("CLUTTEX_EXEC %s", ...), "")
+  return os_execute(...)
+end
+]==])
+
+  -- Silence some of the TeX output to the terminal.
+  initscript:write([==[
 local function start_file_cb(category, filename)
   if category == 1 then -- a normal data file, like a TeX source
     texio_write_nl("log", "("..filename)
@@ -49,33 +70,16 @@ callback.register("stop_file", stop_file_cb)
 texio.write = function(...)
   if select("#",...) == 1 then
     -- Suppress luaotfload's message (See src/fontloader/runtime/fontload-reference.lua)
-    if string.match(...,"^%(using cache: ") then
-      return
-    elseif string.match(...,"^%(using write cache: ") then
-      return
-    elseif string.match(...,"^%(using read cache: ") then
-      return
-    elseif string.match(...,"^%(load luc: ") then
-      return
-    elseif string.match(...,"^%(load cache: ") then
-      return
+    local s = ...
+    if string.match(s, "^%(using cache: ")
+       or string.match(s, "^%(using write cache: ")
+       or string.match(s, "^%(using read cache: ")
+       or string.match(s, "^%(load luc: ")
+       or string.match(s, "^%(load cache: ") then
+      return texio_write("log", ...)
     end
   end
   return texio_write(...)
-end
-io.open = function(...)
-  local fname, mode = ...
-  -- luatexja-ruby
-  if mode == "w" and fname == tex.jobname .. ".ltjruby" then
-    return io_open(output_directory .. "/" .. fname, "w")
-  else
-    return io_open(...)
-  end
-end
-os.execute = function(...)
-  texio_write_nl("log", string.format("CLUTTEX_EXEC %s", ...))
-  texio_write_nl("log", "")
-  return os_execute(...)
 end
 ]==])
   initscript:close()
