@@ -1307,8 +1307,8 @@ Options:
                                  [default: JOBNAME.pdf or JOBNAME.dvi]
       --fresh                  Clean intermediate files before running TeX.
                                  Cannot be used with --output-directory.
-      --max-iterations=N       Maximum number of re-running TeX to resolve
-                                 cross-references.  [default: 5]
+      --max-iterations=N       Maximum number of running TeX to resolve
+                                 cross-references.  [default: 3]
       --[no-]change-directory  Change directory before running TeX.
       --watch                  Watch input files for change.  Requires fswatch
                                  program to be installed.
@@ -1450,6 +1450,7 @@ for _,option in ipairs(option_and_params) do
   elseif name == "max-iterations" then
     assert(options.max_iterations == nil, "multiple --max-iterations options")
     options.max_iterations = assert(tonumber(param), "invalid value for --max-iterations option")
+    assert(options.max_iterations >= 1, "invalid value for --max-iterations option")
 
   elseif name == "watch" then
     assert(options.watch == nil, "multiple --watch options")
@@ -1545,7 +1546,7 @@ end
 
 -- Default values for options
 if options.max_iterations == nil then
-  options.max_iterations = 5
+  options.max_iterations = 3
 end
 
 if options.interaction == nil then
@@ -1709,7 +1710,7 @@ local function do_typeset_c()
   repeat
     iteration = iteration + 1
     should_rerun, auxstatus = single_run(auxstatus)
-  until not should_rerun or iteration > options.max_iterations
+  until not should_rerun or iteration >= options.max_iterations
 
   if should_rerun then
     io.stderr:write("cluttex warning: LaTeX should be run once more.\n")
