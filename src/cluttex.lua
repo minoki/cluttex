@@ -172,14 +172,23 @@ local function single_run(auxstatus, iteration)
     tex_options.tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_options.tex_injection or "", options.output_directory)
   end
 
-  if iteration == 1 and options.start_with_draft and engine.supports_draftmode then
-    tex_options.draftmode = true
-    options.start_with_draft = false
+  local current_tex_options, lightweight_mode = tex_options, false
+  if iteration == 1 and options.start_with_draft then
+    current_tex_options = {}
+    for k,v in pairs(tex_options) do
+      current_tex_options[k] = v
+    end
+    if engine.supports_draftmode then
+      current_tex_options.draftmode = true
+      options.start_with_draft = false
+    end
+    current_tex_options.interaction = "batchmode"
+    lightweight_mode = true
   else
-    tex_options.draftmode = false
+    current_tex_options.draftmode = false
   end
 
-  local command = engine:build_command(inputfile, tex_options)
+  local command = engine:build_command(inputfile, current_tex_options)
 
   local recovered = false
   local function recover()
@@ -233,7 +242,7 @@ local function single_run(auxstatus, iteration)
   end
 
   local should_rerun, auxstatus = reruncheck.comparefileinfo(filelist, auxstatus)
-  return should_rerun or tex_options.draftmode, auxstatus
+  return should_rerun or lightweight_mode, auxstatus
 end
 
 -- Run (La)TeX (possibly multiple times) and produce a PDF file.
