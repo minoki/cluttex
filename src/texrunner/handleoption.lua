@@ -54,6 +54,7 @@ Options:
       --[no-]shell-escape
       --shell-restricted
       --synctex=NUMBER
+      --fmt=FMTNAME
       --[no-]file-line-error   [default: yes]
       --[no-]halt-on-error     [default: yes]
       --interaction=STRING     [default: nonstopmode]
@@ -132,6 +133,10 @@ local option_spec = {
   },
   {
     long = "jobname",
+    param = true,
+  },
+  {
+    long = "fmt",
     param = true,
   },
   {
@@ -216,7 +221,7 @@ local function handle_cluttex_options(arg)
       assert(options.max_iterations >= 1, "invalid value for --max-iterations option")
 
     elseif name == "start-with-draft" then
-      assert(options.fresh == nil, "multiple --start-with-draft options")
+      assert(options.start_with_draft == nil, "multiple --start-with-draft options")
       options.start_with_draft = true
 
     elseif name == "watch" then
@@ -265,6 +270,10 @@ local function handle_cluttex_options(arg)
     elseif name == "jobname" then
       assert(options.jobname == nil, "multiple --jobname options")
       options.jobname = param
+
+    elseif name == "fmt" then
+      assert(options.fmt == nil, "multiple --fmt options")
+      options.fmt = param
 
     elseif name == "output-directory" then
       assert(options.output_directory == nil, "multiple --output-directory options")

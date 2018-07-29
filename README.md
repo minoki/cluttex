@@ -61,6 +61,7 @@ Options:
   (`STRING`=`batchmode`/`nonstopmode`/`scrollmode`/`errorstopmode`)
   [default: `nonstopmode`]
 * `--jobname=STRING`
+* `--fmt=FORMAT`
 * `--output-directory=DIR`
   [default: somewhere in the temporary directory]
 * `--output-format=FORMAT`

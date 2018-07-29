@@ -131,6 +131,7 @@ local tex_options = {
   shell_escape = options.shell_escape,
   shell_restricted = options.shell_restricted,
   jobname = options.jobname,
+  fmt = options.fmt,
   extraoptions = options.tex_extraoptions,
 }
 if options.output_format ~= "pdf" and engine.supports_pdf_generation then

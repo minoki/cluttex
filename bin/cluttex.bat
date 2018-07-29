@@ -676,6 +676,7 @@ engine:build_command(inputfile, options)
     extraoptions: a list of strings
     output_format: "pdf" or "dvi"
     draftmode: boolean (pdfTeX / XeTeX / LuaTeX)
+    fmt: string
     tex_injection: string
     lua_initialization_script: string (LuaTeX only)
 engine.executable: string
@@ -689,6 +690,9 @@ engine_meta.__index = engine_meta
 engine_meta.dvi_extension = "dvi"
 function engine_meta:build_command(inputfile, options)
   local command = {self.executable, "-recorder"}
+  if options.fmt then
+    table.insert(command, "-fmt=" .. options.fmt)
+  end
   if options.halt_on_error then
     table.insert(command, "-halt-on-error")
   end
@@ -1295,6 +1299,7 @@ Options:
       --[no-]shell-escape
       --shell-restricted
       --synctex=NUMBER
+      --fmt=FMTNAME
       --[no-]file-line-error   [default: yes]
       --[no-]halt-on-error     [default: yes]
       --interaction=STRING     [default: nonstopmode]
@@ -1373,6 +1378,10 @@ local option_spec = {
   },
   {
     long = "jobname",
+    param = true,
+  },
+  {
+    long = "fmt",
     param = true,
   },
   {
@@ -1457,7 +1466,7 @@ local function handle_cluttex_options(arg)
       assert(options.max_iterations >= 1, "invalid value for --max-iterations option")
 
     elseif name == "start-with-draft" then
-      assert(options.fresh == nil, "multiple --start-with-draft options")
+      assert(options.start_with_draft == nil, "multiple --start-with-draft options")
       options.start_with_draft = true
 
     elseif name == "watch" then
@@ -1506,6 +1515,10 @@ local function handle_cluttex_options(arg)
     elseif name == "jobname" then
       assert(options.jobname == nil, "multiple --jobname options")
       options.jobname = param
+
+    elseif name == "fmt" then
+      assert(options.fmt == nil, "multiple --fmt options")
+      options.fmt = param
 
     elseif name == "output-directory" then
       assert(options.output_directory == nil, "multiple --output-directory options")
@@ -1702,6 +1715,7 @@ local tex_options = {
   shell_escape = options.shell_escape,
   shell_restricted = options.shell_restricted,
   jobname = options.jobname,
+  fmt = options.fmt,
   extraoptions = options.tex_extraoptions,
 }
 if options.output_format ~= "pdf" and engine.supports_pdf_generation then

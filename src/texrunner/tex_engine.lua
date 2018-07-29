@@ -39,6 +39,7 @@ engine:build_command(inputfile, options)
     extraoptions: a list of strings
     output_format: "pdf" or "dvi"
     draftmode: boolean (pdfTeX / XeTeX / LuaTeX)
+    fmt: string
     tex_injection: string
     lua_initialization_script: string (LuaTeX only)
 engine.executable: string
@@ -52,6 +53,9 @@ engine_meta.__index = engine_meta
 engine_meta.dvi_extension = "dvi"
 function engine_meta:build_command(inputfile, options)
   local command = {self.executable, "-recorder"}
+  if options.fmt then
+    table.insert(command, "-fmt=" .. options.fmt)
+  end
   if options.halt_on_error then
     table.insert(command, "-halt-on-error")
   end
