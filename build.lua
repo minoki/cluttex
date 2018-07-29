@@ -74,6 +74,10 @@ local modules = {
     name = "texrunner.handleoption",
     path = "texrunner/handleoption.lua",
   },
+  {
+    name = "texrunner.isatty",
+    path = "texrunner/isatty.lua",
+  },
 }
 
 local imported_globals = {"io", "os", "string", "table", "package", "require", "assert", "error", "ipairs", "type", "select", "arg"}

@@ -17,6 +17,7 @@ sources= \
  src/texrunner/luatexinit.lua \
  src/texrunner/recovery.lua \
  src/texrunner/handleoption.lua \
+ src/texrunner/isatty.lua \
  src/cluttex.lua
 
 bin/cluttex: $(sources) build.lua
