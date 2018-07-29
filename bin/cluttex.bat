@@ -2,6 +2,8 @@
 @texlua "%~f0" %*
 @goto :eof
 ]]
+local io, os, string, table, package, require, assert, error, ipairs, type, select, arg = io, os, string, table, package, require, assert, error, ipairs, type, select, arg
+local CLUTTEX_VERBOSITY
 os.type = os.type or "windows"
 if os.type == "windows" then
 package.preload["texrunner.pathutil"] = function(...)
@@ -1241,11 +1243,6 @@ end
 ]]
 
 -- Standard libraries
-local table = table
-local os = os
-local io = io
-local string = string
-local ipairs = ipairs
 local coroutine = coroutine
 local tostring = tostring
 

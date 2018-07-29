@@ -72,15 +72,33 @@ local modules = {
   },
 }
 
+local imported_globals = {"io", "os", "string", "table", "package", "require", "assert", "error", "ipairs", "type", "select", "arg"}
+
+-- TODO: This code may interfere with the string literal embedded in luatexinit.lua
+local function strip_global_imports(code)
+  local function repl(s1, s2)
+    if s1 == s2 then
+      for i, v in ipairs(imported_globals) do
+        if v == s1 then
+          return ""
+        end
+      end
+    end
+    return nil
+  end
+  return (code:gsub("local (%w+) = (%w+)\n", repl))
+end
+
 local function strip_test_code(code)
   return (code:gsub("%-%- TEST CODE\n(.-)%-%- END TEST CODE\n", ""))
 end
 
 local function load_module_code(path)
-  local code = strip_test_code(assert(io.open(srcdir .. path, "r")):read("*a"))
-  assert(load(code)) -- Check syntax
-  return code
+  assert(loadfile(srcdir .. path)) -- Check syntax
+  return strip_test_code(assert(io.open(srcdir .. path, "r")):read("*a"))
 end
+
+assert(loadfile(srcdir .. "cluttex.lua")) -- Check syntax
 
 local shebang = nil
 local main = assert(io.open(srcdir .. "cluttex.lua", "r")):read("*a")
@@ -103,6 +121,9 @@ else
   end
 end
 
+table.insert(lines, string.format("local %s = %s\n", table.concat(imported_globals, ", "), table.concat(imported_globals, ", ")))
+table.insert(lines, "local CLUTTEX_VERBOSITY\n")
+
 if default_os then
   table.insert(lines, string.format("os.type = os.type or %q\n", default_os))
 end
@@ -118,7 +139,7 @@ for _,m in ipairs(modules) do
     table.insert(lines, string.format("package.preload[%q] = function(...)\n%send\n", m.name, load_module_code(m.path)))
   end
 end
-table.insert(lines, main)
+table.insert(lines, strip_global_imports(main))
 
 if outfile then
   io.output(outfile)
