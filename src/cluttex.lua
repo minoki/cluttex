@@ -139,7 +139,7 @@ if options.output_format ~= "pdf" and engine.supports_pdf_generation then
 end
 
 -- Setup LuaTeX initialization script
-if options.engine == "luatex" or options.engine == "lualatex" then
+if engine.is_luatex then
   local initscriptfile = path_in_output_directory("cluttexinit.lua")
   luatexinit.create_initialization_script(initscriptfile, tex_options)
   tex_options.lua_initialization_script = initscriptfile

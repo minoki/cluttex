@@ -46,6 +46,7 @@ engine.executable: string
 engine.supports_pdf_generation: boolean
 engine.dvi_extension: string
 engine.supports_draftmode: boolean
+engine.is_luatex: true or nil
 ]]
 
 local engine_meta = {}
@@ -128,11 +129,17 @@ local function handle_luatex_options(self, args, options)
   handle_pdftex_options(self, args, options)
 end
 
+local function is_luatex(e)
+  e.is_luatex = true
+  return e
+end
+
 local KnownEngines = {
   ["pdftex"]   = engine("pdftex", true, handle_pdftex_options),
   ["pdflatex"] = engine("pdflatex", true, handle_pdftex_options),
-  ["luatex"]   = engine("luatex", true, handle_luatex_options),
-  ["lualatex"] = engine("lualatex", true, handle_luatex_options),
+  ["luatex"]   = is_luatex(engine("luatex", true, handle_luatex_options)),
+  ["lualatex"] = is_luatex(engine("lualatex", true, handle_luatex_options)),
+  ["luajittex"] = is_luatex(engine("luajittex", true, handle_luatex_options)),
   ["xetex"]    = engine("xetex", true, handle_xetex_options),
   ["xelatex"]  = engine("xelatex", true, handle_xetex_options),
   ["tex"]      = engine("tex", false),

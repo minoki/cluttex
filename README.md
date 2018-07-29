@@ -20,7 +20,7 @@ Options:
   Specify which TeX engine/format to use.
   `ENGINE` is one of the following:
     `pdflatex`, `pdftex`,
-    `lualatex`, `luatex`,
+    `lualatex`, `luatex`, `luajittex`,
     `xelatex`, `xetex`,
     `latex`, `etex`, `tex`,
     `platex`, `eptex`, `ptex`,
