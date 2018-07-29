@@ -70,6 +70,10 @@ local modules = {
     name = "texrunner.recovery",
     path = "texrunner/recovery.lua",
   },
+  {
+    name = "texrunner.handleoption",
+    path = "texrunner/handleoption.lua",
+  },
 }
 
 local imported_globals = {"io", "os", "string", "table", "package", "require", "assert", "error", "ipairs", "type", "select", "arg"}

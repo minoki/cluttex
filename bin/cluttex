@@ -1220,57 +1220,7 @@ return {
   try_recovery = try_recovery,
 }
 end
---[[
-  Copyright 2016,2018 ARATA Mizuki
-
-  This file is part of ClutTeX.
-
-  ClutTeX is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  ClutTeX is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with ClutTeX.  If not, see <http://www.gnu.org/licenses/>.
-]]
-
--- Standard libraries
-local coroutine = coroutine
-local tostring = tostring
-
--- External libraries (included in texlua)
-local filesys = require "lfs"
-local md5     = require "md5"
--- local kpse = require "kpse"
-
--- My own modules
-local pathutil    = require "texrunner.pathutil"
-local fsutil      = require "texrunner.fsutil"
-local shellutil   = require "texrunner.shellutil"
-local reruncheck  = require "texrunner.reruncheck"
-local parseoption = require "texrunner.option".parseoption
-local KnownEngines = require "texrunner.tex_engine"
-local luatexinit  = require "texrunner.luatexinit"
-local recoverylib = require "texrunner.recovery"
-
--- arguments: input file name, jobname, etc...
-local function genOutputDirectory(...)
-  -- The name of the temporary directory is based on the path of input file.
-  local message = table.concat({...}, "\0")
-  local hash = md5.sumhexa(message)
-  local tmpdir = os.getenv("TMPDIR") or os.getenv("TMP") or os.getenv("TEMP")
-  if tmpdir == nil then
-    local home = os.getenv("HOME") or os.getenv("USERPROFILE") or error("environment variable 'TMPDIR' not set!")
-    tmpdir = pathutil.join(home, ".latex-build-temp")
-  end
-  return pathutil.join(tmpdir, 'latex-build-' .. hash)
-end
-
+package.preload["texrunner.handleoption"] = function(...)
 local COPYRIGHT_NOTICE = [[
 Copyright (C) 2016,2018  ARATA Mizuki
 
@@ -1288,7 +1238,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-local function usage()
+local pathutil    = require "texrunner.pathutil"
+local parseoption = require "texrunner.option".parseoption
+local KnownEngines = require "texrunner.tex_engine"
+
+local function usage(arg)
   io.write(string.format([[
 ClutTeX: Process TeX files without cluttering your working directory
 
@@ -1332,9 +1286,8 @@ Options:
 ]], arg[0] or 'texlua cluttex.lua', COPYRIGHT_NOTICE))
 end
 
--- Parse options
-local option_and_params, non_option_index = parseoption(arg, {
-  -- Options for this script
+local option_spec = {
+  -- Options for ClutTeX
   {
     short = "e",
     long = "engine",
@@ -1423,151 +1376,220 @@ local option_and_params, non_option_index = parseoption(arg, {
     long = "dvipdfmx-options",
     param = true,
   },
-})
-
--- Handle options
-local options = {}
-local tex_extraoptions = {}
-local dvipdfmx_extraoptions = {}
-CLUTTEX_VERBOSITY = 0
-for _,option in ipairs(option_and_params) do
-  local name = option[1]
-  local param = option[2]
-
-  if name == "engine" then
-    assert(options.engine == nil, "multiple --engine options")
-    options.engine = param
-
-  elseif name == "output" then
-    assert(options.output == nil, "multiple --output options")
-    options.output = param
-
-  elseif name == "fresh" then
-    assert(options.fresh == nil, "multiple --fresh options")
-    options.fresh = true
-
-  elseif name == "max-iterations" then
-    assert(options.max_iterations == nil, "multiple --max-iterations options")
-    options.max_iterations = assert(tonumber(param), "invalid value for --max-iterations option")
-    assert(options.max_iterations >= 1, "invalid value for --max-iterations option")
-
-  elseif name == "watch" then
-    assert(options.watch == nil, "multiple --watch options")
-    options.watch = true
-
-  elseif name == "help" then
-    usage()
-    os.exit(0)
-
-  elseif name == "version" then
-    io.stderr:write("cluttex (prerelease)\n")
-    os.exit(0)
-
-  elseif name == "verbose" then
-    CLUTTEX_VERBOSITY = CLUTTEX_VERBOSITY + 1
-
-  elseif name == "change-directory" then
-    assert(options.change_directory == nil, "multiple --change-directory options")
-    options.change_directory = param
-
-  -- Options for TeX
-  elseif name == "synctex" then
-    assert(options.synctex == nil, "multiple --synctex options")
-    options.synctex = param
-
-  elseif name == "file-line-error" then
-    options.file_line_error = param
-
-  elseif name == "interaction" then
-    assert(options.interaction == nil, "multiple --interaction options")
-    assert(param == "batchmode" or param == "nonstopmode" or param == "scrollmode" or param == "errorstopmode", "invalid argument for --interaction")
-    options.interaction = param
-
-  elseif name == "halt-on-error" then
-    options.halt_on_error = param
-
-  elseif name == "shell-escape" then
-    assert(options.shell_escape == nil and options.shell_restricted == nil, "multiple --(no-)shell-escape or --shell-restricted options")
-    options.shell_escape = param
-
-  elseif name == "shell-restricted" then
-    assert(options.shell_escape == nil and options.shell_restricted == nil, "multiple --(no-)shell-escape or --shell-restricted options")
-    options.shell_restricted = true
-
-  elseif name == "jobname" then
-    assert(options.jobname == nil, "multiple --jobname options")
-    options.jobname = param
-
-  elseif name == "output-directory" then
-    assert(options.output_directory == nil, "multiple --output-directory options")
-    options.output_directory = param
-
-  elseif name == "output-format" then
-    assert(options.output_format == nil, "multiple --output-format options")
-    assert(param == "pdf" or param == "dvi", "invalid argument for --output-format")
-    options.output_format = param
-
-  elseif name == "tex-option" then
-    table.insert(tex_extraoptions, shellutil.escape(param))
-
-  elseif name == "tex-options" then
-    table.insert(tex_extraoptions, param)
-
-  elseif name == "dvipdfmx-option" then
-    table.insert(dvipdfmx_extraoptions, shellutil.escape(param))
-
-  elseif name == "dvipdfmx-options" then
-    table.insert(dvipdfmx_extraoptions, param)
-
-  end
-end
-
--- Handle non-options (i.e. input file)
-if non_option_index > #arg then
-  -- No input file given
-  usage()
-  os.exit(1)
-elseif non_option_index < #arg then
-  io.stderr("cluttex: Multiple input files are not supported.\n")
-  os.exit(1)
-end
-local inputfile = arg[non_option_index]
-
--- If run as 'cllualatex', then the default engine is lualatex
-if options.engine == nil and type(arg[0]) == "string" then
-  local basename = pathutil.basename(arg[0])
-  local engine_part = string.match(basename, "^cl(%w+)$")
-  if engine_part and KnownEngines[engine_part] then
-    options.engine = engine_part
-  end
-end
-
-if options.engine == nil then
-  io.stderr:write("cluttex: Engine not specified.\n")
-  os.exit(1)
-end
-local engine = KnownEngines[options.engine]
-if not engine then
-  io.stderr:write("cluttex: Unknown engine name '", options.engine, "'.\n")
-  os.exit(1)
-end
+}
 
 -- Default values for options
-if options.max_iterations == nil then
-  options.max_iterations = 3
+local function set_default_values(options)
+  if options.max_iterations == nil then
+    options.max_iterations = 3
+  end
+
+  if options.interaction == nil then
+    options.interaction = "nonstopmode"
+  end
+
+  if options.file_line_error == nil then
+    options.file_line_error = true
+  end
+
+  if options.halt_on_error == nil then
+    options.halt_on_error = true
+  end
 end
 
-if options.interaction == nil then
-  options.interaction = "nonstopmode"
+-- inputfile, engine, options, tex_extraoptions, dvipdfmx_extraoptions = handle_cluttex_options(arg)
+local function handle_cluttex_options(arg)
+  -- Parse options
+  local option_and_params, non_option_index = parseoption(arg, option_spec)
+
+  -- Handle options
+  local options = {}
+  local tex_extraoptions = {}
+  local dvipdfmx_extraoptions = {}
+  CLUTTEX_VERBOSITY = 0
+  for _,option in ipairs(option_and_params) do
+    local name = option[1]
+    local param = option[2]
+
+    if name == "engine" then
+      assert(options.engine == nil, "multiple --engine options")
+      options.engine = param
+
+    elseif name == "output" then
+      assert(options.output == nil, "multiple --output options")
+      options.output = param
+
+    elseif name == "fresh" then
+      assert(options.fresh == nil, "multiple --fresh options")
+      options.fresh = true
+
+    elseif name == "max-iterations" then
+      assert(options.max_iterations == nil, "multiple --max-iterations options")
+      options.max_iterations = assert(tonumber(param), "invalid value for --max-iterations option")
+      assert(options.max_iterations >= 1, "invalid value for --max-iterations option")
+
+    elseif name == "watch" then
+      assert(options.watch == nil, "multiple --watch options")
+      options.watch = true
+
+    elseif name == "help" then
+      usage(arg)
+      os.exit(0)
+
+    elseif name == "version" then
+      io.stderr:write("cluttex (prerelease)\n")
+      os.exit(0)
+
+    elseif name == "verbose" then
+      CLUTTEX_VERBOSITY = CLUTTEX_VERBOSITY + 1
+
+    elseif name == "change-directory" then
+      assert(options.change_directory == nil, "multiple --change-directory options")
+      options.change_directory = param
+
+      -- Options for TeX
+    elseif name == "synctex" then
+      assert(options.synctex == nil, "multiple --synctex options")
+      options.synctex = param
+
+    elseif name == "file-line-error" then
+      options.file_line_error = param
+
+    elseif name == "interaction" then
+      assert(options.interaction == nil, "multiple --interaction options")
+      assert(param == "batchmode" or param == "nonstopmode" or param == "scrollmode" or param == "errorstopmode", "invalid argument for --interaction")
+      options.interaction = param
+
+    elseif name == "halt-on-error" then
+      options.halt_on_error = param
+
+    elseif name == "shell-escape" then
+      assert(options.shell_escape == nil and options.shell_restricted == nil, "multiple --(no-)shell-escape or --shell-restricted options")
+      options.shell_escape = param
+
+    elseif name == "shell-restricted" then
+      assert(options.shell_escape == nil and options.shell_restricted == nil, "multiple --(no-)shell-escape or --shell-restricted options")
+      options.shell_restricted = true
+
+    elseif name == "jobname" then
+      assert(options.jobname == nil, "multiple --jobname options")
+      options.jobname = param
+
+    elseif name == "output-directory" then
+      assert(options.output_directory == nil, "multiple --output-directory options")
+      options.output_directory = param
+
+    elseif name == "output-format" then
+      assert(options.output_format == nil, "multiple --output-format options")
+      assert(param == "pdf" or param == "dvi", "invalid argument for --output-format")
+      options.output_format = param
+
+    elseif name == "tex-option" then
+      table.insert(tex_extraoptions, shellutil.escape(param))
+
+    elseif name == "tex-options" then
+      table.insert(tex_extraoptions, param)
+
+    elseif name == "dvipdfmx-option" then
+      table.insert(dvipdfmx_extraoptions, shellutil.escape(param))
+
+    elseif name == "dvipdfmx-options" then
+      table.insert(dvipdfmx_extraoptions, param)
+
+    end
+  end
+
+  -- Handle non-options (i.e. input file)
+  if non_option_index > #arg then
+    -- No input file given
+    usage()
+    os.exit(1)
+  elseif non_option_index < #arg then
+    io.stderr("cluttex: Multiple input files are not supported.\n")
+    os.exit(1)
+  end
+  local inputfile = arg[non_option_index]
+
+  -- If run as 'cllualatex', then the default engine is lualatex
+  if options.engine == nil and type(arg[0]) == "string" then
+    local basename = pathutil.basename(arg[0])
+    local engine_part = string.match(basename, "^cl(%w+)$")
+    if engine_part and KnownEngines[engine_part] then
+      options.engine = engine_part
+    end
+  end
+
+  if options.engine == nil then
+    io.stderr:write("cluttex: Engine not specified.\n")
+    os.exit(1)
+  end
+  local engine = KnownEngines[options.engine]
+  if not engine then
+    io.stderr:write("cluttex: Unknown engine name '", options.engine, "'.\n")
+    os.exit(1)
+  end
+
+  set_default_values(options)
+
+  return inputfile, engine, options, tex_extraoptions, dvipdfmx_extraoptions
 end
 
-if options.file_line_error == nil then
-  options.file_line_error = true
+return {
+  usage = usage,
+  handle_cluttex_options = handle_cluttex_options,
+}
+end
+--[[
+  Copyright 2016,2018 ARATA Mizuki
+
+  This file is part of ClutTeX.
+
+  ClutTeX is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  ClutTeX is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with ClutTeX.  If not, see <http://www.gnu.org/licenses/>.
+]]
+
+-- Standard libraries
+local coroutine = coroutine
+local tostring = tostring
+
+-- External libraries (included in texlua)
+local filesys = require "lfs"
+local md5     = require "md5"
+-- local kpse = require "kpse"
+
+-- My own modules
+local pathutil    = require "texrunner.pathutil"
+local fsutil      = require "texrunner.fsutil"
+local shellutil   = require "texrunner.shellutil"
+local reruncheck  = require "texrunner.reruncheck"
+local luatexinit  = require "texrunner.luatexinit"
+local recoverylib = require "texrunner.recovery"
+local handle_cluttex_options = require "texrunner.handleoption".handle_cluttex_options
+
+-- arguments: input file name, jobname, etc...
+local function genOutputDirectory(...)
+  -- The name of the temporary directory is based on the path of input file.
+  local message = table.concat({...}, "\0")
+  local hash = md5.sumhexa(message)
+  local tmpdir = os.getenv("TMPDIR") or os.getenv("TMP") or os.getenv("TEMP")
+  if tmpdir == nil then
+    local home = os.getenv("HOME") or os.getenv("USERPROFILE") or error("environment variable 'TMPDIR' not set!")
+    tmpdir = pathutil.join(home, ".latex-build-temp")
+  end
+  return pathutil.join(tmpdir, 'latex-build-' .. hash)
 end
 
-if options.halt_on_error == nil then
-  options.halt_on_error = true
-end
+local inputfile, engine, options, tex_extraoptions, dvipdfmx_extraoptions = handle_cluttex_options(arg)
 
 local jobname = options.jobname or pathutil.basename(pathutil.trimext(inputfile))
 assert(jobname ~= "", "jobname cannot be empty")
