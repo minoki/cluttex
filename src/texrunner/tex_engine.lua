@@ -38,12 +38,13 @@ engine:build_command(inputfile, options)
     output_directory: string
     extraoptions: a list of strings
     output_format: "pdf" or "dvi"
-    draftmode: boolean
+    draftmode: boolean (pdfTeX / XeTeX / LuaTeX)
     tex_injection: string
     lua_initialization_script: string (LuaTeX only)
 engine.executable: string
 engine.supports_pdf_generation: boolean
 engine.dvi_extension: string
+engine.supports_draftmode: boolean
 ]]
 
 local engine_meta = {}
@@ -98,6 +99,7 @@ local function engine(name, supports_pdf_generation, handle_additional_options)
     executable = name,
     supports_pdf_generation = supports_pdf_generation,
     handle_additional_options = handle_additional_options,
+    supports_draftmode = supports_pdf_generation,
   }, engine_meta)
 end
 

@@ -146,7 +146,7 @@ end
 
 -- Run TeX command (*tex, *latex)
 -- should_rerun, newauxstatus = single_run([auxstatus])
-local function single_run(auxstatus)
+local function single_run(auxstatus, iteration)
   local minted = false
   if fsutil.isfile(recorderfile) then
     -- Recorder file already exists
@@ -170,6 +170,13 @@ local function single_run(auxstatus)
 
   if minted and not (tex_options.tex_injection and string.find(tex_options.tex_injection,"minted") == nil) then
     tex_options.tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_options.tex_injection or "", options.output_directory)
+  end
+
+  if iteration == 1 and options.start_with_draft and engine.supports_draftmode then
+    tex_options.draftmode = true
+    options.start_with_draft = false
+  else
+    tex_options.draftmode = false
   end
 
   local command = engine:build_command(inputfile, tex_options)
@@ -225,7 +232,8 @@ local function single_run(auxstatus)
     end
   end
 
-  return reruncheck.comparefileinfo(filelist, auxstatus)
+  local should_rerun, auxstatus = reruncheck.comparefileinfo(filelist, auxstatus)
+  return should_rerun or tex_options.draftmode, auxstatus
 end
 
 -- Run (La)TeX (possibly multiple times) and produce a PDF file.
@@ -235,7 +243,7 @@ local function do_typeset_c()
   local should_rerun, auxstatus
   repeat
     iteration = iteration + 1
-    should_rerun, auxstatus = single_run(auxstatus)
+    should_rerun, auxstatus = single_run(auxstatus, iteration)
   until not should_rerun or iteration >= options.max_iterations
 
   if should_rerun then

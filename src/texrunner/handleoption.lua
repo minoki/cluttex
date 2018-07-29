@@ -39,6 +39,7 @@ Options:
                                  Cannot be used with --output-directory.
       --max-iterations=N       Maximum number of running TeX to resolve
                                  cross-references.  [default: 3]
+      --start-with-draft       Start with draft mode.
       --[no-]change-directory  Change directory before running TeX.
       --watch                  Watch input files for change.  Requires fswatch
                                  program to be installed.
@@ -82,6 +83,9 @@ local option_spec = {
   {
     long = "max-iterations",
     param = true,
+  },
+  {
+    long = "start-with-draft",
   },
   {
     long = "change-directory",
@@ -210,6 +214,10 @@ local function handle_cluttex_options(arg)
       assert(options.max_iterations == nil, "multiple --max-iterations options")
       options.max_iterations = assert(tonumber(param), "invalid value for --max-iterations option")
       assert(options.max_iterations >= 1, "invalid value for --max-iterations option")
+
+    elseif name == "start-with-draft" then
+      assert(options.fresh == nil, "multiple --start-with-draft options")
+      options.start_with_draft = true
 
     elseif name == "watch" then
       assert(options.watch == nil, "multiple --watch options")
