@@ -7,7 +7,8 @@ It automatically re-runs (La)TeX program to resolve cross-references and everyth
 
 Usage
 -----
-`$ cluttex --engine pdflatex file.tex`
+
+`$ cluttex -e pdflatex file.tex`
 
 More general form:
 
@@ -30,8 +31,8 @@ Options:
   Clean intermediate files before running TeX.
   Cannot be used with `--output-directory`.
 * `--max-iterations=N`
-  Maximum number of re-running TeX to resolve cross-references.
-  [default: 5]
+  Maximum number of running TeX to resolve cross-references.
+  [default: 3]
 * `--[no-]change-directory`
   Change the current working directory to the output directory when running TeX.
 * `--watch`
@@ -65,3 +66,5 @@ Options:
 * `--output-format=FORMAT`
   Set output format (`pdf` or `dvi`).
   [default: `pdf`]
+
+If run as `cllualatex` or `clxelatex`, then the default engine is `lualatex` or `xelatex`, accordingly.
