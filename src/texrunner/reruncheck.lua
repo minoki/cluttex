@@ -137,9 +137,7 @@ local function comparefileinfo(filelist, auxstatus)
         if auxstatus[path] and auxstatus[path].mtime then
           if auxstatus[path].mtime < mtime then
             -- Input file was updated during execution
-            if CLUTTEX_VERBOSITY >= 1 then
-              message.info("Input file '", fileinfo.path, "' was modified (by user, or some external commands).")
-            end
+            message.info("Input file '", fileinfo.path, "' was modified (by user, or some external commands).")
             newauxstatus[path] = {mtime = mtime}
             return true, newauxstatus
           end
@@ -167,9 +165,7 @@ local function comparefileinfo(filelist, auxstatus)
             newauxstatus[path] = {size = size, md5sum = md5sum}
           end
           if really_modified then
-            if CLUTTEX_VERBOSITY >= 1 then
-              message.info("File '", fileinfo.path, "' was modified (", modified_because, ").")
-            end
+            message.info("File '", fileinfo.path, "' was modified (", modified_because, ").")
             should_rerun = true
           else
             if CLUTTEX_VERBOSITY >= 1 then
@@ -197,10 +193,10 @@ local function comparefileinfo(filelist, auxstatus)
           else
             should_rerun = true
           end
-          if CLUTTEX_VERBOSITY >= 1 then
-            if should_rerun then
-              message.info("New auxiliary file '", fileinfo.path, "'.")
-            else
+          if should_rerun then
+            message.info("New auxiliary file '", fileinfo.path, "'.")
+          else
+            if CLUTTEX_VERBOSITY >= 1 then
               message.info("Ignoring almost-empty auxiliary file '", fileinfo.path, "'.")
             end
           end
