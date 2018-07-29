@@ -54,7 +54,7 @@ local function genOutputDirectory(...)
   return pathutil.join(tmpdir, 'latex-build-' .. hash)
 end
 
-local inputfile, engine, options, tex_extraoptions, dvipdfmx_extraoptions = handle_cluttex_options(arg)
+local inputfile, engine, options = handle_cluttex_options(arg)
 
 local jobname = options.jobname or pathutil.basename(pathutil.trimext(inputfile))
 assert(jobname ~= "", "jobname cannot be empty")
@@ -131,7 +131,7 @@ local tex_options = {
   shell_escape = options.shell_escape,
   shell_restricted = options.shell_restricted,
   jobname = options.jobname,
-  extraoptions = tex_extraoptions,
+  extraoptions = options.tex_extraoptions,
 }
 if options.output_format ~= "pdf" and engine.supports_pdf_generation then
   tex_options.output_format = options.output_format
@@ -216,7 +216,7 @@ local function do_typeset_c()
     -- Output file (DVI/PDF) is generated in the output directory
     local outfile = path_in_output_directory(output_extension)
     coroutine.yield(fsutil.copy_command(outfile, options.output))
-    if #dvipdfmx_extraoptions > 0 then
+    if #options.dvipdfmx_extraoptions > 0 then
       io.stderr:write("cluttex warning: --dvipdfmx-option[s] are ignored.\n")
     end
 
@@ -224,7 +224,7 @@ local function do_typeset_c()
     -- DVI file is generated
     local dvifile = path_in_output_directory("dvi")
     local dvipdfmx_command = {"dvipdfmx", "-o", shellutil.escape(options.output)}
-    for _,v in ipairs(dvipdfmx_extraoptions) do
+    for _,v in ipairs(options.dvipdfmx_extraoptions) do
       table.insert(dvipdfmx_command, v)
     end
     table.insert(dvipdfmx_command, shellutil.escape(dvifile))

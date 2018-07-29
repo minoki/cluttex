@@ -174,15 +174,16 @@ local function set_default_values(options)
   end
 end
 
--- inputfile, engine, options, tex_extraoptions, dvipdfmx_extraoptions = handle_cluttex_options(arg)
+-- inputfile, engine, options = handle_cluttex_options(arg)
 local function handle_cluttex_options(arg)
   -- Parse options
   local option_and_params, non_option_index = parseoption(arg, option_spec)
 
   -- Handle options
-  local options = {}
-  local tex_extraoptions = {}
-  local dvipdfmx_extraoptions = {}
+  local options = {
+    tex_extraoptions = {},
+    dvipdfmx_extraoptions = {},
+  }
   CLUTTEX_VERBOSITY = 0
   for _,option in ipairs(option_and_params) do
     local name = option[1]
@@ -262,16 +263,16 @@ local function handle_cluttex_options(arg)
       options.output_format = param
 
     elseif name == "tex-option" then
-      table.insert(tex_extraoptions, shellutil.escape(param))
+      table.insert(options.tex_extraoptions, shellutil.escape(param))
 
     elseif name == "tex-options" then
-      table.insert(tex_extraoptions, param)
+      table.insert(options.tex_extraoptions, param)
 
     elseif name == "dvipdfmx-option" then
-      table.insert(dvipdfmx_extraoptions, shellutil.escape(param))
+      table.insert(options.dvipdfmx_extraoptions, shellutil.escape(param))
 
     elseif name == "dvipdfmx-options" then
-      table.insert(dvipdfmx_extraoptions, param)
+      table.insert(options.dvipdfmx_extraoptions, param)
 
     end
   end
@@ -308,7 +309,7 @@ local function handle_cluttex_options(arg)
 
   set_default_values(options)
 
-  return inputfile, engine, options, tex_extraoptions, dvipdfmx_extraoptions
+  return inputfile, engine, options
 end
 
 return {
