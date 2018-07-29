@@ -113,6 +113,7 @@ local option_spec = {
   {
     long = "color",
     param = true,
+    default = "always",
   },
   -- Options for TeX
   {

@@ -40,10 +40,14 @@ local function parseoption(arg, options)
               if param then
                 -- --option=param
               else
-                -- --option param
-                assert(i + 1 <= #arg, "argument missing after " .. arg[i] .. " option")
-                param = arg[i + 1]
-                i = i + 1
+                if o.default ~= nil then
+                  param = o.default
+                else
+                  -- --option param
+                  assert(i + 1 <= #arg, "argument missing after " .. arg[i] .. " option")
+                  param = arg[i + 1]
+                  i = i + 1
+                end
               end
             else
               -- --option
