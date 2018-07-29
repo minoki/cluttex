@@ -31,9 +31,9 @@ local function md5sum_file(path)
   return md5.sum(contents)
 end
 
--- filelist = parse_recorder_file("jobname.fls")
+-- filelist = parse_recorder_file("jobname.fls", options)
 -- filelist[i] = {path = "...", abspath = "...", kind = "input" or "output" or "auxiliary"}
-local function parse_recorder_file(file)
+local function parse_recorder_file(file, options)
   local filelist = {}
   local filemap = {}
   for l in io.lines(file) do
@@ -74,7 +74,17 @@ local function parse_recorder_file(file)
       local abspath = pathutil.abspath(path)
       local fileinfo = filemap[abspath]
       if not fileinfo then
-        fileinfo = {path = path, abspath = abspath, kind = "output"}
+        local kind = "output"
+        local ext = pathutil.ext(path)
+        if ext == "out" then
+          -- hyperref bookmarks file
+          kind = "auxiliary"
+        elseif options.makeindex and ext == "idx" then
+          -- Treat .idx files (to be processed by MakeIndex) as auxiliary
+          kind = "auxiliary"
+          -- ...and .ind files
+        end
+        fileinfo = {path = path, abspath = abspath, kind = kind}
         table.insert(filelist, fileinfo)
         filemap[abspath] = fileinfo
       else
@@ -127,7 +137,7 @@ local function comparefileinfo(filelist, auxstatus)
           if auxstatus[path].mtime < mtime then
             -- Input file was updated during execution
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: File '", fileinfo.path, "' was modified by user.\n")
+              io.stderr:write("cluttex: Input file '", fileinfo.path, "' was modified (by user, or some external commands).\n")
             end
             newauxstatus[path] = {mtime = mtime}
             return true, newauxstatus
@@ -141,20 +151,23 @@ local function comparefileinfo(filelist, auxstatus)
         if auxstatus[path] then
           -- File was touched during execution
           local really_modified = false
+          local modified_because = nil
           local size = filesys.attributes(path, "size")
           if auxstatus[path].size ~= size then
             really_modified = true
+            modified_because = string.format("size: %d -> %d", auxstatus[path].size or -1, size)
             newauxstatus[path] = {size = size}
           else
             local md5sum = md5sum_file(path)
             if auxstatus[path].md5sum ~= md5sum then
               really_modified = true
+              modified_because = string.format("md5: %s -> %s", auxstatus[path].md5sum or "(N/A)", md5sum)
             end
             newauxstatus[path] = {size = size, md5sum = md5sum}
           end
           if really_modified then
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: File '", fileinfo.path, "' was modified.\n")
+              io.stderr:write("cluttex: File '", fileinfo.path, "' was modified (", modified_because, ").\n")
             end
             should_rerun = true
           else
@@ -185,9 +198,9 @@ local function comparefileinfo(filelist, auxstatus)
           end
           if CLUTTEX_VERBOSITY >= 1 then
             if should_rerun then
-              io.stderr:write("cluttex: New input file '", fileinfo.path, "'.\n")
+              io.stderr:write("cluttex: New auxiliary file '", fileinfo.path, "'.\n")
             else
-              io.stderr:write("cluttex: New input file '", fileinfo.path, "'. (not modified)\n")
+              io.stderr:write("cluttex: Ignoring almost-empty auxiliary file '", fileinfo.path, "'.\n")
             end
           end
         end

@@ -45,6 +45,7 @@ Options:
       --tex-option=OPTION      Pass OPTION to TeX as a single option.
       --tex-options=OPTIONs    Pass OPTIONs to TeX as multiple options.
       --dvipdfmx-option[s]=OPTION[s]  Same for dvipdfmx.
+      --makeindex=COMMAND+OPTIONs  Command to generate index, such as `makeindex' or `mendex'.
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
@@ -151,6 +152,10 @@ local option_spec = {
   },
   {
     long = "dvipdfmx-options",
+    param = true,
+  },
+  {
+    long = "makeindex",
     param = true,
   },
 }
@@ -273,6 +278,10 @@ local function handle_cluttex_options(arg)
 
     elseif name == "dvipdfmx-options" then
       table.insert(options.dvipdfmx_extraoptions, param)
+
+    elseif name == "makeindex" then
+      assert(options.makeindex == nil, "multiple --makeindex options")
+      options.makeindex = param
 
     end
   end

@@ -150,7 +150,7 @@ local function single_run(auxstatus)
   local minted = false
   if fsutil.isfile(recorderfile) then
     -- Recorder file already exists
-    local filelist = reruncheck.parse_recorder_file(recorderfile)
+    local filelist = reruncheck.parse_recorder_file(recorderfile, options)
     auxstatus = reruncheck.collectfileinfo(filelist, auxstatus)
     for _,v in ipairs(filelist) do
       if string.match(v.path, "minted/minted%.sty$") then
@@ -193,7 +193,38 @@ local function single_run(auxstatus)
     return true, {}
   end
 
-  local filelist = reruncheck.parse_recorder_file(recorderfile)
+  local filelist = reruncheck.parse_recorder_file(recorderfile, options)
+
+  if options.makeindex then
+    -- Look for .idx files and run MakeIndex
+    for _,file in ipairs(filelist) do
+      if pathutil.ext(file.path) == "idx" then
+        -- Run makeindex if the .idx file is new or updated
+        local idxfileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
+        if reruncheck.comparefileinfo({idxfileinfo}, auxstatus) then
+          local output_ind = pathutil.replaceext(file.abspath, "ind")
+          local idx_dir = pathutil.dirname(file.abspath)
+          local makeindex_command = {
+            "cd", shellutil.escape(idx_dir), "&&",
+            options.makeindex, -- Do not escape options.makeindex to allow additional options
+            "-o", pathutil.basename(output_ind),
+            pathutil.basename(file.abspath)
+          }
+          coroutine.yield(table.concat(makeindex_command, " "))
+          table.insert(filelist, {path = output_ind, abspath = output_ind, kind = "auxiliary"})
+        end
+      end
+    end
+  else
+    -- Check log file
+    local logfile = assert(io.open(path_in_output_directory("log")))
+    local execlog = logfile:read("*a")
+    logfile:close()
+    if string.match(execlog, "No file [^\n]+%.ind%.") then
+      io.stderr:write("cluttex: You may want to set --makeindex option.\n")
+    end
+  end
+
   return reruncheck.comparefileinfo(filelist, auxstatus)
 end
 
@@ -264,7 +295,7 @@ end
 if options.watch then
   -- Watch mode
   local success, status = do_typeset()
-  local filelist = reruncheck.parse_recorder_file(recorderfile)
+  local filelist = reruncheck.parse_recorder_file(recorderfile, options)
   local input_files_to_watch = {}
   for _,fileinfo in ipairs(filelist) do
     if fileinfo.kind == "input" then

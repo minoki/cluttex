@@ -813,9 +813,9 @@ local function md5sum_file(path)
   return md5.sum(contents)
 end
 
--- filelist = parse_recorder_file("jobname.fls")
+-- filelist = parse_recorder_file("jobname.fls", options)
 -- filelist[i] = {path = "...", abspath = "...", kind = "input" or "output" or "auxiliary"}
-local function parse_recorder_file(file)
+local function parse_recorder_file(file, options)
   local filelist = {}
   local filemap = {}
   for l in io.lines(file) do
@@ -856,7 +856,17 @@ local function parse_recorder_file(file)
       local abspath = pathutil.abspath(path)
       local fileinfo = filemap[abspath]
       if not fileinfo then
-        fileinfo = {path = path, abspath = abspath, kind = "output"}
+        local kind = "output"
+        local ext = pathutil.ext(path)
+        if ext == "out" then
+          -- hyperref bookmarks file
+          kind = "auxiliary"
+        elseif options.makeindex and ext == "idx" then
+          -- Treat .idx files (to be processed by MakeIndex) as auxiliary
+          kind = "auxiliary"
+          -- ...and .ind files
+        end
+        fileinfo = {path = path, abspath = abspath, kind = kind}
         table.insert(filelist, fileinfo)
         filemap[abspath] = fileinfo
       else
@@ -909,7 +919,7 @@ local function comparefileinfo(filelist, auxstatus)
           if auxstatus[path].mtime < mtime then
             -- Input file was updated during execution
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: File '", fileinfo.path, "' was modified by user.\n")
+              io.stderr:write("cluttex: Input file '", fileinfo.path, "' was modified (by user, or some external commands).\n")
             end
             newauxstatus[path] = {mtime = mtime}
             return true, newauxstatus
@@ -923,20 +933,23 @@ local function comparefileinfo(filelist, auxstatus)
         if auxstatus[path] then
           -- File was touched during execution
           local really_modified = false
+          local modified_because = nil
           local size = filesys.attributes(path, "size")
           if auxstatus[path].size ~= size then
             really_modified = true
+            modified_because = string.format("size: %d -> %d", auxstatus[path].size or -1, size)
             newauxstatus[path] = {size = size}
           else
             local md5sum = md5sum_file(path)
             if auxstatus[path].md5sum ~= md5sum then
               really_modified = true
+              modified_because = string.format("md5: %s -> %s", auxstatus[path].md5sum or "(N/A)", md5sum)
             end
             newauxstatus[path] = {size = size, md5sum = md5sum}
           end
           if really_modified then
             if CLUTTEX_VERBOSITY >= 1 then
-              io.stderr:write("cluttex: File '", fileinfo.path, "' was modified.\n")
+              io.stderr:write("cluttex: File '", fileinfo.path, "' was modified (", modified_because, ").\n")
             end
             should_rerun = true
           else
@@ -967,9 +980,9 @@ local function comparefileinfo(filelist, auxstatus)
           end
           if CLUTTEX_VERBOSITY >= 1 then
             if should_rerun then
-              io.stderr:write("cluttex: New input file '", fileinfo.path, "'.\n")
+              io.stderr:write("cluttex: New auxiliary file '", fileinfo.path, "'.\n")
             else
-              io.stderr:write("cluttex: New input file '", fileinfo.path, "'. (not modified)\n")
+              io.stderr:write("cluttex: Ignoring almost-empty auxiliary file '", fileinfo.path, "'.\n")
             end
           end
         end
@@ -1268,6 +1281,7 @@ Options:
       --tex-option=OPTION      Pass OPTION to TeX as a single option.
       --tex-options=OPTIONs    Pass OPTIONs to TeX as multiple options.
       --dvipdfmx-option[s]=OPTION[s]  Same for dvipdfmx.
+      --makeindex=COMMAND+OPTIONs  Command to generate index, such as `makeindex' or `mendex'.
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
@@ -1374,6 +1388,10 @@ local option_spec = {
   },
   {
     long = "dvipdfmx-options",
+    param = true,
+  },
+  {
+    long = "makeindex",
     param = true,
   },
 }
@@ -1496,6 +1514,10 @@ local function handle_cluttex_options(arg)
 
     elseif name == "dvipdfmx-options" then
       table.insert(options.dvipdfmx_extraoptions, param)
+
+    elseif name == "makeindex" then
+      assert(options.makeindex == nil, "multiple --makeindex options")
+      options.makeindex = param
 
     end
   end
@@ -1686,7 +1708,7 @@ local function single_run(auxstatus)
   local minted = false
   if fsutil.isfile(recorderfile) then
     -- Recorder file already exists
-    local filelist = reruncheck.parse_recorder_file(recorderfile)
+    local filelist = reruncheck.parse_recorder_file(recorderfile, options)
     auxstatus = reruncheck.collectfileinfo(filelist, auxstatus)
     for _,v in ipairs(filelist) do
       if string.match(v.path, "minted/minted%.sty$") then
@@ -1729,7 +1751,38 @@ local function single_run(auxstatus)
     return true, {}
   end
 
-  local filelist = reruncheck.parse_recorder_file(recorderfile)
+  local filelist = reruncheck.parse_recorder_file(recorderfile, options)
+
+  if options.makeindex then
+    -- Look for .idx files and run MakeIndex
+    for _,file in ipairs(filelist) do
+      if pathutil.ext(file.path) == "idx" then
+        -- Run makeindex if the .idx file is new or updated
+        local idxfileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
+        if reruncheck.comparefileinfo({idxfileinfo}, auxstatus) then
+          local output_ind = pathutil.replaceext(file.abspath, "ind")
+          local idx_dir = pathutil.dirname(file.abspath)
+          local makeindex_command = {
+            "cd", shellutil.escape(idx_dir), "&&",
+            options.makeindex, -- Do not escape options.makeindex to allow additional options
+            "-o", pathutil.basename(output_ind),
+            pathutil.basename(file.abspath)
+          }
+          coroutine.yield(table.concat(makeindex_command, " "))
+          table.insert(filelist, {path = output_ind, abspath = output_ind, kind = "auxiliary"})
+        end
+      end
+    end
+  else
+    -- Check log file
+    local logfile = assert(io.open(path_in_output_directory("log")))
+    local execlog = logfile:read("*a")
+    logfile:close()
+    if string.match(execlog, "No file [^\n]+%.ind%.") then
+      io.stderr:write("cluttex: You may want to set --makeindex option.\n")
+    end
+  end
+
   return reruncheck.comparefileinfo(filelist, auxstatus)
 end
 
@@ -1800,7 +1853,7 @@ end
 if options.watch then
   -- Watch mode
   local success, status = do_typeset()
-  local filelist = reruncheck.parse_recorder_file(recorderfile)
+  local filelist = reruncheck.parse_recorder_file(recorderfile, options)
   local input_files_to_watch = {}
   for _,fileinfo in ipairs(filelist) do
     if fileinfo.kind == "input" then

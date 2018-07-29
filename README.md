@@ -17,7 +17,7 @@ More general form:
 Options:
 
 * `-e`, `--engine=ENGINE`
-  Specify which TeX engine to use.
+  Specify which TeX engine/format to use.
   `ENGINE` is one of the following:
     `pdflatex`, `pdftex`,
     `lualatex`, `luatex`,
@@ -66,5 +66,8 @@ Options:
 * `--output-format=FORMAT`
   Set output format (`pdf` or `dvi`).
   [default: `pdf`]
+* `--makeindex=COMMAND`
+  Use MakeIndex program to process `.idx` files.
+  (e.g. `--makeindex=makeindex`, or `--makeindex=mendex`)
 
 If run as `cllualatex` or `clxelatex`, then the default engine is `lualatex` or `xelatex`, accordingly.
