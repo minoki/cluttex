@@ -1555,7 +1555,7 @@ local function handle_cluttex_options(arg)
   -- Handle non-options (i.e. input file)
   if non_option_index > #arg then
     -- No input file given
-    usage()
+    usage(arg)
     os.exit(1)
   elseif non_option_index < #arg then
     io.stderr("cluttex: Multiple input files are not supported.\n")
