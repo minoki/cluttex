@@ -1534,6 +1534,15 @@ elseif non_option_index < #arg then
 end
 local inputfile = arg[non_option_index]
 
+-- If run as 'cllualatex', then the default engine is lualatex
+if options.engine == nil and type(arg[0]) == "string" then
+  local basename = pathutil.basename(arg[0])
+  local engine_part = string.match(basename, "^cl(%w+)$")
+  if engine_part and KnownEngines[engine_part] then
+    options.engine = engine_part
+  end
+end
+
 if options.engine == nil then
   io.stderr:write("cluttex: Engine not specified.\n")
   os.exit(1)
