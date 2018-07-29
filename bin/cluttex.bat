@@ -5,6 +5,7 @@
 local io, os, string, table, package, require, assert, error, ipairs, type, select, arg = io, os, string, table, package, require, assert, error, ipairs, type, select, arg
 local CLUTTEX_VERBOSITY
 os.type = os.type or "windows"
+if lfs and not package.loaded['lfs'] then package.loaded['lfs'] = lfs end
 if os.type == "windows" then
 package.preload["texrunner.pathutil"] = function(...)
 --[[

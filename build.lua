@@ -132,6 +132,9 @@ if default_os then
   table.insert(lines, string.format("os.type = os.type or %q\n", default_os))
 end
 
+-- LuajitTeX doesn't seem to set package.loaded table...
+table.insert(lines, "if lfs and not package.loaded['lfs'] then package.loaded['lfs'] = lfs end\n")
+
 for _,m in ipairs(modules) do
   if m.path_windows or m.path_unix then
     table.insert(lines, 'if os.type == "windows" then\n')
