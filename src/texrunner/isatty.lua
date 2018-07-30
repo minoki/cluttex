@@ -29,10 +29,17 @@ if os.type == "unix" then
       }
   end)
   if succ then
+    if CLUTTEX_VERBOSITY >= 3 then
+      io.stderr:write("ClutTeX: isatty found via luaposix\n")
+    end
     return M
+  else
+    if CLUTTEX_VERBOSITY >= 3 then
+      io.stderr:write("ClutTeX: luaposix not found: ", M, "\n")
+    end
   end
 
-  -- Try LuaJIT
+  -- Try LuaJIT-like FFI
   local succ, M = pcall(function()
       local ffi = require "ffi"
       ffi.cdef[[
@@ -44,12 +51,19 @@ int fileno(void *stream);
       return {
         isatty = function(file)
           -- LuaJIT converts Lua's file handles into FILE* (void*)
-          return isatty(fileno(file)) == 1
+          return isatty(fileno(file)) ~= 0
         end
       }
   end)
   if succ then
+    if CLUTTEX_VERBOSITY >= 3 then
+      io.stderr:write("ClutTeX: isatty found via FFI (Unix)\n")
+    end
     return M
+  else
+    if CLUTTEX_VERBOSITY >= 3 then
+      io.stderr:write("ClutTeX: FFI (Unix) not found: ", M, "\n")
+    end
   end
 
 else
@@ -60,18 +74,75 @@ else
       ffi.cdef[[
 int _isatty(int fd);
 int _fileno(void *stream);
+void *_get_osfhandle(int fd); // should return intptr_t
+typedef int BOOL;
+typedef uint32_t DWORD;
+typedef int FILE_INFO_BY_HANDLE_CLASS; // ???
+typedef struct _FILE_NAME_INFO {
+DWORD FileNameLength;
+uint16_t FileName[?];
+} FILE_NAME_INFO;
+DWORD GetFileType(void *hFile);
+BOOL GetFileInformationByHandleEx(void *hFile, FILE_INFO_BY_HANDLE_CLASS fic, void *fileinfo, DWORD dwBufferSize);
 ]]
       local isatty = assert(ffi.C._isatty, "_isatty not found")
       local fileno = assert(ffi.C._fileno, "_fileno not found")
+      local get_osfhandle = assert(ffi.C._get_osfhandle, "_get_osfhandle not found")
+      local GetFileType = assert(ffi.C.GetFileType, "GetFileType not found")
+      local GetFileInformationByHandleEx = assert(ffi.C.GetFileInformationByHandleEx, "GetFileInformationByHandleEx not found")
+      local function wide_to_narrow(array, length)
+        local t = {}
+        for i = 0, length - 1 do
+          table.insert(t, string.char(math.min(array[i], 0xff)))
+        end
+        return table.concat(t, "")
+      end
+      local function is_mintty(fd)
+        local handle = get_osfhandle(fd)
+        local filetype = GetFileType(handle)
+        if filetype ~= 0x0003 then -- not FILE_TYPE_PIPE (0x0003)
+          -- mintty must be a pipe
+          if CLUTTEX_VERBOSITY >= 4 then
+            io.stderr:write("ClutTeX: not a pipe\n")
+          end
+          return false
+        end
+        local nameinfo = ffi.new("FILE_NAME_INFO", 32768)
+        local FileNameInfo = 2 -- : FILE_INFO_BY_HANDLE_CLASS
+        if GetFileInformationByHandleEx(handle, FileNameInfo, nameinfo, ffi.sizeof("FILE_NAME_INFO", 32768)) ~= 0 then
+          local filename = wide_to_narrow(nameinfo.FileName, math.floor(nameinfo.FileNameLength / 2))
+          -- \(cygwin|msys)-<hex digits>-pty<N>-(from|to)-master
+          if CLUTTEX_VERBOSITY >= 4 then
+            io.stderr:write("ClutTeX: GetFileInformationByHandleEx returned ", filename, "\n")
+          end
+          local a, b = string.match(filename, "^\\(%w+)%-%x+%-pty%d+%-(%w+)%-master$")
+          if (a == "cygwin" or a == "msys") and (b == "from" or b == "to") then
+            return true
+          end
+        else
+          if CLUTTEX_VERBOSITY >= 4 then
+            io.stderr:write("ClutTeX: GetFileInformationByHandleEx failed\n")
+          end
+        end
+        return false
+      end
       return {
         isatty = function(file)
           -- LuaJIT converts Lua's file handles into FILE* (void*)
-          return isatty(fileno(file)) == 1
+          local fd = fileno(file)
+          return isatty(fd) ~= 0 or is_mintty(fd)
         end
       }
   end)
   if succ then
+    if CLUTTEX_VERBOSITY >= 3 then
+      io.stderr:write("ClutTeX: isatty found via FFI (Windows)\n")
+    end
     return M
+  else
+    if CLUTTEX_VERBOSITY >= 3 then
+      io.stderr:write("ClutTeX: FFI (Windows) not found: ", M, "\n")
+    end
   end
 end
 
