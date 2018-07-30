@@ -1285,7 +1285,8 @@ Usage:
 Options:
   -e, --engine=ENGINE          Specify which TeX engine to use.
                                  ENGINE is one of the following:
-                                     pdflatex, pdftex, lualatex, luatex,
+                                     pdflatex, pdftex,
+                                     lualatex, luatex, luajittex,
                                      xelatex, xetex, latex, etex, tex,
                                      platex, eptex, ptex,
                                      uplatex, euptex, uptex,
@@ -1302,7 +1303,8 @@ Options:
       --tex-option=OPTION      Pass OPTION to TeX as a single option.
       --tex-options=OPTIONs    Pass OPTIONs to TeX as multiple options.
       --dvipdfmx-option[s]=OPTION[s]  Same for dvipdfmx.
-      --makeindex=COMMAND+OPTIONs  Command to generate index, such as `makeindex' or `mendex'.
+      --makeindex=COMMAND+OPTIONs  Command to generate index, such as
+                                     `makeindex' or `mendex'.
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
