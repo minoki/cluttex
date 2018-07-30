@@ -157,6 +157,6 @@ end
 table.insert(lines, strip_global_imports(main))
 
 if outfile then
-  io.output(outfile)
+  io.output(assert(io.open(outfile, "wb")))
 end
 io.write(table.concat(lines, ""))
