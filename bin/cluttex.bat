@@ -2042,7 +2042,7 @@ local function single_run(auxstatus, iteration)
     local execlog = logfile:read("*a")
     logfile:close()
     if string.match(execlog, "No file [^\n]+%.ind%.") then
-      message.diag("You may want to set --makeindex option.")
+      message.diag("You may want to use --makeindex option.")
     end
   end
 
