@@ -18,13 +18,13 @@
 ]]
 
 if os.type == "unix" then
-  -- try luaposix
+  -- Try luaposix
   local succ, M = pcall(function()
-      local posix_unistd = require "posix.unistd"
-      local posix_stdio = require "posix.stdio"
+      local isatty = require "posix.unistd".isatty
+      local fileno = require "posix.stdio".fileno
       return {
         isatty = function(file)
-          return posix_unistd.isatty(posix_stdio.fileno(file)) == 1
+          return isatty(fileno(file)) == 1
         end,
       }
   end)
@@ -32,7 +32,7 @@ if os.type == "unix" then
     return M
   end
 
-  -- try LuaJIT
+  -- Try LuaJIT
   local succ, M = pcall(function()
       local ffi = require "ffi"
       ffi.cdef[[
@@ -53,7 +53,26 @@ int fileno(void *stream);
   end
 
 else
-  -- Windows: not supported
+  -- Try LuaJIT
+  -- TODO: Try to detect MinTTY using GetFileInformationByHandleEx
+  local succ, M = pcall(function()
+      local ffi = require "ffi"
+      ffi.cdef[[
+int _isatty(int fd);
+int _fileno(void *stream);
+]]
+      local isatty = assert(ffi.C._isatty, "_isatty not found")
+      local fileno = assert(ffi.C._fileno, "_fileno not found")
+      return {
+        isatty = function(file)
+          -- LuaJIT converts Lua's file handles into FILE* (void*)
+          return isatty(fileno(file)) == 1
+        end
+      }
+  end)
+  if succ then
+    return M
+  end
 end
 
 return {
