@@ -335,7 +335,7 @@ local function handle_cluttex_options(arg)
 
   -- If run as 'cllualatex', then the default engine is lualatex
   if options.engine == nil and type(arg[0]) == "string" then
-    local basename = pathutil.basename(arg[0])
+    local basename = pathutil.trimext(pathutil.basename(arg[0]))
     local engine_part = string.match(basename, "^cl(%w+)$")
     if engine_part and KnownEngines[engine_part] then
       options.engine = engine_part
