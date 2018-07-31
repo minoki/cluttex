@@ -1691,6 +1691,7 @@ else
   -- TODO: Try to detect MinTTY using GetFileInformationByHandleEx
   local succ, M = pcall(function()
       local ffi = require "ffi"
+      local bitlib = assert(bit32 or bit, "Neither bit32 (Lua 5.2) nor bit (LuaJIT) found") -- Lua 5.2 or LuaJIT
       ffi.cdef[[
 int _isatty(int fd);
 int _fileno(void *stream);
@@ -1704,12 +1705,16 @@ uint16_t FileName[?];
 } FILE_NAME_INFO;
 DWORD GetFileType(void *hFile);
 BOOL GetFileInformationByHandleEx(void *hFile, FILE_INFO_BY_HANDLE_CLASS fic, void *fileinfo, DWORD dwBufferSize);
+BOOL GetConsoleMode(void *hConsoleHandle, DWORD* lpMode);
+BOOL SetConsoleMode(void *hConsoleHandle, DWORD dwMode);
 ]]
       local isatty = assert(ffi.C._isatty, "_isatty not found")
       local fileno = assert(ffi.C._fileno, "_fileno not found")
       local get_osfhandle = assert(ffi.C._get_osfhandle, "_get_osfhandle not found")
       local GetFileType = assert(ffi.C.GetFileType, "GetFileType not found")
       local GetFileInformationByHandleEx = assert(ffi.C.GetFileInformationByHandleEx, "GetFileInformationByHandleEx not found")
+      local GetConsoleMode = assert(ffi.C.GetConsoleMode, "GetConsoleMode not found")
+      local SetConsoleMode = assert(ffi.C.SetConsoleMode, "SetConsoleMode not found")
       local function wide_to_narrow(array, length)
         local t = {}
         for i = 0, length - 1 do
@@ -1751,7 +1756,28 @@ BOOL GetFileInformationByHandleEx(void *hFile, FILE_INFO_BY_HANDLE_CLASS fic, vo
           -- LuaJIT converts Lua's file handles into FILE* (void*)
           local fd = fileno(file)
           return isatty(fd) ~= 0 or is_mintty(fd)
-        end
+        end,
+        enable_console_colors = function(file)
+          local fd = fileno(file)
+          if isatty(fd) ~= 0 then
+            local handle = get_osfhandle(fd)
+            local modePtr = ffi.new("DWORD[1]")
+            local result = GetConsoleMode(handle, modePtr)
+            if result ~= 0 then
+              local ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+              result = SetConsoleMode(handle, bitlib.bor(modePtr[0], ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+              if result == 0 then
+                if CLUTTEX_VERBOSITY >= 3 then
+                  io.stderr:write("ClutTeX: SetConsoleMode failed\n")
+                end
+              end
+            else
+              if CLUTTEX_VERBOSITY >= 3 then
+                io.stderr:write("ClutTeX: GetConsoleMode failed\n")
+              end
+            end
+          end
+        end,
       }
   end)
   if succ then
@@ -1795,14 +1821,23 @@ package.preload["texrunner.message"] = function(...)
 local use_colors = false
 
 local function set_colors(mode)
+  local M
   if mode == "always" then
     use_colors = true
+    M = require "texrunner.isatty"
+    if M.enable_console_colors then
+      M.enable_console_colors(io.stderr)
+    end
   elseif mode == "never" then
     use_colors = false
   elseif mode == "auto" then
-    use_colors = require "texrunner.isatty".isatty(io.stderr)
+    M = require "texrunner.isatty"
+    use_colors = M.isatty(io.stderr)
   else
     error "The value of --color option must be one of 'auto', 'always', or 'never'."
+  end
+  if use_colors and M.enable_console_colors then
+    M.enable_console_colors(io.stderr)
   end
 end
 
