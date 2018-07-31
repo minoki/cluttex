@@ -2193,7 +2193,14 @@ local function do_typeset_c()
   if options.output_format == "dvi" or engine.supports_pdf_generation then
     -- Output file (DVI/PDF) is generated in the output directory
     local outfile = path_in_output_directory(output_extension)
-    coroutine.yield(fsutil.copy_command(outfile, options.output))
+    local oncopyerror
+    if os.type == "windows" then
+      oncopyerror = function()
+        message.error("Failed to copy file.  Some application may be locking the ", string.upper(options.output_format), " file.")
+        return false
+      end
+    end
+    coroutine.yield(fsutil.copy_command(outfile, options.output), oncopyerror)
     if #options.dvipdfmx_extraoptions > 0 then
       message.warn("--dvipdfmx-option[s] are ignored.")
     end
