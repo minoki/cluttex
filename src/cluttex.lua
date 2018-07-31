@@ -268,7 +268,7 @@ local function do_typeset_c()
     local oncopyerror
     if os.type == "windows" then
       oncopyerror = function()
-        message.error("Failed to copy file.  Some application may be locking the ", string.upper(options.output_format), " file.")
+        message.error("Failed to copy file.  Some applications may be locking the ", string.upper(options.output_format), " file.")
         return false
       end
     end
@@ -278,7 +278,7 @@ local function do_typeset_c()
     end
 
   else
-    -- DVI file is generated
+    -- DVI file is generated, but PDF file is wanted
     local dvifile = path_in_output_directory("dvi")
     local dvipdfmx_command = {"dvipdfmx", "-o", shellutil.escape(options.output)}
     for _,v in ipairs(options.dvipdfmx_extraoptions) do
@@ -286,6 +286,22 @@ local function do_typeset_c()
     end
     table.insert(dvipdfmx_command, shellutil.escape(dvifile))
     coroutine.yield(table.concat(dvipdfmx_command, " "))
+  end
+
+  -- Copy SyncTeX file if necessary
+  if options.output_format == "pdf" then
+    local synctex = tonumber(options.synctex or "0")
+    local synctex_ext = nil
+    if synctex > 0 then
+      -- Compressed SyncTeX file (.synctex.gz)
+      synctex_ext = "synctex.gz"
+    elseif synctex < 0 then
+      -- Uncompressed SyncTeX file (.synctex)
+      synctex_ext = "synctex"
+    end
+    if synctex_ext then
+      coroutine.yield(fsutil.copy_command(path_in_output_directory(synctex_ext), pathutil.replaceext(options.output, synctex_ext)))
+    end
   end
 end
 
