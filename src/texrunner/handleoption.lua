@@ -50,6 +50,8 @@ Options:
       --dvipdfmx-option[s]=OPTION[s]  Same for dvipdfmx.
       --makeindex=COMMAND+OPTIONs  Command to generate index, such as
                                      `makeindex' or `mendex'.
+      --bibtex=COMMAND+OPTIONs  Command for BibTeX, such as
+                                     `bibtex' or `pbibtex'.
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
@@ -175,6 +177,10 @@ local option_spec = {
   },
   {
     long = "makeindex",
+    param = true,
+  },
+  {
+    long = "bibtex",
     param = true,
   },
 }
@@ -314,6 +320,10 @@ local function handle_cluttex_options(arg)
     elseif name == "makeindex" then
       assert(options.makeindex == nil, "multiple --makeindex options")
       options.makeindex = param
+
+    elseif name == "bibtex" then
+      assert(options.bibtex == nil, "multiple --bibtex options")
+      options.bibtex = param
 
     end
   end

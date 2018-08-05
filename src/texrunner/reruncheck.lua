@@ -54,6 +54,8 @@ local function parse_recorder_file(file, options)
           elseif string.find(path,"luatexja",1,true) and string.match(path, "%.lu[abc]$") then
             -- LuaTeX-ja cache (see save_cache(_luc) in ltj-base.lua)
             kind = "auxiliary"
+          elseif ext == "bbl" then
+            kind = "auxiliary"
           end
           fileinfo = {path = path, abspath = abspath, kind = kind}
           table.insert(filelist, fileinfo)

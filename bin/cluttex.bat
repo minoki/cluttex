@@ -857,6 +857,8 @@ local function parse_recorder_file(file, options)
           elseif string.find(path,"luatexja",1,true) and string.match(path, "%.lu[abc]$") then
             -- LuaTeX-ja cache (see save_cache(_luc) in ltj-base.lua)
             kind = "auxiliary"
+          elseif ext == "bbl" then
+            kind = "auxiliary"
           end
           fileinfo = {path = path, abspath = abspath, kind = kind}
           table.insert(filelist, fileinfo)
@@ -1045,6 +1047,7 @@ local string_match = string.match
 local pathutil = require "texrunner.pathutil"
 local filesys = require "lfs"
 local fsutil = require "texrunner.fsutil"
+local message = require "texrunner.message"
 
 -- for LaTeX
 local function parse_aux_file(auxfile, outdir, report, seen)
@@ -1068,8 +1071,29 @@ local function parse_aux_file(auxfile, outdir, report, seen)
   return report
 end
 
+-- \citation, \bibdata, \bibstyle and \@input
+local function extract_bibtex_from_aux_file(auxfile, outdir, biblines)
+  biblines = biblines or {}
+  for l in io.lines(auxfile) do
+    local name = string_match(l, "\\([%a@]+)")
+    if name == "citation" or name == "bibdata" or name == "bibstyle" then
+      table.insert(biblines, l)
+      if CLUTTEX_VERBOSITY >= 2 then
+        message.info("BibTeX line: ", l)
+      end
+    elseif name == "@input" then
+      local subauxfile = string_match(l, "\\@input{(.+)}")
+      if subauxfile and fsutil.isfile(subauxfile) then
+        extract_bibtex_from_aux_file(pathutil.join(outdir, subauxfile), outdir, biblines)
+      end
+    end
+  end
+  return biblines
+end
+
 return {
   parse_aux_file = parse_aux_file,
+  extract_bibtex_from_aux_file = extract_bibtex_from_aux_file,
 }
 end
 package.preload["texrunner.luatexinit"] = function(...)
@@ -1305,6 +1329,8 @@ Options:
       --dvipdfmx-option[s]=OPTION[s]  Same for dvipdfmx.
       --makeindex=COMMAND+OPTIONs  Command to generate index, such as
                                      `makeindex' or `mendex'.
+      --bibtex=COMMAND+OPTIONs  Command for BibTeX, such as
+                                     `bibtex' or `pbibtex'.
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
@@ -1430,6 +1456,10 @@ local option_spec = {
   },
   {
     long = "makeindex",
+    param = true,
+  },
+  {
+    long = "bibtex",
     param = true,
   },
 }
@@ -1569,6 +1599,10 @@ local function handle_cluttex_options(arg)
     elseif name == "makeindex" then
       assert(options.makeindex == nil, "multiple --makeindex options")
       options.makeindex = param
+
+    elseif name == "bibtex" then
+      assert(options.bibtex == nil, "multiple --bibtex options")
+      options.bibtex = param
 
     end
   end
@@ -1971,6 +2005,7 @@ local reruncheck  = require "texrunner.reruncheck"
 local luatexinit  = require "texrunner.luatexinit"
 local recoverylib = require "texrunner.recovery"
 local message     = require "texrunner.message"
+local extract_bibtex_from_aux_file = require "texrunner.auxfile".extract_bibtex_from_aux_file
 local handle_cluttex_options = require "texrunner.handleoption".handle_cluttex_options
 
 -- arguments: input file name, jobname, etc...
@@ -2035,6 +2070,11 @@ if options.change_directory then
   options.output = pathutil.abspath(options.output, original_wd)
   os.setenv("TEXINPUTS", original_wd .. ":" .. TEXINPUTS)
 end
+if options.bibtex then
+  local BIBINPUTS = os.getenv("BIBINPUTS") or ""
+  options.output = pathutil.abspath(options.output, original_wd)
+  os.setenv("BIBINPUTS", original_wd .. ":" .. BIBINPUTS)
+end
 
 -- Set `max_print_line' environment variable if not already set.
 if os.getenv("max_print_line") == nil then
@@ -2079,16 +2119,25 @@ end
 
 -- Run TeX command (*tex, *latex)
 -- should_rerun, newauxstatus = single_run([auxstatus])
+-- This function should be run in a coroutine.
 local function single_run(auxstatus, iteration)
   local minted = false
+  local bibtex_aux_hash = nil
+  local mainauxfile = path_in_output_directory("aux")
   if fsutil.isfile(recorderfile) then
     -- Recorder file already exists
     local filelist = reruncheck.parse_recorder_file(recorderfile, options)
     auxstatus = reruncheck.collectfileinfo(filelist, auxstatus)
-    for _,v in ipairs(filelist) do
-      if string.match(v.path, "minted/minted%.sty$") then
+    for _,fileinfo in ipairs(filelist) do
+      if string.match(fileinfo.path, "minted/minted%.sty$") then
         minted = true
         break
+      end
+    end
+    if options.bibtex then
+      local biblines = extract_bibtex_from_aux_file(mainauxfile, options.output_directory)
+      if #biblines > 0 then
+        bibtex_aux_hash = md5.sum(table.concat(biblines, "\n"))
       end
     end
   else
@@ -2123,12 +2172,16 @@ local function single_run(auxstatus, iteration)
 
   local command = engine:build_command(inputfile, current_tex_options)
 
+  local execlog -- the contents of .log file
+
   local recovered = false
   local function recover()
     -- Check log file
-    local logfile = assert(io.open(path_in_output_directory("log")))
-    local execlog = logfile:read("*a")
-    logfile:close()
+    if not execlog then
+      local logfile = assert(io.open(path_in_output_directory("log")))
+      execlog = logfile:read("*a")
+      logfile:close()
+    end
     recovered = recoverylib.try_recovery{
       execlog = execlog,
       auxfile = path_in_output_directory("aux"),
@@ -2166,11 +2219,44 @@ local function single_run(auxstatus, iteration)
     end
   else
     -- Check log file
-    local logfile = assert(io.open(path_in_output_directory("log")))
-    local execlog = logfile:read("*a")
-    logfile:close()
-    if string.match(execlog, "No file [^\n]+%.ind%.") then
+    if not execlog then
+      local logfile = assert(io.open(path_in_output_directory("log")))
+      execlog = logfile:read("*a")
+      logfile:close()
+    end
+    if string.find(execlog, "No file [^\n]+%.ind%.") then
       message.diag("You may want to use --makeindex option.")
+    end
+  end
+
+  if options.bibtex then
+    local biblines2 = extract_bibtex_from_aux_file(mainauxfile, options.output_directory)
+    local bibtex_aux_hash2
+    if #biblines2 > 0 then
+      bibtex_aux_hash2 = md5.sum(table.concat(biblines2, "\n"))
+    end
+    if bibtex_aux_hash ~= bibtex_aux_hash2 then
+      -- The input for BibTeX command has changed...
+      local bibtex_command = {
+        "cd", shellutil.escape(options.output_directory), "&&",
+        options.bibtex,
+        pathutil.basename(mainauxfile)
+      }
+      coroutine.yield(table.concat(bibtex_command, " "))
+    else
+      if CLUTTEX_VERBOSITY >= 1 then
+        message.info("No need to run BibTeX.")
+      end
+    end
+  else
+    -- Check log file
+    if not execlog then
+      local logfile = assert(io.open(path_in_output_directory("log")))
+      execlog = logfile:read("*a")
+      logfile:close()
+    end
+    if string.find(execlog, "No file [^\n]+%.bbl%.") then
+      message.diag("You may want to use --bibtex option.")
     end
   end
 

@@ -21,6 +21,7 @@ local string_match = string.match
 local pathutil = require "texrunner.pathutil"
 local filesys = require "lfs"
 local fsutil = require "texrunner.fsutil"
+local message = require "texrunner.message"
 
 -- for LaTeX
 local function parse_aux_file(auxfile, outdir, report, seen)
@@ -44,6 +45,27 @@ local function parse_aux_file(auxfile, outdir, report, seen)
   return report
 end
 
+-- \citation, \bibdata, \bibstyle and \@input
+local function extract_bibtex_from_aux_file(auxfile, outdir, biblines)
+  biblines = biblines or {}
+  for l in io.lines(auxfile) do
+    local name = string_match(l, "\\([%a@]+)")
+    if name == "citation" or name == "bibdata" or name == "bibstyle" then
+      table.insert(biblines, l)
+      if CLUTTEX_VERBOSITY >= 2 then
+        message.info("BibTeX line: ", l)
+      end
+    elseif name == "@input" then
+      local subauxfile = string_match(l, "\\@input{(.+)}")
+      if subauxfile and fsutil.isfile(subauxfile) then
+        extract_bibtex_from_aux_file(pathutil.join(outdir, subauxfile), outdir, biblines)
+      end
+    end
+  end
+  return biblines
+end
+
 return {
   parse_aux_file = parse_aux_file,
+  extract_bibtex_from_aux_file = extract_bibtex_from_aux_file,
 }
