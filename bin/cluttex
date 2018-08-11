@@ -926,6 +926,10 @@ local function collectfileinfo(filelist, auxstatus)
   return auxstatus
 end
 
+local function binarytohex(s)
+  return (s:gsub(".", function(c) return string.format("%02x", string.byte(c)) end))
+end
+
 -- should_rerun, newauxstatus = comparefileinfo(auxfiles, auxstatus)
 local function comparefileinfo(filelist, auxstatus)
   local should_rerun = false
@@ -956,13 +960,21 @@ local function comparefileinfo(filelist, auxstatus)
           local size = filesys.attributes(path, "size")
           if auxstatus[path].size ~= size then
             really_modified = true
-            modified_because = string.format("size: %d -> %d", auxstatus[path].size or -1, size)
+            if auxstatus[path].size then
+              modified_because = string.format("size: %d -> %d", auxstatus[path].size, size)
+            else
+              modified_because = string.format("size: (N/A) -> %d", size)
+            end
             newauxstatus[path] = {size = size}
           else
             local md5sum = md5sum_file(path)
             if auxstatus[path].md5sum ~= md5sum then
               really_modified = true
-              modified_because = string.format("md5: %s -> %s", auxstatus[path].md5sum or "(N/A)", md5sum)
+              if auxstatus[path].md5sum then
+                modified_because = string.format("md5: %s -> %s", binarytohex(auxstatus[path].md5sum), binarytohex(md5sum))
+              else
+                modified_because = string.format("md5: (N/A) -> %s", binarytohex(md5sum))
+              end
             end
             newauxstatus[path] = {size = size, md5sum = md5sum}
           end
