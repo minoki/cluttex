@@ -18,7 +18,7 @@
 ]]
 
 -- options_and_params, i = parseoption(arg, options)
--- options[i] = {short = "o", long = "option" [, param = true] [, boolean = true]}
+-- options[i] = {short = "o", long = "option" [, param = true] [, boolean = true] [, allow_single_hyphen = false]}
 -- arg[i], arg[i + 1], ..., arg[#arg] are non-options
 local function parseoption(arg, options)
   local i = 1
@@ -69,30 +69,66 @@ local function parseoption(arg, options)
         error("unknown long option: " .. arg[i])
       end
     elseif arg[i]:sub(1,1) == "-" then
-      -- Short option
-      local name = arg[i]:sub(2,2)
-      local param
-      local opt
+      local name,param = arg[i]:match("^([^=]+)=(.*)$", 2)
+      name = name or arg[i]:sub(2)
+      local opt = nil
       for _,o in ipairs(options) do
-        if o.short then
-          if o.short == name then
+        if o.long and o.allow_single_hyphen then
+          if o.long == name then
             if o.param then
-              if #arg[i] > 2 then
-                -- -oparam
-                param = arg[i]:sub(3)
+              if param then
+                -- -option=param
               else
-                -- -o param
-                assert(i + 1 <= #arg, "argument missing after " .. arg[i] .. " option")
-                param = arg[i + 1]
-                i = i + 1
+                if o.default ~= nil then
+                  param = o.default
+                else
+                  -- -option param
+                  assert(i + 1 <= #arg, "argument missing after " .. arg[i] .. " option")
+                  param = arg[i + 1]
+                  i = i + 1
+                end
               end
             else
-              -- -o
-              assert(#arg[i] == 2, "combining multiple short options like -abc is not supported")
+              -- -option
               param = true
             end
             opt = o
             break
+          elseif o.boolean and name == "no-" .. o.long then
+            -- -no-option
+            opt = o
+            break
+          end
+        elseif o.long and #name >= 2 and (o.long == name or (o.boolean and name == "no-" .. o.long)) then
+          error("You must supply two hyphens (i.e. --" .. name .. ") for long option")
+        end
+      end
+      if opt == nil then
+        -- Short option
+        local name = arg[i]:sub(2,2)
+        local param
+        local opt
+        for _,o in ipairs(options) do
+          if o.short then
+            if o.short == name then
+              if o.param then
+                if #arg[i] > 2 then
+                  -- -oparam
+                  param = arg[i]:sub(3)
+                else
+                  -- -o param
+                  assert(i + 1 <= #arg, "argument missing after " .. arg[i] .. " option")
+                  param = arg[i + 1]
+                  i = i + 1
+                end
+              else
+                -- -o
+                assert(#arg[i] == 2, "combining multiple short options like -abc is not supported")
+                param = true
+              end
+              opt = o
+              break
+            end
           end
         end
       end

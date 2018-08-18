@@ -105,6 +105,7 @@ local option_spec = {
   {
     short = "h",
     long = "help",
+    allow_single_hyphen = true,
   },
   {
     short = "v",
@@ -123,41 +124,51 @@ local option_spec = {
   {
     long = "synctex",
     param = true,
+    allow_single_hyphen = true,
   },
   {
     long = "file-line-error",
     boolean = true,
+    allow_single_hyphen = true,
   },
   {
     long = "interaction",
     param = true,
+    allow_single_hyphen = true,
   },
   {
     long = "halt-on-error",
     boolean = true,
+    allow_single_hyphen = true,
   },
   {
     long = "shell-escape",
     boolean = true,
+    allow_single_hyphen = true,
   },
   {
     long = "shell-restricted",
+    allow_single_hyphen = true,
   },
   {
     long = "jobname",
     param = true,
+    allow_single_hyphen = true,
   },
   {
     long = "fmt",
     param = true,
+    allow_single_hyphen = true,
   },
   {
     long = "output-directory",
     param = true,
+    allow_single_hyphen = true,
   },
   {
     long = "output-format",
     param = true,
+    allow_single_hyphen = true,
   },
   {
     long = "tex-option",
