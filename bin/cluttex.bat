@@ -630,9 +630,7 @@ local function parseoption(arg, options)
       end
       if opt == nil then
         -- Short option
-        local name = arg[i]:sub(2,2)
-        local param
-        local opt
+        name = arg[i]:sub(2,2)
         for _,o in ipairs(options) do
           if o.short then
             if o.short == name then
