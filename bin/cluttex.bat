@@ -923,6 +923,8 @@ local function parse_recorder_file(file, options)
           -- Treat .idx files (to be processed by MakeIndex) as auxiliary
           kind = "auxiliary"
           -- ...and .ind files
+        elseif ext == "bcf" then -- biber
+          kind = "auxiliary"
         end
         fileinfo = {path = path, abspath = abspath, kind = kind}
         table.insert(filelist, fileinfo)
@@ -1378,6 +1380,7 @@ Options:
                                      `makeindex' or `mendex'.
       --bibtex=COMMAND+OPTIONs  Command for BibTeX, such as
                                      `bibtex' or `pbibtex'.
+      --biber[=COMMAND+OPTIONs]  Command for Biber.
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
@@ -1520,6 +1523,11 @@ local option_spec = {
     long = "bibtex",
     param = true,
   },
+  {
+    long = "biber",
+    param = true,
+    default = "biber",
+  },
 }
 
 -- Default values for options
@@ -1660,7 +1668,13 @@ local function handle_cluttex_options(arg)
 
     elseif name == "bibtex" then
       assert(options.bibtex == nil, "multiple --bibtex options")
+      assert(options.biber == nil, "multiple --bibtex/--biber options")
       options.bibtex = param
+
+    elseif name == "biber" then
+      assert(options.biber == nil, "multiple --biber options")
+      assert(options.bibtex == nil, "multiple --bibtex/--biber options")
+      options.biber = param
 
     end
   end
@@ -2306,6 +2320,24 @@ local function single_run(auxstatus, iteration)
         message.info("No need to run BibTeX.")
       end
     end
+  elseif options.biber then
+    for _,file in ipairs(filelist) do
+      if pathutil.ext(file.path) == "bcf" then
+        -- Run biber if the .bcf file is new or updated
+        local bcffileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
+        if reruncheck.comparefileinfo({bcffileinfo}, auxstatus) then
+          local output_bbl = pathutil.replaceext(file.abspath, "bbl")
+          local bbl_dir = pathutil.dirname(file.abspath)
+          local biber_command = {
+            options.biber, -- Do not escape options.biber to allow additional options
+            "--output-directory", shellutil.escape(options.output_directory),
+            pathutil.basename(file.abspath)
+          }
+          coroutine.yield(table.concat(biber_command, " "))
+          table.insert(filelist, {path = output_bbl, abspath = output_bbl, kind = "auxiliary"})
+        end
+      end
+    end
   else
     -- Check log file
     if not execlog then
@@ -2314,7 +2346,7 @@ local function single_run(auxstatus, iteration)
       logfile:close()
     end
     if string.find(execlog, "No file [^\n]+%.bbl%.") then
-      message.diag("You may want to use --bibtex option.")
+      message.diag("You may want to use --bibtex or --biber option.")
     end
   end
 

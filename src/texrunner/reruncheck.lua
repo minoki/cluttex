@@ -86,6 +86,8 @@ local function parse_recorder_file(file, options)
           -- Treat .idx files (to be processed by MakeIndex) as auxiliary
           kind = "auxiliary"
           -- ...and .ind files
+        elseif ext == "bcf" then -- biber
+          kind = "auxiliary"
         end
         fileinfo = {path = path, abspath = abspath, kind = kind}
         table.insert(filelist, fileinfo)

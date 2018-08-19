@@ -53,6 +53,7 @@ Options:
                                      `makeindex' or `mendex'.
       --bibtex=COMMAND+OPTIONs  Command for BibTeX, such as
                                      `bibtex' or `pbibtex'.
+      --biber[=COMMAND+OPTIONs]  Command for Biber.
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
@@ -195,6 +196,11 @@ local option_spec = {
     long = "bibtex",
     param = true,
   },
+  {
+    long = "biber",
+    param = true,
+    default = "biber",
+  },
 }
 
 -- Default values for options
@@ -335,7 +341,13 @@ local function handle_cluttex_options(arg)
 
     elseif name == "bibtex" then
       assert(options.bibtex == nil, "multiple --bibtex options")
+      assert(options.biber == nil, "multiple --bibtex/--biber options")
       options.bibtex = param
+
+    elseif name == "biber" then
+      assert(options.biber == nil, "multiple --biber options")
+      assert(options.bibtex == nil, "multiple --bibtex/--biber options")
+      options.biber = param
 
     end
   end

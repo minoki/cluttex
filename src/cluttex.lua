@@ -283,6 +283,24 @@ local function single_run(auxstatus, iteration)
         message.info("No need to run BibTeX.")
       end
     end
+  elseif options.biber then
+    for _,file in ipairs(filelist) do
+      if pathutil.ext(file.path) == "bcf" then
+        -- Run biber if the .bcf file is new or updated
+        local bcffileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
+        if reruncheck.comparefileinfo({bcffileinfo}, auxstatus) then
+          local output_bbl = pathutil.replaceext(file.abspath, "bbl")
+          local bbl_dir = pathutil.dirname(file.abspath)
+          local biber_command = {
+            options.biber, -- Do not escape options.biber to allow additional options
+            "--output-directory", shellutil.escape(options.output_directory),
+            pathutil.basename(file.abspath)
+          }
+          coroutine.yield(table.concat(biber_command, " "))
+          table.insert(filelist, {path = output_bbl, abspath = output_bbl, kind = "auxiliary"})
+        end
+      end
+    end
   else
     -- Check log file
     if not execlog then
@@ -291,7 +309,7 @@ local function single_run(auxstatus, iteration)
       logfile:close()
     end
     if string.find(execlog, "No file [^\n]+%.bbl%.") then
-      message.diag("You may want to use --bibtex option.")
+      message.diag("You may want to use --bibtex or --biber option.")
     end
   end
 
