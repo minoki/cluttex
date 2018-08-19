@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
 local pathutil     = require "texrunner.pathutil"
+local shellutil    = require "texrunner.shellutil"
 local parseoption  = require "texrunner.option".parseoption
 local KnownEngines = require "texrunner.tex_engine"
 local message      = require "texrunner.message"
