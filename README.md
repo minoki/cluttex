@@ -44,7 +44,7 @@ Options:
   Print version information and exit.
 * `-V`, `--verbose`
   Be more verbose.
-* `--color=WHEN`
+* `--color[=WHEN]`
   Make ClutTeX's message colorful.
   `WHEN` is one of `always`, `auto`, or `never`.
   [default: `auto`]
@@ -74,5 +74,12 @@ Options:
 * `--makeindex=COMMAND`
   Use MakeIndex program to process `.idx` files.
   (e.g. `--makeindex=makeindex`, or `--makeindex=mendex`)
+* `--bibtex=COMMAND`
+  Use BibTeX program to produce `.bbl` file from `.aux` files.
+  (e.g. `--bibtex=bibtex`, or `--bibtex=upbibtex`)
+* `--biber[=COMMAND]`
+  Use Biber program to produce `.bbl` file from `.bcf` file.
 
 If run as `cllualatex` or `clxelatex`, then the default engine is `lualatex` or `xelatex`, accordingly.
+
+Some options allow single-hyphen form for compatibility: `-help`, `-synctex`, `-file-line-error`, `-interaction`, `-halt-on-error`, `-[no-]shell-escape`, `-shell-restricted`, `-jobname`, `-fmt`, `-output-directory`, `-output-format`.
