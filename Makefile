@@ -24,8 +24,10 @@ sources= \
 bin/cluttex: $(sources) build.lua
 	@mkdir -p bin
 	lua build.lua --unix-shellscript $@
+	lua checkglobal.lua $@
 	chmod +x $@
 
 bin/cluttex.bat: $(sources) build.lua
 	@mkdir -p bin
 	lua build.lua --windows-batchfile $@
+	lua checkglobal.lua $@
