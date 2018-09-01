@@ -1386,6 +1386,7 @@ Options:
   -V, --verbose                Be more verbose.
       --color=WHEN             Make ClutTeX's message colorful. WHEN is one of
                                  `always', `auto', or `never'.  [default: auto]
+      --includeonly=NAMEs      Insert '\includeonly{NAMEs}'.
 
       --[no-]shell-escape
       --shell-restricted
@@ -1448,6 +1449,10 @@ local option_spec = {
     long = "color",
     param = true,
     default = "always",
+  },
+  {
+    long = "includeonly",
+    param = true,
   },
   -- Options for TeX
   {
@@ -1608,6 +1613,10 @@ local function handle_cluttex_options(arg)
     elseif name == "change-directory" then
       assert(options.change_directory == nil, "multiple --change-directory options")
       options.change_directory = param
+
+    elseif name == "includeonly" then
+      assert(options.includeonly == nil, "multiple --includeonly options")
+      options.includeonly = param
 
       -- Options for TeX
     elseif name == "synctex" then
@@ -2221,6 +2230,10 @@ local function single_run(auxstatus, iteration)
     auxstatus = {}
   end
   --local timestamp = os.time()
+
+  if options.includeonly then
+    tex_options.tex_injection = string.format("%s\\includeonly{%s}", tex_options.tex_injection or "", options.includeonly)
+  end
 
   if minted and not (tex_options.tex_injection and string.find(tex_options.tex_injection,"minted") == nil) then
     tex_options.tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_options.tex_injection or "", options.output_directory)

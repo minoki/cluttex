@@ -185,6 +185,10 @@ local function single_run(auxstatus, iteration)
   end
   --local timestamp = os.time()
 
+  if options.includeonly then
+    tex_options.tex_injection = string.format("%s\\includeonly{%s}", tex_options.tex_injection or "", options.includeonly)
+  end
+
   if minted and not (tex_options.tex_injection and string.find(tex_options.tex_injection,"minted") == nil) then
     tex_options.tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_options.tex_injection or "", options.output_directory)
   end

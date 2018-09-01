@@ -48,6 +48,8 @@ Options:
   Make ClutTeX's message colorful.
   `WHEN` is one of `always`, `auto`, or `never`.
   [default: `auto`]
+* `--includeonly=NAMEs`
+  Insert `\includeonly{NAMEs}`.
 * `--tex-option=OPTION`
   Pass `OPTION` to TeX as a single option.
 * `--tex-options=OPTIONs`
