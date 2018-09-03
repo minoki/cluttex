@@ -4,7 +4,19 @@ ClutTeX: Process LaTeX document without cluttering your directory
 ClutTeX is a program to automatically process your LaTeX document.
 If necessary, it re-runs (La)TeX program to resolve cross-references and everything.
 
-One of its main feature is that, it does not clutter your working directory (but the final `.pdf` file is still produced for you).
+One of its main feature is that, it does not clutter your working directory (but the final `.pdf` file is still brought for you).
+
+Japanese blog: [TeX 実行の自動化ツールを作った (ClutTeX)](https://blog.miz-ar.info/2016/12/cluttex/)
+
+Features
+-----
+
+* Does not clutter your working directory with `.aux`, `.log`, etc. files.
+* Does not prompt for input when there is a (La)TeX error.
+* With pTeX-like engines, automatically run dvipdfmx to produce PDF file.
+* Automatically re-run (La)TeX to resolve cross-references and other things.
+* Watch input files for change (requires an external program). [`--watch` option]
+* Support for MakeIndex, BibTeX, Biber, makeglossaries commands. [`--makeindex`, `--bibtex`, `--biber`, `--makeglossaries` options]
 
 Usage
 -----
@@ -15,7 +27,14 @@ More general form:
 
 `$ cluttex [OPTIONS] [--] INPUT.tex`
 
-Options:
+Install
+-----
+
+Click [Clone or download] button on GitHub and [Download ZIP].
+Unpack `cluttex-master.zip` and copy `bin/cluttex` (or `bin/cluttex.bat` on Windows) to somewhere in PATH.
+
+Command-line Options
+-----
 
 * `-e`, `--engine=ENGINE`
   Specify which TeX engine/format to use.
