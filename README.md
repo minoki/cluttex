@@ -1,9 +1,10 @@
-ClutTeX: Convenient Little Utility for Tidying TeX execution
+ClutTeX: Process LaTeX document without cluttering your directory
 =====
 
-ClutTeX is a utility that lets you process your (La)TeX document without cluttering your working directory.
+ClutTeX is a program to automatically process your LaTeX document.
+If necessary, it re-runs (La)TeX program to resolve cross-references and everything.
 
-It automatically re-runs (La)TeX program to resolve cross-references and everything.
+One of its main feature is that, it does not clutter your working directory (but the final `.pdf` file is still produced for you).
 
 Usage
 -----
@@ -38,16 +39,10 @@ Options:
 * `--watch`
   Watch input files for change.
   Requires [fswatch](http://emcrisostomo.github.io/fswatch/) program to be installed.
-* `-h`, `--help`
-  Print this message and exit.
-* `-v`, `--version`
-  Print version information and exit.
-* `-V`, `--verbose`
-  Be more verbose.
 * `--color[=WHEN]`
   Make ClutTeX's message colorful.
   `WHEN` is one of `always`, `auto`, or `never`.
-  [default: `auto`]
+  [default: `auto` if `--color` is omitted, `always` if `=WHEN` is omitted]
 * `--includeonly=NAMEs`
   Insert `\includeonly{NAMEs}`.
 * `--tex-option=OPTION`
@@ -56,6 +51,28 @@ Options:
   Pass `OPTIONs` to TeX as multiple options.
 * `--dvipdfmx-option[s]=OPTION[s]`
   Same for dvipdfmx.
+* `-h`, `--help`
+  Print this message and exit.
+* `-v`, `--version`
+  Print version information and exit.
+* `-V`, `--verbose`
+  Be more verbose.
+
+Options to run auxiliary programs:
+
+* `--makeindex=COMMAND`
+  Use MakeIndex program to process `.idx` files.
+  (e.g. `--makeindex=makeindex`, or `--makeindex=mendex`)
+* `--bibtex=COMMAND`
+  Use BibTeX program to produce `.bbl` file from `.aux` files.
+  (e.g. `--bibtex=bibtex`, or `--bibtex=upbibtex`)
+* `--biber[=COMMAND]`
+  Use Biber program to produce `.bbl` file from `.bcf` file.
+* `--makeglossaries[=COMMAND]`
+  Use makeglossaries program to produce `.gls` file from `.glo` file.
+
+TeX-compatible options:
+
 * `--[no-]shell-escape`
 * `--shell-restricted`
 * `--synctex=NUMBER`
@@ -73,17 +90,7 @@ Options:
 * `--output-format=FORMAT`
   Set output format (`pdf` or `dvi`).
   [default: `pdf`]
-* `--makeindex=COMMAND`
-  Use MakeIndex program to process `.idx` files.
-  (e.g. `--makeindex=makeindex`, or `--makeindex=mendex`)
-* `--bibtex=COMMAND`
-  Use BibTeX program to produce `.bbl` file from `.aux` files.
-  (e.g. `--bibtex=bibtex`, or `--bibtex=upbibtex`)
-* `--biber[=COMMAND]`
-  Use Biber program to produce `.bbl` file from `.bcf` file.
-* `--makeglossaries[=COMMAND]`
-  Use makeglossaries program to produce `.gls` file from `.glo` file.
+
+For TeX-compatible options, single-hypen forms are allowed (e.g. `-synctex=1` in addition to `--synctex=1`).
 
 If run as `cllualatex` or `clxelatex`, then the default engine is `lualatex` or `xelatex`, accordingly.
-
-Some options allow single-hyphen form for compatibility: `-help`, `-synctex`, `-file-line-error`, `-interaction`, `-halt-on-error`, `-[no-]shell-escape`, `-shell-restricted`, `-jobname`, `-fmt`, `-output-directory`, `-output-format`.
