@@ -268,6 +268,36 @@ local function single_run(auxstatus, iteration)
     end
   end
 
+  if options.makeglossaries then
+    -- Look for .glo files and run makeglossaries
+    for _,file in ipairs(filelist) do
+      if pathutil.ext(file.path) == "glo" then
+        -- Run makeglossaries if the .glo file is new or updated
+        local glofileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
+        if reruncheck.comparefileinfo({glofileinfo}, auxstatus) then -- TODO: Check if .gls file exists
+          local output_gls = pathutil.replaceext(file.abspath, "gls")
+          local makeglossaries_command = {
+            options.makeglossaries,
+            "-d", shellutil.escape(options.output_directory),
+            pathutil.trimext(pathutil.basename(file.path))
+          }
+          coroutine.yield(table.concat(makeglossaries_command, " "))
+          table.insert(filelist, {path = output_gls, abspath = output_gls, kind = "auxiliary"})
+        end
+      end
+    end
+  else
+    -- Check log file
+    if not execlog then
+      local logfile = assert(io.open(path_in_output_directory("log")))
+      execlog = logfile:read("*a")
+      logfile:close()
+    end
+    if string.find(execlog, "No file [^\n]+%.gls%.") then
+      message.diag("You may want to use --makeglossaries option.")
+    end
+  end
+
   if options.bibtex then
     local biblines2 = extract_bibtex_from_aux_file(mainauxfile, options.output_directory)
     local bibtex_aux_hash2

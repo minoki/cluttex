@@ -81,6 +81,8 @@ Options:
   (e.g. `--bibtex=bibtex`, or `--bibtex=upbibtex`)
 * `--biber[=COMMAND]`
   Use Biber program to produce `.bbl` file from `.bcf` file.
+* `--makeglossaries[=COMMAND]`
+  Use makeglossaries program to produce `.gls` file from `.glo` file.
 
 If run as `cllualatex` or `clxelatex`, then the default engine is `lualatex` or `xelatex`, accordingly.
 

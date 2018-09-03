@@ -88,6 +88,8 @@ local function parse_recorder_file(file, options)
           -- ...and .ind files
         elseif ext == "bcf" then -- biber
           kind = "auxiliary"
+        elseif ext == "glo" then -- makeglossaries
+          kind = "auxiliary"
         end
         fileinfo = {path = path, abspath = abspath, kind = kind}
         table.insert(filelist, fileinfo)
