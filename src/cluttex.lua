@@ -236,6 +236,12 @@ local function single_run(auxstatus, iteration)
 
   local filelist = reruncheck.parse_recorder_file(recorderfile, options)
 
+  if not execlog then
+    local logfile = assert(io.open(path_in_output_directory("log")))
+    execlog = logfile:read("*a")
+    logfile:close()
+  end
+
   if options.makeindex then
     -- Look for .idx files and run MakeIndex
     for _,file in ipairs(filelist) do
@@ -258,11 +264,6 @@ local function single_run(auxstatus, iteration)
     end
   else
     -- Check log file
-    if not execlog then
-      local logfile = assert(io.open(path_in_output_directory("log")))
-      execlog = logfile:read("*a")
-      logfile:close()
-    end
     if string.find(execlog, "No file [^\n]+%.ind%.") then
       message.diag("You may want to use --makeindex option.")
     end
@@ -288,11 +289,6 @@ local function single_run(auxstatus, iteration)
     end
   else
     -- Check log file
-    if not execlog then
-      local logfile = assert(io.open(path_in_output_directory("log")))
-      execlog = logfile:read("*a")
-      logfile:close()
-    end
     if string.find(execlog, "No file [^\n]+%.gls%.") then
       message.diag("You may want to use --makeglossaries option.")
     end
@@ -337,11 +333,6 @@ local function single_run(auxstatus, iteration)
     end
   else
     -- Check log file
-    if not execlog then
-      local logfile = assert(io.open(path_in_output_directory("log")))
-      execlog = logfile:read("*a")
-      logfile:close()
-    end
     if string.find(execlog, "No file [^\n]+%.bbl%.") then
       message.diag("You may want to use --bibtex or --biber option.")
     end
