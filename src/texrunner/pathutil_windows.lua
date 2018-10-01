@@ -213,6 +213,7 @@ end
 return {
   basename = basename,
   dirname = dirname,
+  parentdir = parentdir,
   trimext = trimext,
   ext = ext,
   replaceext = replaceext,

@@ -98,17 +98,22 @@ elseif options.fresh then
   os.exit(1)
 end
 
+local pathsep = ":"
+if os.type == "windows" then
+  pathsep = ";"
+end
+
 local original_wd = filesys.currentdir()
 if options.change_directory then
   local TEXINPUTS = os.getenv("TEXINPUTS") or ""
   filesys.chdir(options.output_directory)
   options.output = pathutil.abspath(options.output, original_wd)
-  os.setenv("TEXINPUTS", original_wd .. ":" .. TEXINPUTS)
+  os.setenv("TEXINPUTS", original_wd .. pathsep .. TEXINPUTS)
 end
-if options.bibtex then
+if options.bibtex or options.biber then
   local BIBINPUTS = os.getenv("BIBINPUTS") or ""
   options.output = pathutil.abspath(options.output, original_wd)
-  os.setenv("BIBINPUTS", original_wd .. ":" .. BIBINPUTS)
+  os.setenv("BIBINPUTS", original_wd .. pathsep .. BIBINPUTS)
 end
 
 -- Set `max_print_line' environment variable if not already set.
