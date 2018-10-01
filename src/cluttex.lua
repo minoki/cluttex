@@ -345,6 +345,10 @@ local function single_run(auxstatus, iteration)
     end
   end
 
+  if string.find(execlog, "No pages of output.") then
+    return "No pages of output."
+  end
+
   local should_rerun, auxstatus = reruncheck.comparefileinfo(filelist, auxstatus)
   return should_rerun or lightweight_mode, auxstatus
 end
@@ -357,6 +361,10 @@ local function do_typeset_c()
   repeat
     iteration = iteration + 1
     should_rerun, auxstatus = single_run(auxstatus, iteration)
+    if should_rerun == "No pages of output." then
+      message.warn("No pages of output.")
+      return
+    end
   until not should_rerun or iteration >= options.max_iterations
 
   if should_rerun then
