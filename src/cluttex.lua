@@ -255,8 +255,8 @@ local function single_run(auxstatus, iteration)
       if pathutil.ext(file.path) == "idx" then
         -- Run makeindex if the .idx file is new or updated
         local idxfileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
-        if reruncheck.comparefileinfo({idxfileinfo}, auxstatus) then
-          local output_ind = pathutil.replaceext(file.abspath, "ind")
+        local output_ind = pathutil.replaceext(file.abspath, "ind")
+        if reruncheck.comparefileinfo({idxfileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, output_ind, auxstatus) then
           local idx_dir = pathutil.dirname(file.abspath)
           local makeindex_command = {
             "cd", shellutil.escape(idx_dir), "&&",
@@ -266,6 +266,11 @@ local function single_run(auxstatus, iteration)
           }
           coroutine.yield(table.concat(makeindex_command, " "))
           table.insert(filelist, {path = output_ind, abspath = output_ind, kind = "auxiliary"})
+        else
+          local succ, err = filesys.touch(output_ind)
+          if not succ then
+            message.warn("Failed to touch " .. output_ind .. " (" .. err .. ")")
+          end
         end
       end
     end
@@ -282,8 +287,8 @@ local function single_run(auxstatus, iteration)
       if pathutil.ext(file.path) == "glo" then
         -- Run makeglossaries if the .glo file is new or updated
         local glofileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
-        if reruncheck.comparefileinfo({glofileinfo}, auxstatus) then -- TODO: Check if .gls file exists
-          local output_gls = pathutil.replaceext(file.abspath, "gls")
+        local output_gls = pathutil.replaceext(file.abspath, "gls")
+        if reruncheck.comparefileinfo({glofileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, output_gls, auxstatus) then
           local makeglossaries_command = {
             options.makeglossaries,
             "-d", shellutil.escape(options.output_directory),
@@ -291,6 +296,11 @@ local function single_run(auxstatus, iteration)
           }
           coroutine.yield(table.concat(makeglossaries_command, " "))
           table.insert(filelist, {path = output_gls, abspath = output_gls, kind = "auxiliary"})
+        else
+          local succ, err = filesys.touch(output_gls)
+          if not succ then
+            message.warn("Failed to touch " .. output_ind .. " (" .. err .. ")")
+          end
         end
       end
     end
@@ -307,7 +317,8 @@ local function single_run(auxstatus, iteration)
     if #biblines2 > 0 then
       bibtex_aux_hash2 = md5.sum(table.concat(biblines2, "\n"))
     end
-    if bibtex_aux_hash ~= bibtex_aux_hash2 then
+    local output_bbl = path_in_output_directory("bbl")
+    if bibtex_aux_hash ~= bibtex_aux_hash2 or reruncheck.comparefiletime(mainauxfile, output_bbl, auxstatus) then
       -- The input for BibTeX command has changed...
       local bibtex_command = {
         "cd", shellutil.escape(options.output_directory), "&&",
@@ -319,14 +330,18 @@ local function single_run(auxstatus, iteration)
       if CLUTTEX_VERBOSITY >= 1 then
         message.info("No need to run BibTeX.")
       end
+      local succ, err = filesys.touch(output_bbl)
+      if not succ then
+        message.warn("Failed to touch " .. output_bbl .. " (" .. err .. ")")
+      end
     end
   elseif options.biber then
     for _,file in ipairs(filelist) do
       if pathutil.ext(file.path) == "bcf" then
         -- Run biber if the .bcf file is new or updated
         local bcffileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
-        if reruncheck.comparefileinfo({bcffileinfo}, auxstatus) then
-          local output_bbl = pathutil.replaceext(file.abspath, "bbl")
+        local output_bbl = pathutil.replaceext(file.abspath, "bbl")
+        if reruncheck.comparefileinfo({bcffileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, output_bbl, auxstatus) then
           local bbl_dir = pathutil.dirname(file.abspath)
           local biber_command = {
             options.biber, -- Do not escape options.biber to allow additional options
@@ -335,6 +350,11 @@ local function single_run(auxstatus, iteration)
           }
           coroutine.yield(table.concat(biber_command, " "))
           table.insert(filelist, {path = output_bbl, abspath = output_bbl, kind = "auxiliary"})
+        else
+          local succ, err = filesys.touch(output_bbl)
+          if not succ then
+            message.warn("Failed to touch " .. output_bbl .. " (" .. err .. ")")
+          end
         end
       end
     end

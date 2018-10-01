@@ -117,6 +117,7 @@ local function collectfileinfo(filelist, auxstatus)
       if fileinfo.kind == "input" then
         status.mtime = status.mtime or filesys.attributes(path, "modification")
       elseif fileinfo.kind == "auxiliary" then
+        status.mtime = status.mtime or filesys.attributes(path, "modification")
         status.size = status.size or filesys.attributes(path, "size")
         status.md5sum = status.md5sum or md5sum_file(path)
       end
@@ -225,8 +226,25 @@ local function comparefileinfo(filelist, auxstatus)
   return should_rerun, newauxstatus
 end
 
+-- true if src is newer than dst
+local function comparefiletime(srcpath, dstpath, auxstatus)
+  if not filesys.isfile(dstpath) then
+    return true
+  end
+  local src_info = auxstatus[srcpath]
+  if src_info then
+    local src_mtime = src_info.mtime
+    if src_mtime then
+      local dst_mtime = filesys.attributes(dstpath, "modification")
+      return src_mtime > dst_mtime
+    end
+  end
+  return false
+end
+
 return {
   parse_recorder_file = parse_recorder_file;
   collectfileinfo = collectfileinfo;
   comparefileinfo = comparefileinfo;
+  comparefiletime = comparefiletime;
 }
