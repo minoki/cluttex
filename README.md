@@ -27,6 +27,8 @@ More general form:
 
 `$ cluttex [OPTIONS] [--] INPUT.tex`
 
+See [example/](example/) for some examples.
+
 Install
 -----
 
