@@ -128,6 +128,7 @@ local function path_in_output_directory(ext)
 end
 
 local recorderfile = path_in_output_directory("fls")
+local recorderfile2 = path_in_output_directory("cluttex-fls")
 
 local tex_options = {
   interaction = options.interaction,
@@ -161,7 +162,10 @@ local function single_run(auxstatus, iteration)
   local mainauxfile = path_in_output_directory("aux")
   if fsutil.isfile(recorderfile) then
     -- Recorder file already exists
-    local filelist = reruncheck.parse_recorder_file(recorderfile, options)
+    local filelist, filemap = reruncheck.parse_recorder_file(recorderfile, options)
+    if engine.is_luatex and fsutil.isfile(recorderfile2) then
+      filelist, filemap = reruncheck.parse_recorder_file(recorderfile2, options, filelist, filemap)
+    end
     auxstatus = reruncheck.collectfileinfo(filelist, auxstatus)
     for _,fileinfo in ipairs(filelist) do
       if string.match(fileinfo.path, "minted/minted%.sty$") then
@@ -234,7 +238,10 @@ local function single_run(auxstatus, iteration)
     return true, {}
   end
 
-  local filelist = reruncheck.parse_recorder_file(recorderfile, options)
+  local filelist, filemap = reruncheck.parse_recorder_file(recorderfile, options)
+  if engine.is_luatex and fsutil.isfile(recorderfile2) then
+    filelist, filemap = reruncheck.parse_recorder_file(recorderfile2, options, filelist, filemap)
+  end
 
   if not execlog then
     local logfile = assert(io.open(path_in_output_directory("log")))
@@ -432,7 +439,10 @@ end
 if options.watch then
   -- Watch mode
   local success, status = do_typeset()
-  local filelist = reruncheck.parse_recorder_file(recorderfile, options)
+  local filelist, filemap = reruncheck.parse_recorder_file(recorderfile, options)
+  if engine.is_luatex and fsutil.isfile(recorderfile2) then
+    filelist, filemap = reruncheck.parse_recorder_file(recorderfile2, options, filelist, filemap)
+  end
   local input_files_to_watch = {}
   for _,fileinfo in ipairs(filelist) do
     if fileinfo.kind == "input" then

@@ -18,14 +18,23 @@ local texio_write_nl = texio.write_nl
   -- Packages coded in Lua doesn't follow -output-directory option and doesn't write command to the log file
   initscript:write(string.format("local output_directory = %q\n", options.output_directory))
   initscript:write([==[
-io.open = function(...)
-  local fname, mode = ...
+local luawritelog
+local function openluawritelog()
+  if not luawritelog then
+    luawritelog = assert(io_open(output_directory .. "/" .. tex.jobname .. ".cluttex-fls", "w"))
+  end
+  return luawritelog
+end
+io.open = function(fname, mode)
   -- luatexja-ruby
   if mode == "w" and fname == tex.jobname .. ".ltjruby" then
-    return io_open(output_directory .. "/" .. fname, "w")
-  else
-    return io_open(...)
+    fname = output_directory .. "/" .. fname
   end
+  if type(mode) == "string" and string.find(mode, "w") ~= nil then
+    -- write mode
+    openluawritelog():write("OUTPUT " .. fname .. "\n")
+  end
+  return io_open(fname, mode)
 end
 os.execute = function(...)
   texio_write_nl("log", string.format("CLUTTEX_EXEC %s", ...), "")
