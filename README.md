@@ -115,3 +115,8 @@ TeX-compatible options:
 For TeX-compatible options, single-hypen forms are allowed (e.g. `-synctex=1` in addition to `--synctex=1`).
 
 If run as `cllualatex` or `clxelatex`, then the default engine is `lualatex` or `xelatex`, accordingly.
+
+License
+-----
+
+This program is distributed under GNU General Public License, version 3.
