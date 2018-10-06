@@ -1,2 +1,4 @@
 example/*/*.pdf
 *.synctex.gz
+*.tar
+*.tar.gz

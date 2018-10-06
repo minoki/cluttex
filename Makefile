@@ -1,6 +1,6 @@
 all: bin/cluttex bin/cluttex.bat
 
-.PHONY: all
+.PHONY: all archive
 
 sources= \
  src/texrunner/pathutil.lua \
@@ -31,3 +31,7 @@ bin/cluttex.bat: $(sources) build.lua
 	@mkdir -p bin
 	lua build.lua --windows-batchfile $@
 	lua checkglobal.lua $@
+
+archive:
+	git archive --format=tar --prefix=cluttex/ -o cluttex.tar HEAD
+	gzip -k9 cluttex.tar
