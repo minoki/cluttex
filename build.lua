@@ -1,5 +1,5 @@
 --[[
-  Copyright 2016 ARATA Mizuki
+  Copyright 2016, 2018 ARATA Mizuki
 
   This file is part of ClutTeX.
 
@@ -134,7 +134,7 @@ else
 end
 
 table.insert(lines, string.format("local %s = %s\n", table.concat(imported_globals, ", "), table.concat(imported_globals, ", ")))
-table.insert(lines, "local CLUTTEX_VERBOSITY\n")
+table.insert(lines, "local CLUTTEX_VERBOSITY, CLUTTEX_VERSION\n")
 
 if default_os then
   table.insert(lines, string.format("os.type = os.type or %q\n", default_os))

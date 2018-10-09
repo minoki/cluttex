@@ -3,7 +3,7 @@
 @goto :eof
 ]]
 local io, os, string, table, package, require, assert, error, ipairs, type, select, arg = io, os, string, table, package, require, assert, error, ipairs, type, select, arg
-local CLUTTEX_VERBOSITY
+local CLUTTEX_VERBOSITY, CLUTTEX_VERSION
 os.type = os.type or "windows"
 if lfs and not package.loaded['lfs'] then package.loaded['lfs'] = lfs end
 if os.type == "windows" then
@@ -1630,7 +1630,7 @@ local function handle_cluttex_options(arg)
       os.exit(0)
 
     elseif name == "version" then
-      io.stderr:write("cluttex (prerelease)\n")
+      io.stderr:write("cluttex ",CLUTTEX_VERSION,"\n")
       os.exit(0)
 
     elseif name == "verbose" then
@@ -2103,6 +2103,8 @@ end
   You should have received a copy of the GNU General Public License
   along with ClutTeX.  If not, see <http://www.gnu.org/licenses/>.
 ]]
+
+CLUTTEX_VERSION = "v0.1"
 
 -- Standard libraries
 local coroutine = coroutine

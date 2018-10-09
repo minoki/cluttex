@@ -278,7 +278,7 @@ local function handle_cluttex_options(arg)
       os.exit(0)
 
     elseif name == "version" then
-      io.stderr:write("cluttex (prerelease)\n")
+      io.stderr:write("cluttex ",CLUTTEX_VERSION,"\n")
       os.exit(0)
 
     elseif name == "verbose" then

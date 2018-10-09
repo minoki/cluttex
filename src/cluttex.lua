@@ -18,6 +18,8 @@
   along with ClutTeX.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+CLUTTEX_VERSION = "v0.1"
+
 -- Standard libraries
 local table = table
 local os = os
