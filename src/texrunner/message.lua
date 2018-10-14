@@ -22,21 +22,27 @@ local use_colors = false
 local function set_colors(mode)
   local M
   if mode == "always" then
-    use_colors = true
     M = require "texrunner.isatty"
-    if M.enable_console_colors then
-      M.enable_console_colors(io.stderr)
+    use_colors = true
+    if use_colors and M.enable_virtual_terminal then
+      local succ = M.enable_virtual_terminal(io.stderr)
+      if not succ and CLUTTEX_VERBOSITY >= 2 then
+        io.stderr:write("ClutTeX: Failed to enable virtual terminal\n")
+      end
     end
-  elseif mode == "never" then
-    use_colors = false
   elseif mode == "auto" then
     M = require "texrunner.isatty"
     use_colors = M.isatty(io.stderr)
+    if use_colors and M.enable_virtual_terminal then
+      use_colors = M.enable_virtual_terminal(io.stderr)
+      if not use_colors and CLUTTEX_VERBOSITY >= 2 then
+        io.stderr:write("ClutTeX: Failed to enable virtual terminal\n")
+      end
+    end
+  elseif mode == "never" then
+    use_colors = false
   else
     error "The value of --color option must be one of 'auto', 'always', or 'never'."
-  end
-  if use_colors and M.enable_console_colors then
-    M.enable_console_colors(io.stderr)
   end
 end
 
