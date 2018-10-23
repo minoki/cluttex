@@ -15,8 +15,8 @@ Features
 * Does not prompt for input when there is a (La)TeX error.
 * With pTeX-like engines, automatically run dvipdfmx to produce PDF file.
 * Automatically re-run (La)TeX to resolve cross-references and other things.
-* Watch input files for change (requires an external program). [`--watch` option]
-* Support for MakeIndex, BibTeX, Biber, makeglossaries commands. [`--makeindex`, `--bibtex`, `--biber`, `--makeglossaries` options]
+* Watch input files for change (requires an external program). \[`--watch` option\]
+* Support for MakeIndex, BibTeX, Biber, makeglossaries commands. \[`--makeindex`, `--bibtex`, `--biber`, `--makeglossaries` options\]
 
 Usage
 -----
@@ -32,7 +32,7 @@ See [example/](example/) for some examples.
 Install
 -----
 
-Click [Clone or download] button on GitHub and [Download ZIP].
+Click \[Clone or download\] button on GitHub and \[Download ZIP\].
 Unpack `cluttex-master.zip` and copy `bin/cluttex` (or `bin/cluttex.bat` on Windows) to somewhere in PATH.
 
 Command-line Options
@@ -48,13 +48,13 @@ Command-line Options
     `platex`, `eptex`, `ptex`,
     `uplatex`, `euptex`, `uptex`.
 * `-o`, `--output=FILE`
-  The name of output file.  [default: `JOBNAME.FORMAT`]
+  The name of output file.  \[default: `JOBNAME.FORMAT`\]
 * `--fresh`
   Clean intermediate files before running TeX.
   Cannot be used with `--output-directory`.
 * `--max-iterations=N`
   Maximum number of running TeX to resolve cross-references.
-  [default: 3]
+  \[default: 3\]
 * `--[no-]change-directory`
   Change the current working directory to the output directory when running TeX.
 * `--watch`
@@ -63,7 +63,7 @@ Command-line Options
 * `--color[=WHEN]`
   Make ClutTeX's message colorful.
   `WHEN` is one of `always`, `auto`, or `never`.
-  [default: `auto` if `--color` is omitted, `always` if `=WHEN` is omitted]
+  \[default: `auto` if `--color` is omitted, `always` if `=WHEN` is omitted\]
 * `--includeonly=NAMEs`
   Insert `\includeonly{NAMEs}`.
 * `--tex-option=OPTION`
@@ -98,19 +98,19 @@ TeX-compatible options:
 * `--shell-restricted`
 * `--synctex=NUMBER`
 * `--[no-]file-line-error`
-  [default: yes]
+  \[default: yes\]
 * `--[no-]halt-on-error`
-  [default: yes]
+  \[default: yes\]
 * `--interaction=STRING`
   (`STRING`=`batchmode`/`nonstopmode`/`scrollmode`/`errorstopmode`)
-  [default: `nonstopmode`]
+  \[default: `nonstopmode`\]
 * `--jobname=STRING`
 * `--fmt=FORMAT`
 * `--output-directory=DIR`
-  [default: somewhere in the temporary directory]
+  \[default: somewhere in the temporary directory\]
 * `--output-format=FORMAT`
   Set output format (`pdf` or `dvi`).
-  [default: `pdf`]
+  \[default: `pdf`\]
 
 For TeX-compatible options, single-hypen forms are allowed (e.g. `-synctex=1` in addition to `--synctex=1`).
 
