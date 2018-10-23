@@ -1,0 +1,224 @@
+\documentclass[a4paper]{ltjsreport}
+\usepackage[unicode]{hyperref}
+\usepackage{jslogo} % for \BibTeX
+\usepackage{amsmath}
+\newcommand\ClutTeX{Clut\TeX}
+\newcommand\texcmd[1]{\texttt{\textbackslash #1}}
+\newcommand\texenv[1]{\texttt{#1}}
+\newcommand\texpkg[1]{\texttt{#1}}
+\newcommand\metavar[1]{\textsf{#1}}
+\renewcommand\sectionautorefname{セクション}
+\renewcommand\subsectionautorefname{サブセクション}
+
+\title{\ClutTeX{}マニュアル}
+\author{ARATA Mizuki}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter{\ClutTeX{}の概要}
+\ClutTeX{}は、\LaTeX{}処理の自動化ツールである。
+基本的な特徴として、
+\begin{itemize}
+\item 作業ディレクトリを\texttt{.aux}や\texttt{.log}等の「余計な」ファイルで散らかさない
+\item （相互参照の解決などで）複数回処理を行う必要がある場合に、必要な回数だけ自動で処理する
+\item 入力ファイルを監視し、変更があった場合に自動で再処理する（\texttt{--watch}オプション\footnote{別途プログラムが必要}）
+\item MakeIndex, \BibTeX, Biber等のコマンドを自動で実行する（\texttt{--makeindex}オプション, \texttt{--bibtex}オプション, \texttt{--biber}オプション）
+\item p\TeX 系列の処理系でPDFを生成する場合、別途\texttt{dvipdfmx}を実行する必要がない（自動で\texttt{dvipdfmx}を実行する）
+\end{itemize}
+などがある。
+
+\LaTeX{}処理の自動化ツールとしては\texttt{latexmk}が普及している。
+そのような既存のツールに対する\ClutTeX{}の最大の差別化ポイントは「作業ディレクトリを散らかさない」ことである。
+
+\texttt{.aux}等の補助ファイルは「処理後に消す」のではなく、「隔離された場所に生成させる」。
+そのため、「相互参照を使う文書の処理に関して、\ClutTeX{}を使わない場合に比べて\ClutTeX{}を使う場合に実行回数が増える」ようなことは基本的にはない\footnote{PCの再起動直後など、テンポラリディレクトリーが空の場合を除く。}。
+
+\chapter{\ClutTeX{}の使い方}
+\section{インストール}
+\ClutTeX{}は最新の\TeX\ Liveに収録されている。
+よって、\TeX\ Liveを利用している方は、\TeX\ Liveの更新（コマンドなら\texttt{tlmgr upgrade --all}）を行えば\ClutTeX{}がインストールされる。
+
+何らかの理由により手動でインストールしたい場合は、GitHub\footnote{\url{https://github.com/minoki/cluttex}}からアーカイブをダウンロードし、その中にある\texttt{bin/cluttex}か\texttt{bin/cluttex.bat}をPATHの通った場所にコピーする。
+
+\section{コマンドライン}
+基本的な使い方：
+\begin{center}
+  \texttt{cluttex -e \metavar{ENGINE} \metavar{OPTIONs} [--] \metavar{INPUT}.tex}
+\end{center}
+
+基本的なオプション：
+\begin{description}
+\item[\texttt{-e}, \texttt{--engine=\metavar{ENGINE}}]
+  使用する\TeX{}エンジン・フォーマットを指定する。
+  \metavar{ENGINE}は以下のいずれかを指定する：
+  \texttt{pdflatex}, \texttt{pdftex},
+  \texttt{lualatex}, \texttt{luatex}, \texttt{luajittex},
+  \texttt{xelatex}, \texttt{xetex},
+  \texttt{latex}, \texttt{etex}, \texttt{tex},
+  \texttt{platex}, \texttt{eptex}, \texttt{ptex},
+  \texttt{uplatex}, \texttt{euptex}, \texttt{uptex}.
+  必須。
+\item[\texttt{-o}, \texttt{--output=\metavar{FILE}}]
+  出力ファイル名を指定する。
+  デフォルト：\texttt{\metavar{JOBNAME}.\metavar{FORMAT}}
+\item[\texttt{--fresh}]
+  補助ファイルを削除してから処理を行う。
+  \texttt{--output-directory}との併用はできない。
+\item[\texttt{--max-iterations=\metavar{N}}]
+  相互参照の解決等のために最大何回処理を行うかを指定する。
+  デフォルト：3
+\item[\texttt{--watch}]
+  入力ファイルを監視する。
+  別途、\texttt{fswatch}プログラムが必要となる。
+  詳しくは\autoref{sec:watch-mode}を参照。
+\item[\texttt{--color[=\metavar{WHEN}]}]
+  ターミナルへの出力を色付けする。
+  \metavar{WHEN}は\texttt{always}, \texttt{auto}, \texttt{never}のいずれかを指定する。
+  \texttt{--color}自体を省略した場合は\texttt{auto}, \metavar{WHEN}を省略した場合は\texttt{always}が使用される。
+\item[\texttt{--includeonly=\metavar{NAMEs}}]
+  \texttt{\texcmd{includeonly}\{\metavar{NAMEs}\}}を挿入する。
+\item[\texttt{--tex-option=\metavar{OPTION}}, \texttt{--tex-options=\metavar{OPTIONs}}]
+  \TeX{}に追加のオプションを渡す。
+\item[\texttt{--dvipdfmx-option=\metavar{OPTION}}, \texttt{--dvipdfmx-options=\metavar{OPTIONs}}]
+  \texttt{dvipdfmx}に追加のオプションを渡す。
+\item[\texttt{--[no-]change-directory}]
+  \TeX{}の実行時に、出力ディレクトリに移動する。
+  シェルエスケープするパッケージを利用する場合に有用となる可能性がある。
+\item[\texttt{-h}, \texttt{--help}]
+\item[\texttt{-v}, \texttt{--version}]
+\item[\texttt{-V}, \texttt{--verbose}]
+\end{description}
+
+補助コマンド実行用のオプション：
+\begin{description}
+\item[\texttt{--makeindex=\metavar{COMMAND}}]
+  MakeIndexを実行する。
+\item[\texttt{--bibtex=\metavar{COMMAND}}]
+  \BibTeX{}を実行する。
+\item[\texttt{--biber[=\metavar{COMMAND}]}]
+  Biberを実行する。
+  \metavar{COMMAND}のデフォルト値：\texttt{biber}
+\item[\texttt{--makeglossaries[=\metavar{COMMAND}]}]
+  makeglossariesを実行する。
+  このオプションは試験的なものである。
+\end{description}
+
+\TeX{}互換オプション：
+\begin{description}
+\item[\texttt{--[no-]shell-escape}]
+\item[\texttt{--shell-restricted}]
+\item[\texttt{--synctex=\metavar{NUMBER}}]
+  Sync\TeX{}用のファイルを生成する。
+  注意点として、\texttt{.synctex.gz}ファイルは\texttt{.pdf}ファイルと同じディレクトリに生成される。
+  詳しくは\autoref{sec:synctex}を参照。
+\item[\texttt{--[no-]file-line-error}]
+  デフォルト：Yes
+\item[\texttt{--[no-]halt-on-error}]
+  デフォルト：Yes
+\item[\texttt{--interaction=\metavar{STRING}}]
+  \metavar{STRING}は\texttt{batchmode}, \texttt{nonstopmode}, \texttt{scrollmode}, \texttt{errorstopmode}のいずれか。
+  デフォルト：\texttt{nonstopmode}
+\item[\texttt{--jobname=\metavar{STRING}}]
+\item[\texttt{--fmt=\metavar{FORMAT}}]
+\item[\texttt{--output-directory=\metavar{DIR}}]
+  （\TeX{}処理系にとっての）出力ディレクトリを指定する。
+  補助ファイルはここで指定されたディレクトリに生成される。
+  デフォルト：テンポラリディレクトリのどこか
+\item[\texttt{--output-format=\metavar{FORMAT}}]
+  出力フォーマットを指定する。
+  \texttt{pdf}または\texttt{dvi}を指定できる。
+  デフォルト：\texttt{pdf}
+\end{description}
+
+長いオプションは基本的にハイフンを二つ必要とするが、\TeX{}互換オプションに関してはハイフンが一つでも受理される（例：\texttt{-color}は受理されないが\texttt{-synctex=1}は受理される）。
+短いオプションを複数繋げる書き方には対応していない（例：\texttt{-Ve pdflatex}とは書けない）。
+
+\section{Sync\TeX}\label{sec:synctex}
+\texttt{--synctex=1}オプションを使うとSync\TeX{}用のファイルを生成させる。
+
+\ClutTeX{}のモットーは「作業ディレクトリを汚さない」であるが、\texttt{.synctex.gz}ファイルに関してはPDFファイルと同じ場所に生成される。
+これは、\texttt{.synctex.gz}ファイルがPDFファイルと同じ場所にないとSync\TeX{}が動作しないためである。
+
+\section{監視モード}\label{sec:watch-mode}
+\ClutTeX{}に\texttt{--watch}オプションを指定して起動した場合、文書の処理後に\emph{監視モード}に入る。
+\texttt{fswatch}\footnote{\url{http://emcrisostomo.github.io/fswatch/}}プログラムが予めインストールされている必要がある。
+
+\ClutTeX{}の将来のバージョンでは、外部プログラムに頼らない監視モードを実装するかもしれない。
+
+\section{MakeIndexや\BibTeX}
+MakeIndexや\BibTeX を使って処理を行う場合は、\texttt{--makeindex}や\texttt{--bibtex}等のオプションを指定する。
+オプションの引数としては、実際に処理に使うコマンド名（\texttt{makeindex}や\texttt{mendex}）を指定する。
+
+Biberを使って文献リストを処理する場合、使用すべきオプションは\texttt{--bibtex=biber}ではなく\texttt{--biber}である。
+
+%索引や文献リストを使用する文書であっても、\texttt{--includeonly}を指定する場合は\texttt{--makeindex}や\texttt{--bibtex}等のオプションは指定しないのが吉である。
+
+\section{大規模な文書を書く場合}
+\LaTeX{}で大きな文書を書く場合は\texcmd{include}コマンドによってファイル分割を行うことが多いだろう。
+この際に\texcmd{includeonly}コマンドを使うと、処理時に「一部のファイルしか処理しない」ようにできて、処理時間の削減ができる。
+しかし、\texcmd{includeonly}コマンドを\TeX{}ソース中に記述していちいち切り替えるのは面倒である。
+
+そこで、\ClutTeX{}では\texcmd{includeonly}コマンドを\texttt{--includeonly}オプションによって指定できるようにした。
+使用例は\autoref{sec:makefile-example}を参照せよ。
+
+Tips: \texttt{includeonly}を使用する際は、\texttt{--makeindex}等のオプションは使用しない方が良い。
+
+処理時間の削減方法として、\texttt{--max-iterations=1}を指定するという手もある。
+デフォルトでは\ClutTeX{}は相互参照等を正しくするために\TeX{}を複数回実行する。
+だが、大規模な文書であれば\TeX{}を一回実行するのには数十秒や数分かかり、複数回実行すればその数倍の時間がかかる。
+作業中の文書に関してそれだけの時間をかけて相互参照等を正しくするのは時間の無駄であろう。
+であれば、作業中の文書に関しては\texttt{--max-iterations=1}を指定して\TeX{}の実行回数を最小限に止めることが有効と考えられる。
+
+\section{Makefileと組み合わせる}\label{sec:makefile-example}
+各プロジェクトに応じたコマンドを毎回打ち込むのは大変なので、Makefileと組み合わせると良いだろう。
+例：
+\begin{verbatim}
+main.pdf: main.tex chap1.tex chap2.tex
+    cluttex -e lualatex -o $@ --makeindex=mendex $<
+
+main-preview.pdf: main.tex chap1.tex chap2.tex
+    cluttex -e lualatex -o $@ --makeindex=mendex --max-iterations=1 $<
+
+chap1-preview.pdf: main.tex chap1.tex
+    cluttex -e lualatex -o $@ --max-iterations=1 --includeonly=chap1 $<
+
+chap2-preview.pdf: main.tex chap2.tex
+    cluttex -e lualatex -o $@ --max-iterations=1 --includeonly=chap2 $<
+\end{verbatim}
+
+\ClutTeX{}の将来のバージョンでは、Makefileを書くのに役立つオプションを実装するかもしれない（例：依存情報をファイルに書き出す）。
+
+\section{出力ディレクトリについて}
+デフォルトでは、\texttt{.aux}ファイル等の補助ファイルは、テンポラリディレクトリ以下の適当なディレクトリに生成される。
+このディレクトリ名は、以下の3要素に依存する：
+\begin{itemize}
+\item 入力ファイルの絶対パス
+\item \texttt{--jobname}オプション
+\item \texttt{--engine}オプション
+\end{itemize}
+一方、以下の要素はディレクトリ名に影響しない：
+\begin{itemize}
+\item \texttt{--includeonly}
+\item \texttt{--makeindex}, \texttt{--bibtex}, \texttt{--biber}, \texttt{--makeglossaries}
+\end{itemize}
+
+出力ディレクトリに生成された補助ファイルは、\texttt{--fresh}オプションを指定しない限り、\ClutTeX{}が消去することはない。
+一方、テンポラリディレクトリを使用するということは、PCの再起動時に補助ファイルが削除されるということでもある。
+
+\section{エイリアス}
+Unix用コマンドの中には、自身の名前によって挙動を変えるものがある。
+つまり、あるコマンドに対してシンボリックリンクリンクによって別名をつけると、元のコマンドと別名によって挙動を変える。
+\TeX\ Liveでも、
+\begin{itemize}
+\item \texttt{extractbb}, \texttt{dvipdfmx} は \texttt{xdvipdfmx} へのエイリアス
+\item \texttt{repstopdf} は \texttt{epstopdf} へのエイリアス
+\end{itemize}
+という例がある。
+
+\texttt{cluttex} が \texttt{cl}\(\langle\text{エンジン名}\rangle\) として呼び出された場合、使用されるエンジン名（\texttt{--engine}オプション）がそれに指定される。
+
+例えば、\texttt{cllualatex}は\texttt{cluttex --engine lualatex}の別名であり、\texttt{clxelatex}は\texttt{cluttex --engine xelatex}の別名である。
+
+\end{document}
