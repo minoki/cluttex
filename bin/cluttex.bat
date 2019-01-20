@@ -1413,6 +1413,7 @@ Options:
       --color=WHEN             Make ClutTeX's message colorful. WHEN is one of
                                  `always', `auto', or `never'.  [default: auto]
       --includeonly=NAMEs      Insert '\includeonly{NAMEs}'.
+      --make-depends=FILE      Write dependencies as a Makefile rule.
 
       --[no-]shell-escape
       --shell-restricted
@@ -1479,6 +1480,10 @@ local option_spec = {
   {
     long = "includeonly",
     param = true,
+  },
+  {
+    long = "make-depends",
+    param = true
   },
   -- Options for TeX
   {
@@ -1648,6 +1653,10 @@ local function handle_cluttex_options(arg)
     elseif name == "includeonly" then
       assert(options.includeonly == nil, "multiple --includeonly options")
       options.includeonly = param
+
+    elseif name == "make-depends" then
+      assert(options.make_depends == nil, "multiple --make-depends options")
+      options.make_depends = param
 
       -- Options for TeX
     elseif name == "synctex" then
@@ -2553,6 +2562,23 @@ local function do_typeset_c()
     if synctex_ext then
       coroutine.yield(fsutil.copy_command(path_in_output_directory(synctex_ext), pathutil.replaceext(options.output, synctex_ext)))
     end
+  end
+
+  -- Write dependencies file
+  if options.make_depends then
+    local filelist, filemap = reruncheck.parse_recorder_file(recorderfile, options)
+    if engine.is_luatex and fsutil.isfile(recorderfile2) then
+      filelist, filemap = reruncheck.parse_recorder_file(recorderfile2, options, filelist, filemap)
+    end
+    local f = assert(io.open(options.make_depends, "w"))
+    f:write(options.output, ":")
+    for _,fileinfo in ipairs(filelist) do
+      if fileinfo.kind == "input" then
+        f:write(" ", fileinfo.path)
+      end
+    end
+    f:write("\n")
+    f:close()
   end
 end
 

@@ -440,6 +440,23 @@ local function do_typeset_c()
       coroutine.yield(fsutil.copy_command(path_in_output_directory(synctex_ext), pathutil.replaceext(options.output, synctex_ext)))
     end
   end
+
+  -- Write dependencies file
+  if options.make_depends then
+    local filelist, filemap = reruncheck.parse_recorder_file(recorderfile, options)
+    if engine.is_luatex and fsutil.isfile(recorderfile2) then
+      filelist, filemap = reruncheck.parse_recorder_file(recorderfile2, options, filelist, filemap)
+    end
+    local f = assert(io.open(options.make_depends, "w"))
+    f:write(options.output, ":")
+    for _,fileinfo in ipairs(filelist) do
+      if fileinfo.kind == "input" then
+        f:write(" ", fileinfo.path)
+      end
+    end
+    f:write("\n")
+    f:close()
+  end
 end
 
 local function do_typeset()

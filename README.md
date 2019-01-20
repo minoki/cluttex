@@ -66,6 +66,8 @@ Command-line Options
   \[default: `auto` if `--color` is omitted, `always` if `=WHEN` is omitted\]
 * `--includeonly=NAMEs`
   Insert `\includeonly{NAMEs}`.
+* `--make-depends=FILE`
+  Write dependencies as a Makefile rule.
 * `--tex-option=OPTION`
   Pass `OPTION` to TeX as a single option.
 * `--tex-options=OPTIONs`

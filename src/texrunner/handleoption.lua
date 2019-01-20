@@ -61,6 +61,7 @@ Options:
       --color=WHEN             Make ClutTeX's message colorful. WHEN is one of
                                  `always', `auto', or `never'.  [default: auto]
       --includeonly=NAMEs      Insert '\includeonly{NAMEs}'.
+      --make-depends=FILE      Write dependencies as a Makefile rule.
 
       --[no-]shell-escape
       --shell-restricted
@@ -127,6 +128,10 @@ local option_spec = {
   {
     long = "includeonly",
     param = true,
+  },
+  {
+    long = "make-depends",
+    param = true
   },
   -- Options for TeX
   {
@@ -296,6 +301,10 @@ local function handle_cluttex_options(arg)
     elseif name == "includeonly" then
       assert(options.includeonly == nil, "multiple --includeonly options")
       options.includeonly = param
+
+    elseif name == "make-depends" then
+      assert(options.make_depends == nil, "multiple --make-depends options")
+      options.make_depends = param
 
       -- Options for TeX
     elseif name == "synctex" then
