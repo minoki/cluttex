@@ -79,6 +79,8 @@
   \texttt{--color}自体を省略した場合は\texttt{auto}, \metavar{WHEN}を省略した場合は\texttt{always}が使用される。
 \item[\texttt{--includeonly=\metavar{NAMEs}}]
   \texttt{\texcmd{includeonly}\{\metavar{NAMEs}\}}を挿入する。
+\item[\texttt{--make-depends=\metavar{FILE}}]
+  Makefile用の依存関係を\metavar{FILE}に書き出す。
 \item[\texttt{--tex-option=\metavar{OPTION}}, \texttt{--tex-options=\metavar{OPTIONs}}]
   \TeX{}に追加のオプションを渡す。
 \item[\texttt{--dvipdfmx-option=\metavar{OPTION}}, \texttt{--dvipdfmx-options=\metavar{OPTIONs}}]
@@ -188,7 +190,18 @@ chap2-preview.pdf: main.tex chap2.tex
     cluttex -e lualatex -o $@ --max-iterations=1 --includeonly=chap2 $<
 \end{verbatim}
 
-\ClutTeX{}の将来のバージョンでは、Makefileを書くのに役立つオプションを実装するかもしれない（例：依存情報をファイルに書き出す）。
+\texttt{--make-depends}オプションを使うと、依存関係をMakefileのルールとしてファイルに書き出すことができる。
+これを使うと、\texttt{main.tex}, \texttt{chap1.tex}, \texttt{chap2.tex}の3つのファイルからなる文書を以下のMakefileで処理させることができる。
+この際、\texttt{main.pdf}の依存先に\texttt{chap1.tex}と\texttt{chap2.tex}を明示しなくても良い。
+
+\begin{verbatim}
+main.pdf: main.tex
+    cluttex -e lualatex -o $@ --make-depends=main.pdf.dep $<
+
+-include main.pdf.dep
+\end{verbatim}
+
+ただし、\texttt{--make-depends}オプションはまだ実験的なものであり、\texttt{--makeindex}等の他の機能との組み合わせがうまく動かなかったり、将来のバージョンで仕様が変更されるかもしれない。
 
 \section{出力ディレクトリについて}
 デフォルトでは、\texttt{.aux}ファイル等の補助ファイルは、テンポラリディレクトリ以下の適当なディレクトリに生成される。

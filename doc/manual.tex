@@ -74,6 +74,8 @@ Basic options:
   If \metavar{WHEN} is omitted, \texttt{always} is used.
 \item[\texttt{--includeonly=\metavar{NAMEs}}]
   Insert \texttt{\texcmd{includeonly}\{\metavar{NAMEs}\}}.
+\item[\texttt{--make-depends=\metavar{FILE}}]
+  Write Makefile-style dependencies information to \metavar{FILE}.
 \item[\texttt{--tex-option=\metavar{OPTION}}, \texttt{--tex-options=\metavar{OPTIONs}}]
   Pass extra options to \TeX.
 \item[\texttt{--dvipdfmx-option=\metavar{OPTION}}, \texttt{--dvipdfmx-options=\metavar{OPTIONs}}]
@@ -177,7 +179,20 @@ chap2-preview.pdf: main.tex chap2.tex
     cluttex -e lualatex -o $@ --max-iterations=1 --includeonly=chap2 $<
 \end{verbatim}
 
-A future version of \ClutTeX\ may implement an option to support Makefile (e.g.\ writing dependency information to a file).
+With \texttt{--make-depends} option, you can let \ClutTeX\ infer sub-files and omit them from Makefile.
+Example:
+
+\begin{verbatim}
+main.pdf: main.tex
+    cluttex -e lualatex -o $@ --make-depends=main.pdf.dep $<
+
+-include main.pdf.dep
+\end{verbatim}
+
+After initial \texttt{make} run, \texttt{main.pdf.dep} will contain something like this:
+\begin{verbatim}
+main.pdf: ... main.tex ... chap1.tex chap2.tex
+\end{verbatim}
 
 \section{Default output directory}
 The auxiliary files like \texttt{.aux} are generated somewhere in the temporary directory, by default.
