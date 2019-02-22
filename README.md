@@ -6,7 +6,10 @@ If necessary, it re-runs (La)TeX program to resolve cross-references and everyth
 
 One of its main feature is that, it does not clutter your working directory (but the final `.pdf` file is still brought for you).
 
-Japanese blog: [TeX 実行の自動化ツールを作った (ClutTeX)](https://blog.miz-ar.info/2016/12/cluttex/)
+Blog:
+
+* [TeX 実行の自動化ツールを作った (ClutTeX)](https://blog.miz-ar.info/2016/12/cluttex/)
+* [LaTeX処理自動化ツール ClutTeX をリリースした](https://blog.miz-ar.info/2018/10/cluttex-release/)
 
 Features
 -----

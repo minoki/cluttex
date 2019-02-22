@@ -1,3 +1,12 @@
+Version 0.2 (2019-02-22)
+-----
+
+Changes:
+
+* Added manual.
+* Added `--make-depends` option.
+* Better support for older Windows; don't emit ANSI escape sequences on older Command Prompts.
+
 Version 0.1 (2018-10-10)
 -----
 
