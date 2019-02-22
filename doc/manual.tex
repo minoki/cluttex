@@ -194,6 +194,8 @@ After initial \texttt{make} run, \texttt{main.pdf.dep} will contain something li
 main.pdf: ... main.tex ... chap1.tex chap2.tex
 \end{verbatim}
 
+Note that \texttt{--make-depends} option is still experimental, and may not work well with other options like \texttt{--makeindex}.
+
 \section{Default output directory}
 The auxiliary files like \texttt{.aux} are generated somewhere in the temporary directory, by default.
 The directory name depends on the following three parameters:
