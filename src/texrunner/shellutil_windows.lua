@@ -1,5 +1,5 @@
 --[[
-  Copyright 2016 ARATA Mizuki
+  Copyright 2016,2019 ARATA Mizuki
 
   This file is part of ClutTeX.
 
@@ -18,6 +18,7 @@
 ]]
 
 local string_gsub = string.gsub
+local os_execute = os.execute
 
 -- s: string
 local function escape(s)
@@ -30,6 +31,13 @@ assert(escape([[Hello" world!]]) == [["Hello\" world!"]])
 assert(escape([[Hello\" world!"]]) == [["Hello\\\" world!\""]])
 -- END TEST CODE
 
+local function has_command(name)
+  local result = os_execute("where " .. escape(name) .. " > NUL 2>&1")
+  -- Note that os.execute returns a number on Lua 5.1 or LuaTeX
+  return result == 0 or result == true
+end
+
 return {
   escape = escape,
+  has_command = has_command,
 }

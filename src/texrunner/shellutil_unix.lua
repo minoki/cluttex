@@ -1,5 +1,5 @@
 --[[
-  Copyright 2016 ARATA Mizuki
+  Copyright 2016,2019 ARATA Mizuki
 
   This file is part of ClutTeX.
 
@@ -22,6 +22,7 @@ local string_match = string.match
 local table = table
 local table_insert = table.insert
 local table_concat = table.concat
+local os_execute = os.execute
 
 -- s: string
 local function escape(s)
@@ -57,6 +58,13 @@ assert(escape([[Hello' world!]]) == [['Hello'"'"' world!']])
 assert(escape([[Hello' world!"]]) == [['Hello'"'"' world!"']])
 -- END TEST CODE
 
+local function has_command(name)
+  local result = os_execute("which " .. escape(name) .. " > /dev/null")
+  -- Note that os.execute returns a number on Lua 5.1 or LuaTeX
+  return result == 0 or result == true
+end
+
 return {
   escape = escape,
+  has_command = has_command,
 }
