@@ -501,28 +501,60 @@ if options.watch then
       table.insert(input_files_to_watch, fileinfo.abspath)
     end
   end
-  local fswatch_command = {"fswatch", "--event=Updated", "--"}
-  for _,path in ipairs(input_files_to_watch) do
-    table.insert(fswatch_command, shellutil.escape(path))
-  end
-  if CLUTTEX_VERBOSITY >= 1 then
-    message.exec(table.concat(fswatch_command, " "))
-  end
-  local fswatch = assert(io.popen(table.concat(fswatch_command, " "), "r"))
-  for l in fswatch:lines() do
-    local found = false
+  if shellutil.has_command("fswatch") then
+    local fswatch_command = {"fswatch", "--event=Updated", "--"}
     for _,path in ipairs(input_files_to_watch) do
-      if l == path then
-        found = true
-        break
+      table.insert(fswatch_command, shellutil.escape(path))
+    end
+    local fswatch_command_str = table.concat(fswatch_command, " ")
+    if CLUTTEX_VERBOSITY >= 1 then
+      message.exec(fswatch_command_str)
+    end
+    local fswatch = assert(io.popen(fswatch_command_str, "r"))
+    for l in fswatch:lines() do
+      local found = false
+      for _,path in ipairs(input_files_to_watch) do
+        if l == path then
+          found = true
+          break
+        end
+      end
+      if found then
+        local success, status = do_typeset()
+        if not success then
+          -- Not successful
+        end
       end
     end
-    if found then
-      local success, status = do_typeset()
-      if not success then
-        -- Not successful
+  elseif shellutil.has_command("inotifywait") then
+    local inotifywait_command = {"inotifywait", "--monitor", "--event=modify", "--event=attrib", "--format=%w", "--quiet"}
+    for _,path in ipairs(input_files_to_watch) do
+      table.insert(inotifywait_command, shellutil.escape(path))
+    end
+    local inotifywait_command_str = table.concat(inotifywait_command, " ")
+    if CLUTTEX_VERBOSITY >= 1 then
+      message.exec(inotifywait_command_str)
+    end
+    local inotifywait = assert(io.popen(inotifywait_command_str, "r"))
+    for l in inotifywait:lines() do
+      local found = false
+      for _,path in ipairs(input_files_to_watch) do
+        if l == path then
+          found = true
+          break
+        end
+      end
+      if found then
+        local success, status = do_typeset()
+        if not success then
+          -- Not successful
+        end
       end
     end
+  else
+    message.error("Could not watch files because neither `fswatch' nor `inotifywait' was installed.")
+    message.info("See ClutTeX's manual for details.")
+    os.exit(1)
   end
 
 else
