@@ -28,6 +28,7 @@ elseif arg[1] == "--windows-batchfile" then
   table.remove(arg, 1)
 end
 local outfile = arg[1]
+local preserve_location_info = false
 
 local modules = {
   {
@@ -106,7 +107,13 @@ local function strip_global_imports(code)
 end
 
 local function strip_test_code(code)
-  return (code:gsub("%-%- TEST CODE\n(.-)%-%- END TEST CODE\n", ""))
+  if preserve_location_info then
+    return (code:gsub("%-%- TEST CODE\n.-%-%- END TEST CODE\n", function(s)
+      return (s:gsub("[^\n]",""))
+    end))
+  else
+    return (code:gsub("%-%- TEST CODE\n(.-)%-%- END TEST CODE\n", ""))
+  end
 end
 
 local function load_module_code(path)
@@ -137,8 +144,10 @@ else
   end
 end
 
-table.insert(lines, string.format("local %s = %s\n", table.concat(imported_globals, ", "), table.concat(imported_globals, ", ")))
-table.insert(lines, "local CLUTTEX_VERBOSITY, CLUTTEX_VERSION\n")
+if not preserve_location_info then
+  table.insert(lines, string.format("local %s = %s\n", table.concat(imported_globals, ", "), table.concat(imported_globals, ", ")))
+  table.insert(lines, "local CLUTTEX_VERBOSITY, CLUTTEX_VERSION\n")
+end
 
 if default_os then
   table.insert(lines, string.format("os.type = os.type or %q\n", default_os))
@@ -146,19 +155,34 @@ end
 
 -- LuajitTeX doesn't seem to set package.loaded table...
 table.insert(lines, "if lfs and not package.loaded['lfs'] then package.loaded['lfs'] = lfs end\n")
-
-for _,m in ipairs(modules) do
-  if m.path_windows or m.path_unix then
-    table.insert(lines, 'if os.type == "windows" then\n')
-    table.insert(lines, string.format("package.preload[%q] = function(...)\n%send\n", m.name, load_module_code(m.path_windows or m.path)))
-    table.insert(lines, 'else\n')
-    table.insert(lines, string.format("package.preload[%q] = function(...)\n%send\n", m.name, load_module_code(m.path_unix or m.path)))
-    table.insert(lines, 'end\n')
-  else
-    table.insert(lines, string.format("package.preload[%q] = function(...)\n%send\n", m.name, load_module_code(m.path)))
+if preserve_location_info then
+  table.insert(lines, "local loadstring = loadstring or load\n")
+  for _,m in ipairs(modules) do
+    if m.path_windows or m.path_unix then
+      table.insert(lines, 'if os.type == "windows" then\n')
+      table.insert(lines, string.format("package.preload[%q] = assert(loadstring(%q, %q))\n", m.name, load_module_code(m.path_windows or m.path), "=" .. (m.path_windows or m.path)))
+      table.insert(lines, 'else\n')
+      table.insert(lines, string.format("package.preload[%q] = assert(loadstring(%q, %q))\n", m.name, load_module_code(m.path_unix or m.path), "=" .. (m.path_unix or m.path)))
+      table.insert(lines, 'end\n')
+    else
+      table.insert(lines, string.format("package.preload[%q] = assert(loadstring(%q, %q))\n", m.name, load_module_code(m.path), "=" .. m.path))
+    end
   end
+  table.insert(lines, string.format("assert(loadstring(%q, %q))(...)\n", main, "=cluttex.lua"))
+else  
+  for _,m in ipairs(modules) do
+    if m.path_windows or m.path_unix then
+      table.insert(lines, 'if os.type == "windows" then\n')
+      table.insert(lines, string.format("package.preload[%q] = function(...)\n%send\n", m.name, load_module_code(m.path_windows or m.path)))
+      table.insert(lines, 'else\n')
+      table.insert(lines, string.format("package.preload[%q] = function(...)\n%send\n", m.name, load_module_code(m.path_unix or m.path)))
+      table.insert(lines, 'end\n')
+    else
+      table.insert(lines, string.format("package.preload[%q] = function(...)\n%send\n", m.name, load_module_code(m.path)))
+    end
+  end
+  table.insert(lines, strip_global_imports(main))
 end
-table.insert(lines, strip_global_imports(main))
 
 if outfile then
   io.output(assert(io.open(outfile, "wb")))

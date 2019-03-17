@@ -32,6 +32,7 @@ local known_global = {
   tostring = true,
   type = true,
   xpcall = true,
+  loadstring = true, -- Lua 5.1
 
   -- Standard modules
   bit32 = true, -- Lua 5.2
