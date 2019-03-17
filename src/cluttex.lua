@@ -45,6 +45,8 @@ local message     = require "texrunner.message"
 local extract_bibtex_from_aux_file = require "texrunner.auxfile".extract_bibtex_from_aux_file
 local handle_cluttex_options = require "texrunner.handleoption".handle_cluttex_options
 
+os.setlocale("", "ctype") -- Workaround for recent Universal CRT
+
 -- arguments: input file name, jobname, etc...
 local function genOutputDirectory(...)
   -- The name of the temporary directory is based on the path of input file.
@@ -491,6 +493,7 @@ end
 if options.watch then
   -- Watch mode
   local success, status = do_typeset()
+  -- TODO: filenames here can be UTF-8 if command_line_encoding=utf-8
   local filelist, filemap = reruncheck.parse_recorder_file(recorderfile, options)
   if engine.is_luatex and fsutil.isfile(recorderfile2) then
     filelist, filemap = reruncheck.parse_recorder_file(recorderfile2, options, filelist, filemap)
@@ -501,7 +504,34 @@ if options.watch then
       table.insert(input_files_to_watch, fileinfo.abspath)
     end
   end
-  if shellutil.has_command("fswatch") then
+  local fswatcherlib
+  if os.type == "windows" then
+    -- Windows: Try built-in filesystem watcher
+    local succ, result = pcall(require, "texrunner.fswatcher_windows")
+    if not succ and CLUTTEX_VERBOSITY >= 1 then
+      message.warn("Failed to load texrunner.fswatcher_windows: " .. result)
+    end
+    fswatcherlib = result
+  end
+  if fswatcherlib then
+    if CLUTTEX_VERBOSITY >= 2 then
+      message.info("Using built-in filesystem watcher for Windows")
+    end
+    local watcher = assert(fswatcherlib.new())
+    for _,path in ipairs(input_files_to_watch) do
+      assert(watcher:add_file(path))
+    end
+    while true do
+      local result = assert(watcher:next())
+      if CLUTTEX_VERBOSITY >= 2 then
+        message.info(string.format("%s %s"), result.action, result.path)
+      end
+      local success, status = do_typeset()
+      if not success then
+        -- Not successful
+      end
+    end
+  elseif shellutil.has_command("fswatch") then
     local fswatch_command = {"fswatch", "--event=Updated", "--"}
     for _,path in ipairs(input_files_to_watch) do
       table.insert(fswatch_command, shellutil.escape(path))

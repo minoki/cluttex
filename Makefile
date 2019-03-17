@@ -19,6 +19,7 @@ sources= \
  src/texrunner/handleoption.lua \
  src/texrunner/isatty.lua \
  src/texrunner/message.lua \
+ src/texrunner/fswatcher_windows.lua \
  src/cluttex.lua
 
 bin/cluttex: $(sources) build.lua
