@@ -58,6 +58,10 @@ DWORD GetFullPathNameA(const char *lpFileName, DWORD nBufferLength, char *lpBuff
 uint64_t GetTickCount64();
 ]]
 
+-- LuaTeX's FFI does not equate a null pointer with nil.
+-- On LuaJIT, ffi.NULL is just nil.
+local NULL = ffi.NULL
+
 -- GetLastError
 local ERROR_FILE_NOT_FOUND         = 0x0002
 local ERROR_PATH_NOT_FOUND         = 0x0003
@@ -289,7 +293,7 @@ local fswatcher_meta = {}
 fswatcher_meta.__index = fswatcher_meta
 local function new_watcher()
   local port = C.CreateIoCompletionPort(INVALID_HANDLE_VALUE, nil, 0, 0)
-  if port == nil then
+  if port == NULL then
     local lasterror = C.GetLastError()
     return nil, format_error("CreateIoCompletionPort", lasterror)
   end
@@ -310,7 +314,7 @@ local function add_directory(self, dirname)
     table.insert(self, t)
     local i = #self
     local result = C.CreateIoCompletionPort(dirwatcher._rawhandle, self._rawport, i, 0)
-    if result == nil then
+    if result == NULL then
       local lasterror = C.GetLastError()
       return nil, format_error("CreateIoCompletionPort", lasterror, dirname)
     end
