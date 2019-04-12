@@ -561,6 +561,7 @@ package.preload["texrunner.option"] = function(...)
 
 -- options_and_params, i = parseoption(arg, options)
 -- options[i] = {short = "o", long = "option" [, param = true] [, boolean = true] [, allow_single_hyphen = false]}
+-- options_and_params[j] = {"option", "value"}
 -- arg[i], arg[i + 1], ..., arg[#arg] are non-options
 local function parseoption(arg, options)
   local i = 1
@@ -600,6 +601,7 @@ local function parseoption(arg, options)
           elseif o.boolean and name == "no-" .. o.long then
             -- --no-option
             opt = o
+            param = false
             break
           end
         end
@@ -639,6 +641,7 @@ local function parseoption(arg, options)
           elseif o.boolean and name == "no-" .. o.long then
             -- -no-option
             opt = o
+            param = false
             break
           end
         elseif o.long and #name >= 2 and (o.long == name or (o.boolean and name == "no-" .. o.long)) then
