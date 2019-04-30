@@ -1,3 +1,11 @@
+Version 0.3 (2019-04-30)
+-----
+
+Changes:
+
+* Support other methods for watching file system: `inotifywait` for Linux and a built-in one for Windows.
+* Fix `--no-*` options.
+
 Version 0.2 (2019-02-22)
 -----
 
