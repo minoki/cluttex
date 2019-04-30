@@ -10,8 +10,9 @@
 \renewcommand\sectionautorefname{セクション}
 \renewcommand\subsectionautorefname{サブセクション}
 
-\title{\ClutTeX{}マニュアル}
+\title{\ClutTeX{}マニュアル\\（バージョン0.3）}
 \author{ARATA Mizuki}
+\date{2019年4月30日}
 
 \begin{document}
 \maketitle
@@ -23,7 +24,7 @@
 \begin{itemize}
 \item 作業ディレクトリを\texttt{.aux}や\texttt{.log}等の「余計な」ファイルで散らかさない
 \item （相互参照の解決などで）複数回処理を行う必要がある場合に、必要な回数だけ自動で処理する
-\item 入力ファイルを監視し、変更があった場合に自動で再処理する（\texttt{--watch}オプション\footnote{別途プログラムが必要}）
+\item 入力ファイルを監視し、変更があった場合に自動で再処理する（\texttt{--watch}オプション\footnote{Unix系OSでは、別途プログラムが必要。}）
 \item MakeIndex, \BibTeX, Biber等のコマンドを自動で実行する（\texttt{--makeindex}オプション, \texttt{--bibtex}オプション, \texttt{--biber}オプション）
 \item p\TeX 系列の処理系でPDFを生成する場合、別途\texttt{dvipdfmx}を実行する必要がない（自動で\texttt{dvipdfmx}を実行する）
 \end{itemize}
@@ -71,7 +72,7 @@
   デフォルト：3
 \item[\texttt{--watch}]
   入力ファイルを監視する。
-  別途、\texttt{fswatch}プログラムが必要となる。
+  別途、\texttt{fswatch}プログラムまたは\texttt{inotifywait}プログラムが必要となる場合がある。
   詳しくは\autoref{sec:watch-mode}を参照。
 \item[\texttt{--color[=\metavar{WHEN}]}]
   ターミナルへの出力を色付けする。
@@ -145,9 +146,9 @@
 
 \section{監視モード}\label{sec:watch-mode}
 \ClutTeX{}に\texttt{--watch}オプションを指定して起動した場合、文書の処理後に\emph{監視モード}に入る。
-\texttt{fswatch}\footnote{\url{http://emcrisostomo.github.io/fswatch/}}プログラムが予めインストールされている必要がある。
 
-\ClutTeX{}の将来のバージョンでは、外部プログラムに頼らない監視モードを実装するかもしれない。
+Windows上では、\ClutTeX{}単体でファイルシステムの監視を行う。
+一方で、それ以外のOS（Unix系）では、\texttt{fswatch}\footnote{\url{http://emcrisostomo.github.io/fswatch/}}プログラムまたは\texttt{inotifywait}プログラムが予めインストールされている必要がある。
 
 \section{MakeIndexや\BibTeX}
 MakeIndexや\BibTeX を使って処理を行う場合は、\texttt{--makeindex}や\texttt{--bibtex}等のオプションを指定する。

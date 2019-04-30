@@ -8,8 +8,10 @@
 \newcommand\texpkg[1]{\texttt{#1}}
 \newcommand\metavar[1]{\textnormal{\textsf{#1}}}
 
-\title{\ClutTeX\ manual}
+\title{\ClutTeX\ manual\\(Version 0.3)}
 \author{ARATA Mizuki}
+\date{2019-04-30}
+
 \begin{document}
 \maketitle
 \tableofcontents
@@ -20,7 +22,7 @@ Basic features are,
 \begin{itemize}
 \item Does not clutter your working directory with ``extra'' files, like \texttt{.aux} or \texttt{.log}.
 \item If multiple runs are required to generate correct document, do so.
-\item Watch input files, and re-process documents if changes are detected\footnote{needs an external program}.
+\item Watch input files, and re-process documents if changes are detected\footnote{needs an external program if you are on a Unix system}.
 \item Run MakeIndex, \BibTeX, Biber, if requested.
 \item Produces a PDF, even if the engine (e.g.\ p\TeX) does not suport direct PDF generation.
 \end{itemize}
@@ -65,7 +67,7 @@ Basic options:
   Default: 3
 \item[\texttt{--watch}]
   Watch input files for change.
-  Requires \texttt{fswatch} command to be available.
+  May need an external program to be available.
   See \autoref{sec:watch-mode} for details.
 \item[\texttt{--color[=\metavar{WHEN}]}]
   Colorize messages.
@@ -138,9 +140,9 @@ This is because Sync\TeX\ cannot find its data file if it's not in the same dire
 
 \section{Watch mode}\label{sec:watch-mode}
 If \texttt{--watch} option is given, \ClutTeX\ enters \emph{watch mode} after processing the document.
-An auxiliary program \texttt{fswatch}\footnote{\url{http://emcrisostomo.github.io/fswatch/}} needs to be installed for this mode.
 
-A future version of \ClutTeX\ may implement a built-in filesystem watcher.
+On Windows, a built-in filesystem watcher is implemented.
+On other platforms, an auxiliary program \texttt{fswatch}\footnote{\url{http://emcrisostomo.github.io/fswatch/}} or \texttt{inotifywait} needs to be installed.
 
 \section{MakeIndex and \BibTeX}
 If you want to generate index or bibliography, using MakeIndex or \BibTeX, set \texttt{--makeindex}, \texttt{--bibtex}, or \texttt{--biber} option.

@@ -62,7 +62,7 @@ Command-line Options
   Change the current working directory to the output directory when running TeX.
 * `--watch`
   Watch input files for change.
-  Requires [fswatch](http://emcrisostomo.github.io/fswatch/) program to be installed.
+  Requires [fswatch](http://emcrisostomo.github.io/fswatch/) program or `inotifywait` program to be installed on Unix systems.
 * `--color[=WHEN]`
   Make ClutTeX's message colorful.
   `WHEN` is one of `always`, `auto`, or `never`.
