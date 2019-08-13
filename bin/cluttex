@@ -692,7 +692,7 @@ return {
 end
 package.preload["texrunner.tex_engine"] = function(...)
 --[[
-  Copyright 2016 ARATA Mizuki
+  Copyright 2016,2019 ARATA Mizuki
 
   This file is part of ClutTeX.
 
@@ -719,7 +719,7 @@ local shellutil = require "texrunner.shellutil"
 --[[
 engine.name: string
 engine.type = "onePass" or "twoPass"
-engine:build_command(inputfile, options)
+engine:build_command(inputline, options)
   options:
     halt_on_error: boolean
     interaction: string
@@ -733,7 +733,6 @@ engine:build_command(inputfile, options)
     output_format: "pdf" or "dvi"
     draftmode: boolean (pdfTeX / XeTeX / LuaTeX)
     fmt: string
-    tex_injection: string
     lua_initialization_script: string (LuaTeX only)
 engine.executable: string
 engine.supports_pdf_generation: boolean
@@ -745,7 +744,7 @@ engine.is_luatex: true or nil
 local engine_meta = {}
 engine_meta.__index = engine_meta
 engine_meta.dvi_extension = "dvi"
-function engine_meta:build_command(inputfile, options)
+function engine_meta:build_command(inputline, options)
   local command = {self.executable, "-recorder"}
   if options.fmt then
     table.insert(command, "-fmt=" .. options.fmt)
@@ -783,11 +782,7 @@ function engine_meta:build_command(inputfile, options)
       table.insert(command, v)
     end
   end
-  if type(options.tex_injection) == "string" then
-    table.insert(command, shellutil.escape(options.tex_injection .. "\\input " .. inputfile)) -- TODO: what if filename contains spaces?
-  else
-    table.insert(command, shellutil.escape(inputfile))
-  end
+  table.insert(command, shellutil.escape(inputline))
   return table.concat(command, " ")
 end
 
@@ -2768,12 +2763,21 @@ local function single_run(auxstatus, iteration)
   end
   --local timestamp = os.time()
 
+  local tex_injection = ""
+
   if options.includeonly then
-    tex_options.tex_injection = string.format("%s\\includeonly{%s}", tex_options.tex_injection or "", options.includeonly)
+    tex_injection = string.format("%s\\includeonly{%s}", tex_options.tex_injection or "", options.includeonly)
   end
 
-  if minted and not (tex_options.tex_injection and string.find(tex_options.tex_injection,"minted") == nil) then
-    tex_options.tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_options.tex_injection or "", options.output_directory)
+  if minted then
+    tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_injection or "", options.output_directory)
+  end
+
+  local inputline
+  if tex_injection ~= "" then
+    inputline = tex_injection .. "\\input " .. inputfile
+  else
+    inputline = inputfile
   end
 
   local current_tex_options, lightweight_mode = tex_options, false
@@ -2792,7 +2796,7 @@ local function single_run(auxstatus, iteration)
     current_tex_options.draftmode = false
   end
 
-  local command = engine:build_command(inputfile, current_tex_options)
+  local command = engine:build_command(inputline, current_tex_options)
 
   local execlog -- the contents of .log file
 

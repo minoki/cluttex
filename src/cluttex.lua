@@ -204,12 +204,21 @@ local function single_run(auxstatus, iteration)
   end
   --local timestamp = os.time()
 
+  local tex_injection = ""
+
   if options.includeonly then
-    tex_options.tex_injection = string.format("%s\\includeonly{%s}", tex_options.tex_injection or "", options.includeonly)
+    tex_injection = string.format("%s\\includeonly{%s}", tex_options.tex_injection or "", options.includeonly)
   end
 
-  if minted and not (tex_options.tex_injection and string.find(tex_options.tex_injection,"minted") == nil) then
-    tex_options.tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_options.tex_injection or "", options.output_directory)
+  if minted then
+    tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_injection or "", options.output_directory)
+  end
+
+  local inputline
+  if tex_injection ~= "" then
+    inputline = tex_injection .. "\\input " .. inputfile
+  else
+    inputline = inputfile
   end
 
   local current_tex_options, lightweight_mode = tex_options, false
@@ -228,7 +237,7 @@ local function single_run(auxstatus, iteration)
     current_tex_options.draftmode = false
   end
 
-  local command = engine:build_command(inputfile, current_tex_options)
+  local command = engine:build_command(inputline, current_tex_options)
 
   local execlog -- the contents of .log file
 

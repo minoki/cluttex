@@ -1,5 +1,5 @@
 --[[
-  Copyright 2016 ARATA Mizuki
+  Copyright 2016,2019 ARATA Mizuki
 
   This file is part of ClutTeX.
 
@@ -26,7 +26,7 @@ local shellutil = require "texrunner.shellutil"
 --[[
 engine.name: string
 engine.type = "onePass" or "twoPass"
-engine:build_command(inputfile, options)
+engine:build_command(inputline, options)
   options:
     halt_on_error: boolean
     interaction: string
@@ -40,7 +40,6 @@ engine:build_command(inputfile, options)
     output_format: "pdf" or "dvi"
     draftmode: boolean (pdfTeX / XeTeX / LuaTeX)
     fmt: string
-    tex_injection: string
     lua_initialization_script: string (LuaTeX only)
 engine.executable: string
 engine.supports_pdf_generation: boolean
@@ -52,7 +51,7 @@ engine.is_luatex: true or nil
 local engine_meta = {}
 engine_meta.__index = engine_meta
 engine_meta.dvi_extension = "dvi"
-function engine_meta:build_command(inputfile, options)
+function engine_meta:build_command(inputline, options)
   local command = {self.executable, "-recorder"}
   if options.fmt then
     table.insert(command, "-fmt=" .. options.fmt)
@@ -90,11 +89,7 @@ function engine_meta:build_command(inputfile, options)
       table.insert(command, v)
     end
   end
-  if type(options.tex_injection) == "string" then
-    table.insert(command, shellutil.escape(options.tex_injection .. "\\input " .. inputfile)) -- TODO: what if filename contains spaces?
-  else
-    table.insert(command, shellutil.escape(inputfile))
-  end
+  table.insert(command, shellutil.escape(inputline))
   return table.concat(command, " ")
 end
 
