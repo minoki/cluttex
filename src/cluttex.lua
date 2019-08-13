@@ -102,6 +102,12 @@ elseif options.fresh then
   os.exit(1)
 end
 
+-- --print-output-directory
+if options.print_output_directory then
+  io.write(options.output_directory, "\n")
+  os.exit(0)
+end
+
 local pathsep = ":"
 if os.type == "windows" then
   pathsep = ";"

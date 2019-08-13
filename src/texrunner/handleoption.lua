@@ -62,6 +62,7 @@ Options:
                                  `always', `auto', or `never'.  [default: auto]
       --includeonly=NAMEs      Insert '\includeonly{NAMEs}'.
       --make-depends=FILE      Write dependencies as a Makefile rule.
+      --print-output-directory  Print the output directory and exit.
 
       --[no-]shell-escape
       --shell-restricted
@@ -132,6 +133,9 @@ local option_spec = {
   {
     long = "make-depends",
     param = true
+  },
+  {
+    long = "print-output-directory",
   },
   -- Options for TeX
   {
@@ -305,6 +309,10 @@ local function handle_cluttex_options(arg)
     elseif name == "make-depends" then
       assert(options.make_depends == nil, "multiple --make-depends options")
       options.make_depends = param
+
+    elseif name == "print-output-directory" then
+      assert(options.print_output_directory == nil, "multiple --print-output-directory options")
+      options.print_output_directory = true
 
       -- Options for TeX
     elseif name == "synctex" then

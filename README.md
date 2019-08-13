@@ -83,6 +83,8 @@ Command-line Options
   Print version information and exit.
 * `-V`, `--verbose`
   Be more verbose.
+* `--print-output-directory`
+  Print the output directory and exit.
 
 Options to run auxiliary programs:
 
