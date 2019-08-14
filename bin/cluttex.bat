@@ -2618,11 +2618,11 @@ local function escapejobname(name)
 end
 
 local function safeinput(name)
-  local escaped, n = string.gsub(name, "[%s\\%%^]", "~\\%1")
+  local escaped, n = string.gsub(name, "[%\\%%^%{%}%~%#]", "~\\%1")
   if n == 0 then
-    return string.format("\\input %s", name)
+    return string.format("\\input\"%s\"", name)
   else
-    return string.format("\\begingroup\\escapechar-1\\let~\\string\\edef\\x{%s }\\expandafter\\endgroup\\expandafter\\input\\x", escaped)
+    return string.format("\\begingroup\\escapechar-1\\let~\\string\\edef\\x{\"%s\" }\\expandafter\\endgroup\\expandafter\\input\\x", escaped)
   end
 end
 
@@ -2690,8 +2690,13 @@ end
 
 local inputfile, engine, options = handle_cluttex_options(arg)
 
+local jobname_for_output
 if options.jobname == nil then
-  options.jobname = safename.escapejobname(pathutil.basename(pathutil.trimext(inputfile)))
+  local basename = pathutil.basename(pathutil.trimext(inputfile))
+  options.jobname = safename.escapejobname(basename)
+  jobname_for_output = basename
+else
+  jobname_for_output = options.jobname
 end
 local jobname = options.jobname
 assert(jobname ~= "", "jobname cannot be empty")
@@ -2707,7 +2712,7 @@ else
 end
 
 if options.output == nil then
-  options.output = jobname .. "." .. output_extension
+  options.output = jobname_for_output .. "." .. output_extension
 end
 
 -- Prepare output directory

@@ -63,8 +63,13 @@ end
 
 local inputfile, engine, options = handle_cluttex_options(arg)
 
+local jobname_for_output
 if options.jobname == nil then
-  options.jobname = safename.escapejobname(pathutil.basename(pathutil.trimext(inputfile)))
+  local basename = pathutil.basename(pathutil.trimext(inputfile))
+  options.jobname = safename.escapejobname(basename)
+  jobname_for_output = basename
+else
+  jobname_for_output = options.jobname
 end
 local jobname = options.jobname
 assert(jobname ~= "", "jobname cannot be empty")
@@ -80,7 +85,7 @@ else
 end
 
 if options.output == nil then
-  options.output = jobname .. "." .. output_extension
+  options.output = jobname_for_output .. "." .. output_extension
 end
 
 -- Prepare output directory

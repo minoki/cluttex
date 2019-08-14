@@ -32,11 +32,11 @@ local function escapejobname(name)
 end
 
 local function safeinput(name)
-  local escaped, n = string.gsub(name, "[%s\\%%^]", "~\\%1")
+  local escaped, n = string.gsub(name, "[%\\%%^%{%}%~%#]", "~\\%1")
   if n == 0 then
-    return string.format("\\input %s", name)
+    return string.format("\\input\"%s\"", name)
   else
-    return string.format("\\begingroup\\escapechar-1\\let~\\string\\edef\\x{%s }\\expandafter\\endgroup\\expandafter\\input\\x", escaped)
+    return string.format("\\begingroup\\escapechar-1\\let~\\string\\edef\\x{\"%s\" }\\expandafter\\endgroup\\expandafter\\input\\x", escaped)
   end
 end
 
