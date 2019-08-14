@@ -63,6 +63,9 @@ Options:
       --includeonly=NAMEs      Insert '\includeonly{NAMEs}'.
       --make-depends=FILE      Write dependencies as a Makefile rule.
       --print-output-directory  Print the output directory and exit.
+      --package-support=PKG1[,PKG2,...]  Enable special support for some
+                                 shell-escaping packages.
+                               Currently supported: minted, epstopdf
 
       --[no-]shell-escape
       --shell-restricted
@@ -136,6 +139,10 @@ local option_spec = {
   },
   {
     long = "print-output-directory",
+  },
+  {
+    long = "package-support",
+    param = true
   },
   -- Options for TeX
   {
@@ -251,6 +258,7 @@ local function handle_cluttex_options(arg)
   local options = {
     tex_extraoptions = {},
     dvipdfmx_extraoptions = {},
+    package_support = {},
   }
   CLUTTEX_VERBOSITY = 0
   for _,option in ipairs(option_and_params) do
@@ -313,6 +321,15 @@ local function handle_cluttex_options(arg)
     elseif name == "print-output-directory" then
       assert(options.print_output_directory == nil, "multiple --print-output-directory options")
       options.print_output_directory = true
+
+    elseif name == "package-support" then
+      local known_packages = {["minted"] = true, ["epstopdf"] = true}
+      for pkg in string.gmatch(param, "[^,%s]+") do
+        options.package_support[pkg] = true
+        if not known_packages[pkg] and CLUTTEX_VERBOSITY >= 1 then
+          message.warn("ClutTeX provides no special support for '"..pkg.."'.")
+        end
+      end
 
       -- Options for TeX
     elseif name == "synctex" then

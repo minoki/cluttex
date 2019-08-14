@@ -85,6 +85,9 @@ Command-line Options
   Be more verbose.
 * `--print-output-directory`
   Print the output directory and exit.
+* `--package-support=PKG1[,PKG2,...,PKGn]`
+  Enable special support for shell-escaping packages.
+  Currently supported packages are `minted` and `epstopdf`.
 
 Options to run auxiliary programs:
 

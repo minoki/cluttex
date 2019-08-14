@@ -214,8 +214,22 @@ local function single_run(auxstatus, iteration)
     tex_injection = string.format("%s\\includeonly{%s}", tex_options.tex_injection or "", options.includeonly)
   end
 
-  if minted then
-    tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_injection or "", options.output_directory)
+  if minted or options.package_support["minted"] then
+    local outdir = options.output_directory
+    if os.type == "windows" then
+      outdir = string.gsub(outdir, "\\", "/") -- Use forward slashes
+    end
+    tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_injection or "", outdir)
+  end
+  if options.package_support["epstopdf"] then
+    local outdir = options.output_directory
+    if os.type == "windows" then
+      outdir = string.gsub(outdir, "\\", "/") -- Use forward slashes
+    end
+    if string.sub(outdir, -1, -1) ~= "/" then
+      outdir = outdir.."/" -- Must end with directory separator
+    end
+    tex_injection = string.format("%s\\PassOptionsToPackage{outdir=%s}{epstopdf}", tex_injection or "", outdir)
   end
 
   local inputline = tex_injection .. safename.safeinput(inputfile)
