@@ -581,7 +581,7 @@ if options.watch then
       message.info("Using `inotifywait' command")
     end
     do_watch = function(files)
-      local inotifywait_command = {"inotifywait", "--monitor", "--event=modify", "--event=attrib", "--format=%w", "--quiet"}
+      local inotifywait_command = {"inotifywait", "--event=modify", "--event=attrib", "--format=%w", "--quiet"}
       for _,path in ipairs(files) do
         table.insert(inotifywait_command, shellutil.escape(path))
       end
