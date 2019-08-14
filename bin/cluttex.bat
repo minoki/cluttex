@@ -3175,8 +3175,9 @@ if options.watch then
       end
       local result = assert(watcher:next())
       if CLUTTEX_VERBOSITY >= 2 then
-        message.info(string.format("%s %s"), result.action, result.path)
+        message.info(string.format("%s %s", result.action, result.path))
       end
+      watcher:close()
       return true
     end
   elseif shellutil.has_command("fswatch") then
