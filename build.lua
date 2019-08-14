@@ -87,6 +87,10 @@ local modules = {
     name = "texrunner.fswatcher_windows",
     path = "texrunner/fswatcher_windows.lua",
   },
+  {
+    name = "texrunner.safename",
+    path = "texrunner/safename.lua",
+  },
 }
 
 local imported_globals = {"io", "os", "string", "table", "package", "require", "assert", "error", "ipairs", "type", "select", "arg"}

@@ -2566,6 +2566,54 @@ return {
   new = new_watcher,
 }
 end
+package.preload["texrunner.safename"] = function(...)
+--[[
+  Copyright 2019 ARATA Mizuki
+
+  This file is part of ClutTeX.
+
+  ClutTeX is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  ClutTeX is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with ClutTeX.  If not, see <http://www.gnu.org/licenses/>.
+]]
+
+local string = string
+
+local function dounsafechar(c)
+  if c == " " then
+    return "_"
+  else
+    return string.format("_%02x", c:byte(1))
+  end
+end
+
+local function escapejobname(name)
+  return (string.gsub(name, "[%s\"$%%&'();<>\\^`|]", dounsafechar))
+end
+
+local function safeinput(name)
+  local escaped, n = string.gsub(name, "[%s\\%%^]", "~\\%1")
+  if n == 0 then
+    return string.format("\\input %s", name)
+  else
+    return string.format("\\begingroup\\escapechar-1\\let~\\string\\edef\\x{%s }\\expandafter\\endgroup\\expandafter\\input\\x", escaped)
+  end
+end
+
+return {
+  escapejobname = escapejobname,
+  safeinput = safeinput,
+}
+end
 --[[
   Copyright 2016,2018-2019 ARATA Mizuki
 
@@ -2604,6 +2652,7 @@ local reruncheck  = require "texrunner.reruncheck"
 local luatexinit  = require "texrunner.luatexinit"
 local recoverylib = require "texrunner.recovery"
 local message     = require "texrunner.message"
+local safename    = require "texrunner.safename"
 local extract_bibtex_from_aux_file = require "texrunner.auxfile".extract_bibtex_from_aux_file
 local handle_cluttex_options = require "texrunner.handleoption".handle_cluttex_options
 
@@ -2624,7 +2673,10 @@ end
 
 local inputfile, engine, options = handle_cluttex_options(arg)
 
-local jobname = options.jobname or pathutil.basename(pathutil.trimext(inputfile))
+if options.jobname == nil then
+  options.jobname = safename.escapejobname(pathutil.basename(pathutil.trimext(inputfile)))
+end
+local jobname = options.jobname
 assert(jobname ~= "", "jobname cannot be empty")
 
 if options.output_format == nil then
@@ -2776,12 +2828,7 @@ local function single_run(auxstatus, iteration)
     tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_injection or "", options.output_directory)
   end
 
-  local inputline
-  if tex_injection ~= "" then
-    inputline = tex_injection .. "\\input " .. inputfile
-  else
-    inputline = inputfile
-  end
+  local inputline = tex_injection .. safename.safeinput(inputfile)
 
   local current_tex_options, lightweight_mode = tex_options, false
   if iteration == 1 and options.start_with_draft then

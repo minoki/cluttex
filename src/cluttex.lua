@@ -42,6 +42,7 @@ local reruncheck  = require "texrunner.reruncheck"
 local luatexinit  = require "texrunner.luatexinit"
 local recoverylib = require "texrunner.recovery"
 local message     = require "texrunner.message"
+local safename    = require "texrunner.safename"
 local extract_bibtex_from_aux_file = require "texrunner.auxfile".extract_bibtex_from_aux_file
 local handle_cluttex_options = require "texrunner.handleoption".handle_cluttex_options
 
@@ -62,7 +63,10 @@ end
 
 local inputfile, engine, options = handle_cluttex_options(arg)
 
-local jobname = options.jobname or pathutil.basename(pathutil.trimext(inputfile))
+if options.jobname == nil then
+  options.jobname = safename.escapejobname(pathutil.basename(pathutil.trimext(inputfile)))
+end
+local jobname = options.jobname
 assert(jobname ~= "", "jobname cannot be empty")
 
 if options.output_format == nil then
@@ -214,12 +218,7 @@ local function single_run(auxstatus, iteration)
     tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_injection or "", options.output_directory)
   end
 
-  local inputline
-  if tex_injection ~= "" then
-    inputline = tex_injection .. "\\input " .. inputfile
-  else
-    inputline = inputfile
-  end
+  local inputline = tex_injection .. safename.safeinput(inputfile)
 
   local current_tex_options, lightweight_mode = tex_options, false
   if iteration == 1 and options.start_with_draft then
