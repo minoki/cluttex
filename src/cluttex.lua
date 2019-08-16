@@ -237,7 +237,7 @@ local function single_run(auxstatus, iteration)
     tex_injection = string.format("%s\\PassOptionsToPackage{outdir=%s}{epstopdf}", tex_injection or "", outdir)
   end
 
-  local inputline = tex_injection .. safename.safeinput(inputfile)
+  local inputline = tex_injection .. safename.safeinput(inputfile, engine)
 
   local current_tex_options, lightweight_mode = tex_options, false
   if iteration == 1 and options.start_with_draft then
