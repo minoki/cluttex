@@ -88,6 +88,8 @@ Command-line Options
 * `--package-support=PKG1[,PKG2,...,PKGn]`
   Enable special support for shell-escaping packages.
   Currently supported packages are `minted` and `epstopdf`.
+* `--engine-executable=COMMAND`
+  The actual TeX command to use.
 
 Options to run auxiliary programs:
 

@@ -36,6 +36,9 @@ Options:
                                      xelatex, xetex, latex, etex, tex,
                                      platex, eptex, ptex,
                                      uplatex, euptex, uptex,
+      --engine-executable=COMMAND+OPTIONs
+                               The actual TeX command to use.
+                                 [default: ENGINE]
   -o, --output=FILE            The name of output file.
                                  [default: JOBNAME.pdf or JOBNAME.dvi]
       --fresh                  Clean intermediate files before running TeX.
@@ -87,6 +90,10 @@ local option_spec = {
   {
     short = "e",
     long = "engine",
+    param = true,
+  },
+  {
+    long = "engine-executable",
     param = true,
   },
   {
@@ -268,6 +275,10 @@ local function handle_cluttex_options(arg)
     if name == "engine" then
       assert(options.engine == nil, "multiple --engine options")
       options.engine = param
+
+    elseif name == "engine-executable" then
+      assert(options.engine_executable == nil, "multiple --engine-executable options")
+      options.engine_executable = param
 
     elseif name == "output" then
       assert(options.output == nil, "multiple --output options")

@@ -52,7 +52,8 @@ local engine_meta = {}
 engine_meta.__index = engine_meta
 engine_meta.dvi_extension = "dvi"
 function engine_meta:build_command(inputline, options)
-  local command = {self.executable, "-recorder"}
+  local executable = options.engine_executable or self.executable
+  local command = {executable, "-recorder"}
   if options.fmt then
     table.insert(command, "-fmt=" .. options.fmt)
   end

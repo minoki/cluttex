@@ -91,7 +91,7 @@ end
 -- Prepare output directory
 if options.output_directory == nil then
   local inputfile_abs = pathutil.abspath(inputfile)
-  options.output_directory = genOutputDirectory(inputfile_abs, jobname, options.engine)
+  options.output_directory = genOutputDirectory(inputfile_abs, jobname, options.engine_executable or options.engine)
 
   if not fsutil.isdir(options.output_directory) then
     assert(fsutil.mkdir_rec(options.output_directory))
@@ -155,6 +155,7 @@ local recorderfile = path_in_output_directory("fls")
 local recorderfile2 = path_in_output_directory("cluttex-fls")
 
 local tex_options = {
+  engine_executable = options.engine_executable,
   interaction = options.interaction,
   file_line_error = options.file_line_error,
   halt_on_error = options.halt_on_error,

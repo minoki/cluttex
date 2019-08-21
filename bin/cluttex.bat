@@ -748,7 +748,8 @@ local engine_meta = {}
 engine_meta.__index = engine_meta
 engine_meta.dvi_extension = "dvi"
 function engine_meta:build_command(inputline, options)
-  local command = {self.executable, "-recorder"}
+  local executable = options.engine_executable or self.executable
+  local command = {executable, "-recorder"}
   if options.fmt then
     table.insert(command, "-fmt=" .. options.fmt)
   end
@@ -1402,6 +1403,9 @@ Options:
                                      xelatex, xetex, latex, etex, tex,
                                      platex, eptex, ptex,
                                      uplatex, euptex, uptex,
+      --engine-executable=COMMAND+OPTIONs
+                               The actual TeX command to use.
+                                 [default: ENGINE]
   -o, --output=FILE            The name of output file.
                                  [default: JOBNAME.pdf or JOBNAME.dvi]
       --fresh                  Clean intermediate files before running TeX.
@@ -1453,6 +1457,10 @@ local option_spec = {
   {
     short = "e",
     long = "engine",
+    param = true,
+  },
+  {
+    long = "engine-executable",
     param = true,
   },
   {
@@ -1634,6 +1642,10 @@ local function handle_cluttex_options(arg)
     if name == "engine" then
       assert(options.engine == nil, "multiple --engine options")
       options.engine = param
+
+    elseif name == "engine-executable" then
+      assert(options.engine_executable == nil, "multiple --engine-executable options")
+      options.engine_executable = param
 
     elseif name == "output" then
       assert(options.output == nil, "multiple --output options")
@@ -2734,7 +2746,7 @@ end
 -- Prepare output directory
 if options.output_directory == nil then
   local inputfile_abs = pathutil.abspath(inputfile)
-  options.output_directory = genOutputDirectory(inputfile_abs, jobname, options.engine)
+  options.output_directory = genOutputDirectory(inputfile_abs, jobname, options.engine_executable or options.engine)
 
   if not fsutil.isdir(options.output_directory) then
     assert(fsutil.mkdir_rec(options.output_directory))
@@ -2798,6 +2810,7 @@ local recorderfile = path_in_output_directory("fls")
 local recorderfile2 = path_in_output_directory("cluttex-fls")
 
 local tex_options = {
+  engine_executable = options.engine_executable,
   interaction = options.interaction,
   file_line_error = options.file_line_error,
   halt_on_error = options.halt_on_error,
