@@ -1,3 +1,12 @@
+Version 0.4 (2019-08-21)
+-----
+
+Changes:
+
+* New options: `--print-output-directory`, `--package-support`, and `--engine-executable`
+* Spaces and special characters in the input file name are now appropriately escaped.  For example, `cluttex -e pdflatex file%1.tex` now typesets the file `file%1.tex`.
+* Watch new input files in watch mode.
+
 Version 0.3 (2019-04-30)
 -----
 

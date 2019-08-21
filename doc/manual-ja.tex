@@ -10,9 +10,9 @@
 \renewcommand\sectionautorefname{セクション}
 \renewcommand\subsectionautorefname{サブセクション}
 
-\title{\ClutTeX{}マニュアル\\（バージョン0.3）}
+\title{\ClutTeX{}マニュアル\\（バージョン0.4）}
 \author{ARATA Mizuki}
-\date{2019年4月30日}
+\date{2019年8月21日}
 
 \begin{document}
 \maketitle
@@ -82,6 +82,8 @@
   \texttt{\texcmd{includeonly}\{\metavar{NAMEs}\}}を挿入する。
 \item[\texttt{--make-depends=\metavar{FILE}}]
   Makefile用の依存関係を\metavar{FILE}に書き出す。
+\item[\texttt{--engine-executable=\metavar{COMMAND}}]
+  実際に使う\TeX{}コマンドを指定する。
 \item[\texttt{--tex-option=\metavar{OPTION}}, \texttt{--tex-options=\metavar{OPTIONs}}]
   \TeX{}に追加のオプションを渡す。
 \item[\texttt{--dvipdfmx-option=\metavar{OPTION}}, \texttt{--dvipdfmx-options=\metavar{OPTIONs}}]
@@ -92,6 +94,11 @@
 \item[\texttt{-h}, \texttt{--help}]
 \item[\texttt{-v}, \texttt{--version}]
 \item[\texttt{-V}, \texttt{--verbose}]
+\item[\texttt{--print-output-directory}]
+  \texttt{--output-directory}の値を標準出力に出力して、そのまま終了する。
+\item[\texttt{--package-support=PKG1[,PKG2,...,PKGn]}]
+  外部コマンドを実行するパッケージ用の個別の対策を有効にする。
+  現在のところ、\texttt{minted}と\texttt{epstopdf}に対応している。
 \end{description}
 
 補助コマンド実行用のオプション：
@@ -218,8 +225,16 @@ main.pdf: main.tex
 \item \texttt{--makeindex}, \texttt{--bibtex}, \texttt{--biber}, \texttt{--makeglossaries}
 \end{itemize}
 
+もし何らかの事情で自動生成された出力ディレクトリの位置を知りたければ、\ClutTeX{}を\texttt{--print-output-directory}オプションを使うとよい。
+例えば、Makefileの\texttt{clean}ターゲットは次のように書ける：
+\begin{verbatim}
+clean:
+    -rm -rf $(shell cluttex -e pdflatex --print-output-directory main.tex)
+    -rm main.pdf
+\end{verbatim}
+
 出力ディレクトリに生成された補助ファイルは、\texttt{--fresh}オプションを指定しない限り、\ClutTeX{}が消去することはない。
-一方、テンポラリディレクトリを使用するということは、PCの再起動時に補助ファイルが削除されるということでもある。
+一方、テンポラリディレクトリを使用するということは、PCの再起動時に補助ファイルが削除される可能性があるということでもある。
 
 \section{エイリアス}
 Unix用コマンドの中には、自身の名前によって挙動を変えるものがある。
@@ -234,5 +249,20 @@ Unix用コマンドの中には、自身の名前によって挙動を変える�
 \texttt{cluttex} が \texttt{cl}\(\langle\text{エンジン名}\rangle\) として呼び出された場合、使用されるエンジン名（\texttt{--engine}オプション）がそれに指定される。
 
 例えば、\texttt{cllualatex}は\texttt{cluttex --engine lualatex}の別名であり、\texttt{clxelatex}は\texttt{cluttex --engine xelatex}の別名である。
+
+\section{\texpkg{minted}と\texpkg{epstopdf}への対策}
+一般に、外部コマンド実行（シェルエスケープ）を行うパッケージは\texttt{-output-directory}を指定した際に正常に動作しない。
+したがって、\ClutTeX{}の下ではそういうパッケージはうまく動かない。
+
+一方で、パッケージによっては\texttt{-output-directory}の値を指示するためのパッケージオプションを持っているものがある。
+例えば、\texpkg{minted}の\texttt{outputdir}オプション、\texpkg{epstopdf}の\texttt{outdir}オプションがそれである。
+
+\ClutTeX{}からこれらのパッケージオプションを指定することはできるが、そのためには使用するパッケージを\ClutTeX{}が事前に知っておかねばならない。
+使用するパッケージを\ClutTeX{}に知らせるには、\texttt{--package-support}オプションを使う。
+
+例えば、\texpkg{minted}を使う文書を処理する場合は次のように実行すれば良い：
+\begin{verbatim}
+cluttex -e pdflatex --shell-escape --package-support=minted document.tex
+\end{verbatim}
 
 \end{document}

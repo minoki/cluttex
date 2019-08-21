@@ -8,9 +8,9 @@
 \newcommand\texpkg[1]{\texttt{#1}}
 \newcommand\metavar[1]{\textnormal{\textsf{#1}}}
 
-\title{\ClutTeX\ manual\\(Version 0.3)}
+\title{\ClutTeX\ manual\\(Version 0.4)}
 \author{ARATA Mizuki}
-\date{2019-04-30}
+\date{2019-08-21}
 
 \begin{document}
 \maketitle
@@ -78,6 +78,8 @@ Basic options:
   Insert \texttt{\texcmd{includeonly}\{\metavar{NAMEs}\}}.
 \item[\texttt{--make-depends=\metavar{FILE}}]
   Write Makefile-style dependencies information to \metavar{FILE}.
+\item[\texttt{--engine-executable=\metavar{COMMAND}}]
+  The actual \TeX\ command to use.
 \item[\texttt{--tex-option=\metavar{OPTION}}, \texttt{--tex-options=\metavar{OPTIONs}}]
   Pass extra options to \TeX.
 \item[\texttt{--dvipdfmx-option=\metavar{OPTION}}, \texttt{--dvipdfmx-options=\metavar{OPTIONs}}]
@@ -88,6 +90,11 @@ Basic options:
 \item[\texttt{-h}, \texttt{--help}]
 \item[\texttt{-v}, \texttt{--version}]
 \item[\texttt{-V}, \texttt{--verbose}]
+\item[\texttt{--print-output-directory}]
+  Print the output directory and exit.
+\item[\texttt{--package-support=PKG1[,PKG2,...,PKGn]}]
+  Enable special support for shell-escaping packages.
+  Currently supported packages are `minted` and `epstopdf`.
 \end{description}
 
 Options for running auxiliary programs:
@@ -212,6 +219,13 @@ On the other hand, the following parameters doesn't affect the directory name:
 \item \texttt{--makeindex}, \texttt{--bibtex}, \texttt{--biber}, \texttt{--makeglossaries}
 \end{itemize}
 
+If you need to know the exact location of the automatically-generated output directory, you can invoke \ClutTeX\ with \texttt{--print-output-directory}.
+For example, \texttt{clean} target of your Makefile could be written as:
+\begin{verbatim}
+clean:
+    -rm -rf $(shell cluttex -e pdflatex --print-output-directory main.tex)
+\end{verbatim}
+
 \ClutTeX\ itself doesn't erase the auxiliary files, unless \texttt{--fresh} option is set.
 Note that, the use of a temporary directory means, the auxiliary files may be cleared when the computer is rebooted.
 
@@ -226,6 +240,21 @@ There are several examples in \TeX\ Live:
 If \ClutTeX\ is called as \texttt{cl}\(\langle\text{\metavar{ENGINE}}\rangle\), the \texttt{--engine} option is set accordingly.
 For example, \texttt{cllualatex} is an alias for \texttt{cluttex --engine lualatex} and \texttt{clxelatex} for \texttt{cluttex --engine xelatex}.
 
-%The aliases provided by \TeX\ Live are, \texttt{cllualatex} and \texttt{clxelatex}.
+% The aliases provided by \TeX\ Live are, \texttt{cllualatex} and \texttt{clxelatex}.
+
+\section{Support for \texpkg{minted} and \texpkg{epstopdf}}
+In general, packages that execute external commands (shell-escape) don't work well with \texttt{-output-directory}.
+Therefore, they don't work well with \ClutTeX.
+
+However, some packages provide a package option to let them know the location of \texttt{-output-directory}.
+For example, \texpkg{minted} provides \texttt{outputdir}, and \texpkg{epstopdf} provides \texttt{outdir}.
+
+\ClutTeX\ can supply them the appropriate options, but only if it knows that the package is going to be used.
+To let \ClutTeX\ what packages are going to be used, use \texttt{--package-support} option.
+
+For example, if you want to typeset a document that uses \texpkg{minted}, run the following:
+\begin{verbatim}
+cluttex -e pdflatex --shell-escape --package-support=minted document.tex
+\end{verbatim}
 
 \end{document}
