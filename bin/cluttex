@@ -1418,20 +1418,23 @@ Options:
       --dvipdfmx-option[s]=OPTION[s]  Same for dvipdfmx.
       --makeindex=COMMAND+OPTIONs  Command to generate index, such as
                                      `makeindex' or `mendex'.
-      --bibtex=COMMAND+OPTIONs  Command for BibTeX, such as
+      --bibtex=COMMAND+OPTIONs     Command for BibTeX, such as
                                      `bibtex' or `pbibtex'.
-      --biber[=COMMAND+OPTIONs]  Command for Biber.
+      --biber[=COMMAND+OPTIONs]    Command for Biber.
       --makeglossaries[=COMMAND+OPTIONs]  Command for makeglossaries.
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
-      --color=WHEN             Make ClutTeX's message colorful. WHEN is one of
-                                 `always', `auto', or `never'.  [default: auto]
+      --color[=WHEN]           Make ClutTeX's message colorful. WHEN is one of
+                                 `always', `auto', or `never'.
+                                 [default: `auto' if --color is omitted,
+                                           `always' if WHEN is omitted]
       --includeonly=NAMEs      Insert '\includeonly{NAMEs}'.
       --make-depends=FILE      Write dependencies as a Makefile rule.
       --print-output-directory  Print the output directory and exit.
-      --package-support=PKG1[,PKG2,...]  Enable special support for some
-                                 shell-escaping packages.
+      --package-support=PKG1[,PKG2,...]
+                               Enable special support for some shell-escaping
+                                 packages.
                                Currently supported: minted, epstopdf
 
       --[no-]shell-escape
