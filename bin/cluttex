@@ -2821,7 +2821,7 @@ end
 -- should_rerun, newauxstatus = single_run([auxstatus])
 -- This function should be run in a coroutine.
 local function single_run(auxstatus, iteration)
-  local minted = false
+  local minted, epstopdf = false, false
   local bibtex_aux_hash = nil
   local mainauxfile = path_in_output_directory("aux")
   if fsutil.isfile(recorderfile) then
@@ -2834,7 +2834,9 @@ local function single_run(auxstatus, iteration)
     for _,fileinfo in ipairs(filelist) do
       if string.match(fileinfo.path, "minted/minted%.sty$") then
         minted = true
-        break
+      end
+      if string.match(fileinfo.path, "epstopdf%.sty$") then
+        epstopdf = true
       end
     end
     if options.bibtex then
@@ -2865,16 +2867,22 @@ local function single_run(auxstatus, iteration)
       outdir = string.gsub(outdir, "\\", "/") -- Use forward slashes
     end
     tex_injection = string.format("%s\\PassOptionsToPackage{outputdir=%s}{minted}", tex_injection or "", outdir)
+    if not options.package_support["minted"] then
+      message.diag("You may want to use --package-support=minted option.")
+    end
   end
-  if options.package_support["epstopdf"] then
+  if epstopdf or options.package_support["epstopdf"] then
     local outdir = options.output_directory
     if os.type == "windows" then
       outdir = string.gsub(outdir, "\\", "/") -- Use forward slashes
     end
     if string.sub(outdir, -1, -1) ~= "/" then
-      outdir = outdir.."/" -- Must end with directory separator
+      outdir = outdir.."/" -- Must end with a directory separator
     end
     tex_injection = string.format("%s\\PassOptionsToPackage{outdir=%s}{epstopdf}", tex_injection or "", outdir)
+    if not options.package_support["epstopdf"] then
+      message.diag("You may want to use --package-support=epstopdf option.")
+    end
   end
 
   local inputline = tex_injection .. safename.safeinput(inputfile, engine)
