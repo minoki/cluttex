@@ -1,0 +1,9 @@
+[submodule "windows/luafilesystem"]
+	path = windows/luafilesystem
+	url = https://github.com/keplerproject/luafilesystem.git
+[submodule "windows/md5"]
+	path = windows/md5
+	url = https://github.com/keplerproject/md5.git
+[submodule "windows/luaffi"]
+	path = windows/luaffi
+	url = https://github.com/facebookarchive/luaffifb.git

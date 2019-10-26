@@ -1,0 +1,39 @@
+all: lua-5.3.5/src/lua.exe
+
+lua-5.3.5.tar.gz:
+	wget -O $@ http://www.lua.org/ftp/lua-5.3.5.tar.gz
+# TODO: check for sha1sum
+
+lua-5.3.5/src/Makefile: lua-5.3.5.tar.gz
+	tar xf $<
+
+# linit.c from stock Lua is not used
+LIB_EXTRA_O= \
+  luafilesystem/src/lfs.o \
+  md5/src/md5.o md5/src/md5lib.o md5lib-luapart.o \
+  luaffi/call.o luaffi/ctype.o luaffi/parser.o luaffi/ffi.o \
+  loslibext.o \
+  custominit.o
+
+LIB_O=lauxlib.o lbaselib.o lbitlib.o lcorolib.o ldblib.o liolib.o \
+  lmathlib.o loslib.o lstrlib.o ltablib.o lutf8lib.o loadlib.o \
+  $(addprefix ../../,$(LIB_EXTRA_O))
+
+lua-5.3.5/src/lua.exe: lua-5.3.5/src/Makefile md5lib-luapart.c custominit.c u8crt/libu8crt.a
+	cd lua-5.3.5/src && $(MAKE) "LUA_A=liblua.a" "LUA_T=lua.exe" \
+	"SYSCFLAGS=-DLUA_USER_H=\\\"u8override.h\\\" -I. -I../.." "SYSLIBS=-L../../u8crt -lu8crt" "SYSLDFLAGS=-s -municode" \
+	"LIB_O=$(LIB_O)" \
+	lua.exe
+
+u8crt/libu8crt.a:
+	cd u8crt/ && $(MAKE) libu8crt.a
+
+md5lib-luapart.c: md5/src/md5.lua embedlua.lua
+	cd md5/src && lua ../../embedlua.lua md5.lua ../../$@
+
+clean:
+	-rm $(LIB_EXTRA_O)
+	cd lua-5.3.5/src && $(MAKE) clean
+	cd u8crt/ && $(MAKE) clean
+
+.PHONY: all clean lua-5.3.5/src/lua.exe u8crt/libu8crt.a

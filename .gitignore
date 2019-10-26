@@ -3,3 +3,7 @@ example/*/*.pdf
 *.tar
 *.tar.gz
 *.dep
+*.o
+*.a
+windows/lua-*
+windows/md5lib-luapart.c
