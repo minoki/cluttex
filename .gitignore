@@ -7,3 +7,7 @@ example/*/*.pdf
 *.dep
 src/cluttex-ml.lua
 VERSION_*
+*.o
+*.a
+windows/lua-*
+windows/md5lib-luapart.c
