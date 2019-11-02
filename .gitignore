@@ -7,3 +7,6 @@ example/*/*.pdf
 *.a
 windows/lua-*
 windows/md5lib-luapart.c
+windows/cluttex-luapart.c
+windows/cluttex-luapart-deps.mk
+windows/cluttex.exe

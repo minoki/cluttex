@@ -13,6 +13,7 @@ extern int luaopen_md5_core(lua_State *L);
 extern int luaopen_md5(lua_State *L);
 extern int luaopen_ffi(lua_State *L);
 extern int luaopen_osext(lua_State *L);
+extern int luaopen_isatty(lua_State *L);
 
 static const luaL_Reg loadedlibs[] = {
     {"_G", luaopen_base},
@@ -36,6 +37,7 @@ static const luaL_Reg preloads[] = {
     {"md5.core", luaopen_md5_core},
     {"md5", luaopen_md5},
     {"ffi", luaopen_ffi},
+    {"texrunner.isatty", luaopen_isatty},
     {NULL, NULL}
 };
 
