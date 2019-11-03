@@ -27,7 +27,7 @@ static bool is_mintty(HANDLE handle) {
         return false;
     }
     // \(cygwin|msys)-<hex digits>-pty<N>-(from|to)-master
-    DWORD len = max(sizeof(u) - sizeof(u.filenameinfo.FileNameLength) - sizeof(WCHAR), u.filenameinfo.FileNameLength) / 2;
+    DWORD len = min(sizeof(u) - sizeof(u.filenameinfo.FileNameLength) - sizeof(WCHAR), u.filenameinfo.FileNameLength) / 2;
     u.filenameinfo.FileName[len] = L'\0';
     WCHAR *filename = u.filenameinfo.FileName;
     if (*filename++ != L'\\') {
