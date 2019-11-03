@@ -11,7 +11,6 @@ lua-5.3.5/src/Makefile: lua-5.3.5.tar.gz
 LIB_EXTRA_O= \
   luafilesystem/src/lfs.o \
   md5/src/md5.o md5/src/md5lib.o md5lib-luapart.o \
-  luaffi/call.o luaffi/ctype.o luaffi/parser.o luaffi/ffi.o \
   loslibext.o \
   isatty/lua-isatty.o \
   custominit.o
