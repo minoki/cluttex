@@ -31,8 +31,9 @@ local function parse_aux_file(auxfile, outdir, report, seen)
   for l in io.lines(auxfile) do
     local subauxfile = string_match(l, "\\@input{(.+)}")
     if subauxfile then
-      if fsutil.isfile(subauxfile) then
-        parse_aux_file(pathutil.join(outdir, subauxfile), outdir, report, seen)
+      local subauxfile_abs = pathutil.abspath(subauxfile, outdir)
+      if fsutil.isfile(subauxfile_abs) then
+        parse_aux_file(subauxfile_abs, outdir, report, seen)
       else
         local dir = pathutil.join(outdir, pathutil.dirname(subauxfile))
         if not fsutil.isdir(dir) then
@@ -57,8 +58,11 @@ local function extract_bibtex_from_aux_file(auxfile, outdir, biblines)
       end
     elseif name == "@input" then
       local subauxfile = string_match(l, "\\@input{(.+)}")
-      if subauxfile and fsutil.isfile(subauxfile) then
-        extract_bibtex_from_aux_file(pathutil.join(outdir, subauxfile), outdir, biblines)
+      if subauxfile then
+        local subauxfile_abs = pathutil.abspath(subauxfile, outdir)
+        if fsutil.isfile(subauxfile_abs) then
+          extract_bibtex_from_aux_file(subauxfile_abs, outdir, biblines)
+        end
       end
     end
   end
