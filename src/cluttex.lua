@@ -74,9 +74,6 @@ end
 local jobname = options.jobname
 assert(jobname ~= "", "jobname cannot be empty")
 
-if options.output_format == nil then
-  options.output_format = "pdf"
-end
 local output_extension
 if options.output_format == "dvi" then
   output_extension = engine.dvi_extension or "dvi"

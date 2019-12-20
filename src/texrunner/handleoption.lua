@@ -257,6 +257,10 @@ local function set_default_values(options)
   if options.halt_on_error == nil then
     options.halt_on_error = true
   end
+
+  if options.output_format == nil then
+    options.output_format = "pdf"
+  end
 end
 
 -- inputfile, engine, options = handle_cluttex_options(arg)
