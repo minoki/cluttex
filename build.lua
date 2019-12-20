@@ -91,6 +91,10 @@ local modules = {
     name = "texrunner.safename",
     path = "texrunner/safename.lua",
   },
+  {
+    name = "texrunner.checkdriver",
+    path = "texrunner/checkdriver.lua",
+  },
 }
 
 local imported_globals = {"io", "os", "string", "table", "package", "require", "assert", "error", "ipairs", "type", "select", "arg"}

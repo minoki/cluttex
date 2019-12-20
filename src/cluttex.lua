@@ -45,6 +45,7 @@ local message     = require "texrunner.message"
 local safename    = require "texrunner.safename"
 local extract_bibtex_from_aux_file = require "texrunner.auxfile".extract_bibtex_from_aux_file
 local handle_cluttex_options = require "texrunner.handleoption".handle_cluttex_options
+local checkdriver = require "texrunner.checkdriver".checkdriver
 
 os.setlocale("", "ctype") -- Workaround for recent Universal CRT
 
@@ -295,6 +296,10 @@ local function single_run(auxstatus, iteration)
     local logfile = assert(io.open(path_in_output_directory("log")))
     execlog = logfile:read("*a")
     logfile:close()
+  end
+
+  if options.check_driver ~= nil then
+    checkdriver(options.check_driver, filelist)
   end
 
   if options.makeindex then
