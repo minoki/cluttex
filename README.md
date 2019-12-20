@@ -90,6 +90,10 @@ Command-line Options
   Currently supported packages are `minted` and `epstopdf`.
 * `--engine-executable=COMMAND`
   The actual TeX command to use.
+* `--check-driver=DRIVER`
+  Check that the correct driver file is loaded.
+  `DRIVER` is one of `dvipdfmx`, `dvips`, `dvisvgm`.
+  Can only be used with `--output-format=dvi`.
 
 Options to run auxiliary programs:
 
