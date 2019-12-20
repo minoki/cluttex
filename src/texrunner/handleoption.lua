@@ -72,6 +72,8 @@ Options:
                                Enable special support for some shell-escaping
                                  packages.
                                Currently supported: minted, epstopdf
+      --check-driver=DRIVER    Check that the correct driver file is loaded.
+                               DRIVER is one of `dvipdfmx', `dvips', `dvisvgm'.
 
       --[no-]shell-escape
       --shell-restricted
@@ -152,6 +154,10 @@ local option_spec = {
   },
   {
     long = "package-support",
+    param = true
+  },
+  {
+    long = "check-driver",
     param = true
   },
   -- Options for TeX
@@ -349,6 +355,11 @@ local function handle_cluttex_options(arg)
         end
       end
 
+    elseif name == "check-driver" then
+      assert(options.check_driver == nil, "multiple --check-driver options")
+      assert(param == "dvipdfmx" or param == "dvips" or param == "dvisvgm", "wrong value for --check-driver option")
+      options.check_driver = param
+
       -- Options for TeX
     elseif name == "synctex" then
       assert(options.synctex == nil, "multiple --synctex options")
@@ -458,6 +469,27 @@ local function handle_cluttex_options(arg)
   end
 
   set_default_values(options)
+
+  if options.output_format == "pdf" then
+    if options.check_driver ~= nil then
+      error("--check-driver can only be used when the output format is DVI.")
+    end
+    if engine.supports_pdf_generation then
+      if engine.is_luatex then
+        options.check_driver = "luatex"
+      elseif engine.name == "xetex" or engine.name == "xelatex" then
+        options.check_driver = "xetex"
+      elseif engine.name == "pdftex" or engine.name == "pdflatex" then
+        options.check_driver = "pdftex"
+      else
+        message.warning("Unknown engine: "..engine.name)
+        message.warning("Driver check will not work.")
+      end
+    else
+      -- ClutTeX uses dvipdfmx to generate PDF from DVI output.
+      options.check_driver = "dvipdfmx"
+    end
+  end
 
   return inputfile, engine, options
 end

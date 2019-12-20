@@ -21,6 +21,7 @@ sources= \
  src/texrunner/message.lua \
  src/texrunner/fswatcher_windows.lua \
  src/texrunner/safename.lua \
+ src/texrunner/checkdriver.lua \
  src/cluttex.lua
 
 bin/cluttex: $(sources) build.lua
