@@ -1,12 +1,16 @@
-all: manual.pdf manual-ja.pdf
+all: cluttex.pdf cluttex-ja.pdf
 
-manual.pdf: manual.tex
-	cluttex -e pdflatex -o $@ --make-depends=manual.pdf.dep $<
+cluttex.pdf: cluttex.tex
+	cluttex -e pdflatex -o $@ --make-depends=cluttex.pdf.dep $<
 
-manual-ja.pdf: manual-ja.tex
-	cluttex -e lualatex -o $@ --make-depends=manual-ja.pdf.dep $<
+cluttex-ja.pdf: cluttex-ja.tex
+	cluttex -e lualatex -o $@ --make-depends=cluttex-ja.pdf.dep $<
 
-.PHONY: all
+clean-outdir:
+	-rm -rf $(shell cluttex -e pdflatex --print-output-directory cluttex.tex)
+	-rm -rf $(shell cluttex -e lualatex --print-output-directory cluttex-ja.tex)
 
--include manual.pdf.dep
--include manual-ja.pdf.dep
+.PHONY: all clean-outdir
+
+-include cluttex.pdf.dep
+-include cluttex-ja.pdf.dep
