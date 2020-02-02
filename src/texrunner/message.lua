@@ -89,7 +89,7 @@ local CMD = {
 
 local function exec_msg(commandline)
   if use_colors then
-    io.stderr:write(CMD.fg_x_white, CMD.bg_red, "[EXEC]", CMD.reset, " ", CMD.fg_red, commandline, CMD.reset, "\n")
+    io.stderr:write(CMD.fg_x_white, CMD.bg_red, "[EXEC]", CMD.reset, " ", CMD.fg_cyan, commandline, CMD.reset, "\n")
   else
     io.stderr:write("[EXEC] ", commandline, "\n")
   end
