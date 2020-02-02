@@ -10,9 +10,9 @@
 \renewcommand\sectionautorefname{セクション}
 \renewcommand\subsectionautorefname{サブセクション}
 
-\title{\ClutTeX{}マニュアル\\（バージョン0.4）}
+\title{\ClutTeX{}マニュアル\\（バージョン0.4.1）}
 \author{ARATA Mizuki}
-\date{2019年8月21日}
+\date{2020年2月3日}
 
 \begin{document}
 \maketitle
@@ -27,6 +27,7 @@
 \item 入力ファイルを監視し、変更があった場合に自動で再処理する（\texttt{--watch}オプション\footnote{Unix系OSでは、別途プログラムが必要。}）
 \item MakeIndex, \BibTeX, Biber等のコマンドを自動で実行する（\texttt{--makeindex}オプション, \texttt{--bibtex}オプション, \texttt{--biber}オプション）
 \item p\TeX 系列の処理系でPDFを生成する場合、別途\texttt{dvipdfmx}を実行する必要がない（自動で\texttt{dvipdfmx}を実行する）
+  もしもDVIファイルが欲しいのであれば、\texttt{--output-format=dvi}を指定すれば良い。
 \end{itemize}
 などがある。
 
@@ -99,6 +100,10 @@
 \item[\texttt{--package-support=PKG1[,PKG2,...,PKGn]}]
   外部コマンドを実行するパッケージ用の個別の対策を有効にする。
   現在のところ、\texttt{minted}と\texttt{epstopdf}に対応している。
+\item[\texttt{--check-driver=DRIVER}]
+  いくつかのパッケージについて、正しいドライバーファイルが読み込まれていることを検査する。
+  \metavar{DRIVER}は\texttt{dvipdfmx}, \texttt{dvips}, or \texttt{dvisvgm}のいずれかである。
+  このオプションは\texttt{--output-format=dvi}が指定された場合にのみ指定できる。
 \end{description}
 
 補助コマンド実行用のオプション：
@@ -264,5 +269,13 @@ Unix用コマンドの中には、自身の名前によって挙動を変える�
 \begin{verbatim}
 cluttex -e pdflatex --shell-escape --package-support=minted document.tex
 \end{verbatim}
+
+\section{ドライバーファイルの検査}
+
+\ClutTeX{}は、いくつかのパッケージについて正しいドライバーファイルが読み込まれていることを検査することができる。
+現在のバージョンで対応しているパッケージは\texpkg{graphics(x)}, \texpkg{color}, \texpkg{expl3}, \texpkg{hyperref}, \texpkg{xy}である。
+
+PDFモードの場合、ドライバーの検査は常に行われる。
+DVIモードで検査を有効にするには、\texttt{--check-driver}オプションを使用する。
 
 \end{document}

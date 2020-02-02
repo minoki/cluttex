@@ -8,9 +8,9 @@
 \newcommand\texpkg[1]{\texttt{#1}}
 \newcommand\metavar[1]{\textnormal{\textsf{#1}}}
 
-\title{\ClutTeX\ manual\\(Version 0.4)}
+\title{\ClutTeX\ manual\\(Version 0.4.1)}
 \author{ARATA Mizuki}
-\date{2019-08-21}
+\date{2020-02-03}
 
 \begin{document}
 \maketitle
@@ -25,6 +25,7 @@ Basic features are,
 \item Watch input files, and re-process documents if changes are detected\footnote{needs an external program if you are on a Unix system}.
 \item Run MakeIndex, \BibTeX, Biber, if requested.
 \item Produces a PDF, even if the engine (e.g.\ p\TeX) does not suport direct PDF generation.
+  If you want a DVI file, use \texttt{--output-format=dvi} option.
 \end{itemize}
 
 The unique feature of this program is that, auxiliary files such as \texttt{.aux} or \texttt{.toc} are created in an isolated location, so you will not be annoyed with these extra files.
@@ -94,7 +95,11 @@ Basic options:
   Print the output directory and exit.
 \item[\texttt{--package-support=PKG1[,PKG2,...,PKGn]}]
   Enable special support for shell-escaping packages.
-  Currently supported packages are `minted` and `epstopdf`.
+  Currently supported packages are `\texttt{minted}` and `\texttt{epstopdf}`.
+\item[\texttt{--check-driver=DRIVER}]
+  Check that the correct driver file is loaded for certain packages.
+  \metavar{DRIVER} is one of \texttt{dvipdfmx}, \texttt{dvips}, or \texttt{dvisvgm}.
+  Can only be used with \texttt{--output-format=dvi}.
 \end{description}
 
 Options for running auxiliary programs:
@@ -256,5 +261,13 @@ For example, if you want to typeset a document that uses \texpkg{minted}, run th
 \begin{verbatim}
 cluttex -e pdflatex --shell-escape --package-support=minted document.tex
 \end{verbatim}
+
+\section{Check for driver file}
+
+\ClutTeX\ can check that the correct driver file is loaded when certain packages are loaded.
+Currently, the list of supported packages are \texpkg{graphics}, \texpkg{color}, \texpkg{expl3}, \texpkg{hyperref}, and \texpkg{xy}.
+
+The check is always done with PDF mode.
+To check the driver with DVI mode, use \texttt{--check-driver} option.
 
 \end{document}
