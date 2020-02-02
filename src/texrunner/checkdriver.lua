@@ -76,7 +76,7 @@ local function checkdriver(expected_driver, filelist)
     end
   end
   local expl3_driver = nil -- "pdfmode" | "dvisvgm" | "xdvipdfmx" | "dvipdfmx" | "dvips" | "unknown"
-  if loaded["expl3-code.tex"] then
+  if loaded["expl3-code.tex"] or loaded["expl3.sty"] or loaded["l3backend-dvips.def"] or loaded["l3backend-dvipdfmx.def"] or loaded["l3backend-xdvipdfmx.def"] or loaded["l3backend-pdfmode.def"] then
     if loaded["l3backend-pdfmode.def"] then
       expl3_driver = "pdfmode" -- pdftex, luatex
     elseif loaded["l3backend-dvisvgm.def"] then
