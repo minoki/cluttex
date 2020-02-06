@@ -1,3 +1,13 @@
+Version 0.5 (2020-02-06)
+-----
+
+Changes:
+
+* New option: `--check-driver`
+* Driver options for some packages are always checked when the output format is PDF.
+* The color for EXEC messages are now cyan ([Issue #2](https://github.com/minoki/cluttex/issues/2)).
+* Some bug-fixes.
+
 Version 0.4 (2019-08-21)
 -----
 
