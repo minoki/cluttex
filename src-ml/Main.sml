@@ -4,7 +4,7 @@ fun getEnvMulti [] = NONE
                                  | NONE => getEnvMulti xs
 fun genOutputDirectory (xs : string list)
     = let val message = String.concatWith "\000" xs
-          val hash = MD5.asHexString (Byte.stringToBytes message)
+          val hash = MD5.md5AsLowerHex (Byte.stringToBytes message)
           val tmpdir = case getEnvMulti ["TMPDIR", "TMP", "TEMP"] of
                            SOME tmpdir => tmpdir
                          | NONE => case getEnvMulti ["HOME", "USERPROFILE"] of

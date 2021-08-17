@@ -1,6 +1,7 @@
 signature MD5 = sig
     val compute : Word8Vector.vector -> Word32.word * Word32.word * Word32.word * Word32.word
-    val asHexString : Word8Vector.vector -> string
+    val md5AsLowerHex : Word8Vector.vector -> string
+    val md5AsUpperHex : Word8Vector.vector -> string
 end
 structure MD5 : MD5 = struct
 infix |>
@@ -43,7 +44,7 @@ fun Round1 X y = let fun ABCD (k, t) (a, b, c, d) = let val a = b + ((a + F (b, 
                         |> BCDA (11, 0wx895cd7be)
                         |> ABCD (12, 0wx6b901122)
                         |> DABC (13, 0wxfd987193)
-                        |> CDAB (14, 0wxa679348e)
+                        |> CDAB (14, 0wxa679438e)
                         |> BCDA (15, 0wx49b40821)
                  end
 fun Round2 X y = let fun ABCD (k, t) (a, b, c, d) = let val a = b + ((a + G (b, c, d) + Word32VectorSlice.sub (X, k) + t) <<< 0w5)
@@ -136,19 +137,20 @@ fun Round4 X y = let fun ABCD (k, t) (a, b, c, d) = let val a = b + ((a + I (b, 
                         |> CDAB (2,  0wx2ad7d2bb)
                         |> BCDA (9,  0wxeb86d391)
                  end
+fun c x = String.sub ("0123456789abcdef", Word32.toInt x)
+fun cc x = String.implode [c (x >> 0w4), c (x andb 0wxf)]
 fun compute (content : Word8Vector.vector) : Word32.word * Word32.word * Word32.word * Word32.word
     = let val content32 : Word32Vector.vector
               = let val origLen = Word8Vector.length content
                     val r = Word8Vector.length content mod 64
-                    val padded = Word8Vector.concat [content, Word8Vector.fromList [0wx80], Word8Vector.tabulate (63 - r, fn _ => 0w0)]
+                    val padded = Word8Vector.concat [content, Word8Vector.fromList [0wx80], Word8Vector.tabulate (if r < 56 then 63 - r else 127 - r, fn _ => 0w0)]
                     val paddedLen = Word8Vector.length padded
-                    val (* assert *) true = Word8Vector.length padded mod 64 = 0
+                    (* val (* assert *) true = paddedLen mod 64 = 0 *)
                     val content8 = Word8Array.tabulate (paddedLen, fn i => Word8Vector.sub (padded, i))
-                    val (* assert *) true = Word8Array.length content8 mod 64 = 0
-                    val () = PackWord64Little.update (content8, paddedLen div 8 - 1, LargeWord.fromInt origLen)
+                    val () = PackWord64Little.update (content8, paddedLen div 8 - 1, LargeWord.fromInt (8 * origLen))
                 in Word32Vector.tabulate (Word8Array.length content8 div 4, fn i => Word32.fromLarge (PackWord32Little.subArr (content8, i)))
                 end
-          val (* assert *) true = Word32Vector.length content32 mod 16 = 0
+          (* val (* assert *) true = Word32Vector.length content32 mod 16 = 0 *)
           val max = Word32Vector.length content32 div 16
           fun loop (i, a, b, c, d)
               = if i >= max then
@@ -160,29 +162,27 @@ fun compute (content : Word8Vector.vector) : Word32.word * Word32.word * Word32.
                     end
       in loop (0, 0wx67452301, 0wxefcdab89, 0wx98badcfe, 0wx10325476)
       end
-fun c x = String.sub ("0123456789abcdef", Word32.toInt x)
-fun cc x = String.implode [c (x >> 0w4), c (x andb 0wxf)]
 fun word32ToHexString (x : Word32.word) = String.concat [ cc (x andb 0wxff)
                                                         , cc ((x >> 0w8) andb 0wxff)
                                                         , cc ((x >> 0w16) andb 0wxff)
                                                         , cc (x >> 0w24)
                                                         ]
-fun asHexString (content : Word8Vector.vector) : string
+fun md5AsLowerHex (content : Word8Vector.vector) : string
     = let val (a, b, c, d) = compute content
       in word32ToHexString a ^ word32ToHexString b ^ word32ToHexString c ^ word32ToHexString d
       end
+fun md5AsUpperHex (content : Word8Vector.vector) : string
+    = String.map Char.toUpper (md5AsLowerHex content)
 end;
-print (MD5.asHexString (Byte.stringToBytes "") ^ "\n");
-print (MD5.asHexString (Byte.stringToBytes "a") ^ "\n");
-print (MD5.asHexString (Byte.stringToBytes "abc") ^ "\n");
-print (MD5.asHexString (Byte.stringToBytes "message digest") ^ "\n");
 (*
-MD5.asHexString (Byte.stringToBytes "") = "d41d8cd98f00b204e9800998ecf8427e"
-MD5.asHexString (Byte.stringToBytes "a") = "0cc175b9c0f1b6a831c399e269772661"
-MD5.asHexString (Byte.stringToBytes "abc") = "900150983cd24fb0d6963f7d28e17f72"
-MD5.asHexString (Byte.stringToBytes "message digest") = "f96b697d7cb7938d525a2f31aaf161d0"
-MD5.asHexString (Byte.stringToBytes "abcdefghijklmnopqrstuvwxyz") = "c3fcd3d76192e4007dfb496cca67e13b"
-MD5.asHexString (Byte.stringToBytes "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") =
-"d174ab98d277d9f5a5611c2c9f419d9f"
-MD5.asHexString (Byte.stringToBytes "12345678901234567890123456789012345678901234567890123456789012345678901234567890") = "57edf4a22be3c955ac49da2e2107b67a"
- *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "") ^ "\n"); (* d41d8cd98f00b204e9800998ecf8427e *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "a") ^ "\n"); (* 0cc175b9c0f1b6a831c399e269772661 *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "abc") ^ "\n"); (* 900150983cd24fb0d6963f7d28e17f72 *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "message digest") ^ "\n"); (* f96b697d7cb7938d525a2f31aaf161d0 *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "abcdefghijklmnopqrstuvwxyz") ^ "\n"); (* c3fcd3d76192e4007dfb496cca67e13b *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012") ^ "\n"); (* b76972fe0dff4baac395b531646f738e *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123") ^ "\n"); (* 27eca74a76daae63f472b250b5bcff9d *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234") ^ "\n"); (* 7b704b4e3d241d250fd327d433c27250 *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") ^ "\n"); (* d174ab98d277d9f5a5611c2c9f419d9f *)
+print (MD5.md5AsLowerHex (Byte.stringToBytes "12345678901234567890123456789012345678901234567890123456789012345678901234567890") ^ "\n"); (* 57edf4a22be3c955ac49da2e2107b67a *)
+*)
