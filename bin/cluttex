@@ -1893,6 +1893,7 @@ if os.type == "unix" then
   -- Try LuaJIT-like FFI
   local succ, M = pcall(function()
       local ffi = require "ffi"
+      assert(ffi.os ~= "" and ffi.arch ~= "", "ffi library is stub")
       ffi.cdef[[
 int isatty(int fd);
 int fileno(void *stream);
@@ -1938,9 +1939,26 @@ int fileno(void *stream);
     end
   end
 
+  -- Fallback using system command
+  return {
+    isatty = function(file)
+      local fd
+      if file == io.stdin then
+        fd = 0
+      elseif file == io.stdout then
+        fd = 1
+      elseif file == io.stderr then
+        fd = 2
+      else
+        return false
+      end
+      local result = os.execute(string.format("test -t %d", fd))
+      return result == true or result == 0
+    end,
+  }
+
 else
   -- Try LuaJIT
-  -- TODO: Try to detect MinTTY using GetFileInformationByHandleEx
   local succ, M = pcall(function()
       local ffi = require "ffi"
       local bitlib = assert(bit32 or bit, "Neither bit32 (Lua 5.2) nor bit (LuaJIT) found") -- Lua 5.2 or LuaJIT
