@@ -2751,35 +2751,53 @@ local message = require "texrunner.message"
 local right_values = {
   dvips = {
     graphics = "dvips",
-    expl3    = "dvips",
+    expl3    = {
+      old = "dvips",
+      new = "dvips",
+    },
     hyperref = "dvips",
     xypic    = "dvips",
   },
   dvipdfmx = {
     graphics = "dvipdfmx",
-    expl3    = "dvipdfmx",
+    expl3    = {
+      old = "dvipdfmx",
+      new = "dvipdfmx",
+    },
     hyperref = "dvipdfmx",
     xypic    = "pdf",
   },
   dvisvgm = {
     graphics = "dvisvgm",
-    expl3    = "dvisvgm",
+    expl3    = {
+      old = "dvisvgm",
+      new = "dvisvgm",
+    },
   },
   xetex = {
     graphics = "xetex",
-    expl3    = "xdvipdfmx",
+    expl3    = {
+      old = "xdvipdfmx",
+      new = "xetex",
+    },
     hyperref = "xetex",
     xypic    = "pdf",
   },
   pdftex = {
     graphics = "pdftex",
-    expl3    = "pdfmode",
+    expl3    = {
+      old = "pdfmode",
+      new = "pdftex",
+    },
     hyperref = "pdftex",
     xypic    = "pdf",
   },
   luatex = {
     graphics = "luatex",
-    expl3    = "pdfmode",
+    expl3    = {
+      old = "pdfmode",
+      new = "luatex",
+    },
     hyperref = "luatex",
     xypic    = "pdf",
   },
@@ -2818,18 +2836,24 @@ local function checkdriver(expected_driver, filelist)
       graphics_driver = "unknown"
     end
   end
-  local expl3_driver = nil -- "pdfmode" | "dvisvgm" | "xdvipdfmx" | "dvipdfmx" | "dvips" | "unknown"
-  if loaded["expl3-code.tex"] or loaded["expl3.sty"] or loaded["l3backend-dvips.def"] or loaded["l3backend-dvipdfmx.def"] or loaded["l3backend-xdvipdfmx.def"] or loaded["l3backend-pdfmode.def"] then
+  local expl3_driver = nil -- "pdfmode" | "dvisvgm" | "xdvipdfmx" | "dvipdfmx" | "dvips" | "pdftex" | "luatex" | "xetex" | "unknown"
+  if loaded["expl3-code.tex"] or loaded["expl3.sty"] or loaded["l3backend-dvips.def"] or loaded["l3backend-dvipdfmx.def"] or loaded["l3backend-xdvipdfmx.def"] or loaded["l3backend-pdfmode.def"] or loaded["l3backend-pdftex.def"] or loaded["l3backend-luatex.def"] or loaded["l3backend-xetex.def"] then
     if loaded["l3backend-pdfmode.def"] then
-      expl3_driver = "pdfmode" -- pdftex, luatex
+      expl3_driver = "pdfmode" -- pdftex, luatex in older l3backend
     elseif loaded["l3backend-dvisvgm.def"] then
       expl3_driver = "dvisvgm"
     elseif loaded["l3backend-xdvipdfmx.def"] then
-      expl3_driver = "xdvipdfmx"
+      expl3_driver = "xdvipdfmx" -- xetex in older l3backend
     elseif loaded["l3backend-dvipdfmx.def"] then
       expl3_driver = "dvipdfmx"
     elseif loaded["l3backend-dvips.def"] then
       expl3_driver = "dvips"
+    elseif loaded["l3backend-pdftex.def"] then
+      expl3_driver = "pdftex"
+    elseif loaded["l3backend-luatex.def"] then
+      expl3_driver = "luatex"
+    elseif loaded["l3backend-xetex.def"] then
+      expl3_driver = "xetex"
     else
       -- TODO: driver=latex2e?
       expl3_driver = "unknown"
@@ -2878,9 +2902,12 @@ local function checkdriver(expected_driver, filelist)
     message.diag("The driver option for graphics(x)/color is missing or wrong.")
     message.diag("Consider setting '", expected.graphics, "' option.")
   end
-  if expl3_driver ~= nil and expected.expl3 ~= nil and expl3_driver ~= expected.expl3 then
+  if expl3_driver ~= nil and expected.expl3 ~= nil and expl3_driver ~= expected.expl3.old and expl3_driver ~= expected.expl3.new then
     message.diag("The driver option for expl3 is missing or wrong.")
-    message.diag("Consider setting 'driver=", expected.expl3, "' option when loading expl3.")
+    message.diag("Consider setting 'driver=", expected.expl3.new, "' option when loading expl3.")
+    if expected.expl3.old ~= expected.expl3.new then
+      message.diag("You might need to instead set 'driver=", expected.expl3.old, "' if you are using an older version of expl3.")
+    end
   end
   if hyperref_driver ~= nil and expected.hyperref ~= nil and hyperref_driver ~= expected.hyperref then
     message.diag("The driver option for hyperref is missing or wrong.")
