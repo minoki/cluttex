@@ -1,3 +1,11 @@
+Version 0.5.1 (2021-11-04)
+-----
+
+Changes:
+
+* Support terminal detection on more platforms (especially on Apple Silicon)
+* Support newer l3backend ([Issue #5](https://github.com/minoki/cluttex/issues/5), thanks to @gksato)
+
 Version 0.5 (2020-02-06)
 -----
 
