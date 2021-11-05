@@ -35,6 +35,6 @@ bin/cluttex.bat: $(sources) build.lua
 	lua build.lua --windows-batchfile $@
 	lua checkglobal.lua $@
 
-archive:
+archive: all
 	git archive --format=tar --prefix=cluttex/ -o cluttex.tar HEAD
 	gzip -k9 cluttex.tar
