@@ -1275,6 +1275,21 @@ texio.write = function(...)
   return texio_write(...)
 end
 ]==])
+
+  -- Fix "arg" to make luamplib work
+  initscript:write([==[
+if string.match(arg[0], "^%-%-lua=") then
+  local minindex = 0
+  while arg[minindex - 1] ~= nil do
+    minindex = minindex - 1
+  end
+  local arg2 = {}
+  for i = 0, #arg - minindex do
+    arg2[i] = arg[i + minindex]
+  end
+  arg = arg2
+end
+]==])
   initscript:close()
 end
 
