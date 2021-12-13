@@ -180,7 +180,7 @@ end
 
 -- handle change_directory properly (needs to be after initscript gen)
 if options.change_directory then
-	tex_options.output_directory = nil
+  tex_options.output_directory = nil
 end
 
 -- Run TeX command (*tex, *latex)
