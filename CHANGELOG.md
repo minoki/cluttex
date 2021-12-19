@@ -1,3 +1,11 @@
+Unreleased Version
+-----
+
+Changes:
+
+* Fix "arg" table in luatexinit to support luamplib
+* Handle the combination of `--output-directory` and `--change-directory` properly ([Issue #7](https://github.com/minoki/cluttex/issues/7), thanks to @atticus-sullivan)
+
 Version 0.5.1 (2021-11-04)
 -----
 

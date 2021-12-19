@@ -3069,9 +3069,11 @@ end
 local original_wd = filesys.currentdir()
 if options.change_directory then
   local TEXINPUTS = os.getenv("TEXINPUTS") or ""
-  filesys.chdir(options.output_directory)
+  assert(filesys.chdir(options.output_directory))
   options.output = pathutil.abspath(options.output, original_wd)
   os.setenv("TEXINPUTS", original_wd .. pathsep .. TEXINPUTS)
+  -- after changing the pwd, '.' is always the output_directory (needed for some path generation)
+  options.output_directory = "."
 end
 if options.bibtex or options.biber then
   local BIBINPUTS = os.getenv("BIBINPUTS") or ""
@@ -3120,6 +3122,11 @@ if engine.is_luatex then
   local initscriptfile = path_in_output_directory("cluttexinit.lua")
   luatexinit.create_initialization_script(initscriptfile, tex_options)
   tex_options.lua_initialization_script = initscriptfile
+end
+
+-- handle change_directory properly (needs to be after initscript gen)
+if options.change_directory then
+  tex_options.output_directory = nil
 end
 
 -- Run TeX command (*tex, *latex)
