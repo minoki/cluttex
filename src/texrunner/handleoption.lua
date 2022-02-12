@@ -47,8 +47,9 @@ Options:
                                  cross-references.  [default: 3]
       --start-with-draft       Start with draft mode.
       --[no-]change-directory  Change directory before running TeX.
-      --watch                  Watch input files for change.  Requires fswatch
-                                 program to be installed.
+      --watch[=ENGINE]         Watch input files for change.  Requires fswatch
+                                 or inotifywait to be installed. ENGINE is one of
+                                 `fswatch', `inotifywait' or `auto' [default: `auto']
       --tex-option=OPTION      Pass OPTION to TeX as a single option.
       --tex-options=OPTIONs    Pass OPTIONs to TeX as multiple options.
       --dvipdfmx-option[s]=OPTION[s]  Same for dvipdfmx.
@@ -122,6 +123,8 @@ local option_spec = {
   },
   {
     long = "watch",
+    param = true,
+    default = "auto",
   },
   {
     short = "h",
@@ -312,7 +315,7 @@ local function handle_cluttex_options(arg)
 
     elseif name == "watch" then
       assert(options.watch == nil, "multiple --watch options")
-      options.watch = true
+      options.watch = param
 
     elseif name == "help" then
       usage(arg)
@@ -469,6 +472,13 @@ local function handle_cluttex_options(arg)
   end
 
   set_default_values(options)
+
+  -- parameter validy check TODO should this be organized as function like
+  -- set_default_values and with a key in the option spec (list or function)?
+  if options.watch ~= "fswatch" and options.watch ~= "inotifywait" then
+    message.error("Unknown wait engine '", options.watch, "'.")
+    os.exit(1)
+  end
 
   if options.output_format == "pdf" then
     if options.check_driver ~= nil then
