@@ -475,9 +475,11 @@ local function handle_cluttex_options(arg)
 
   -- parameter validy check TODO should this be organized as function like
   -- set_default_values and with a key in the option spec (list or function)?
-  if options.watch ~= "fswatch" and options.watch ~= "inotifywait" then
-    message.error("Unknown wait engine '", options.watch, "'.")
-    os.exit(1)
+  if options.watch then
+	  if options.watch ~= "fswatch" and options.watch ~= "inotifywait" then
+		message.error("Unknown wait engine '", options.watch, "'.")
+		os.exit(1)
+	  end
   end
 
   if options.output_format == "pdf" then
