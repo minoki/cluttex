@@ -573,7 +573,7 @@ if options.watch then
       watcher:close()
       return true
     end
-  elseif shellutil.has_command("fswatch") then
+  elseif shellutil.has_command("fswatch") and (options.watch == "auto" or options.watch == "fswatch")  then
     if CLUTTEX_VERBOSITY >= 2 then
       message.info("Using `fswatch' command")
     end
@@ -597,7 +597,7 @@ if options.watch then
       end
       return false
     end
-  elseif shellutil.has_command("inotifywait") then
+  elseif shellutil.has_command("inotifywait") and (options.watch == "auto" or options.watch == "inotifywait") then
     if CLUTTEX_VERBOSITY >= 2 then
       message.info("Using `inotifywait' command")
     end
@@ -622,7 +622,13 @@ if options.watch then
       return false
     end
   else
-    message.error("Could not watch files because neither `fswatch' nor `inotifywait' was installed.")
+    if options.watch == "auto" then
+      message.error("Could not watch files because neither `fswatch' nor `inotifywait' was installed.")
+    elseif options.watch == "fswatch" then
+      message.error("Could not watch files because your selected engine `fswatch' was not installed.")
+    elseif options.watch == "inotifywait" then
+      message.error("Could not watch files because your selected engine `inotifywait' was not installed.")
+    end
     message.info("See ClutTeX's manual for details.")
     os.exit(1)
   end
