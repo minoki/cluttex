@@ -123,9 +123,11 @@ end
 local original_wd = filesys.currentdir()
 if options.change_directory then
   local TEXINPUTS = os.getenv("TEXINPUTS") or ""
+  local LUAINPUTS = os.getenv("LUAINPUTS") or ""
   assert(filesys.chdir(options.output_directory))
   options.output = pathutil.abspath(options.output, original_wd)
   os.setenv("TEXINPUTS", original_wd .. pathsep .. TEXINPUTS)
+  os.setenv("LUAINPUTS", original_wd .. pathsep .. LUAINPUTS)
   -- after changing the pwd, '.' is always the output_directory (needed for some path generation)
   options.output_directory = "."
 end
