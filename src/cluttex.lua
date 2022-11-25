@@ -380,7 +380,7 @@ local function single_run(auxstatus, iteration)
       bibtex_aux_hash2 = md5.sum(table.concat(biblines2, "\n"))
     end
     local output_bbl = path_in_output_directory("bbl")
-    if bibtex_aux_hash ~= bibtex_aux_hash2 or reruncheck.comparefiletime(mainauxfile, output_bbl, auxstatus) then
+    if bibtex_aux_hash ~= bibtex_aux_hash2 or reruncheck.comparefiletime(mainauxfile, output_bbl, auxstatus) then -- will most probably not work
       -- The input for BibTeX command has changed...
       local bibtex_command = {
         "cd", shellutil.escape(options.output_directory), "&&",
@@ -403,7 +403,18 @@ local function single_run(auxstatus, iteration)
         -- Run biber if the .bcf file is new or updated
         local bcffileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
         local output_bbl = pathutil.replaceext(file.abspath, "bbl")
-        if reruncheck.comparefileinfo({bcffileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, output_bbl, auxstatus) then
+        local updated_dot_bib = false
+        for l in io.lines(file.abspath) do
+            local bib = l:match("<bcf:datasource .*>(.*)</bcf:datasource>")
+            if bib then
+                updated_dot_bib = not reruncheck.comparefiletime(pathutil.abspath(mainauxfile), "../"..bib, auxstatus) -- TODO absolute path for bib?
+                if updated_dot_bib then
+                    message.info(".bib file is newer than main-aux")
+                    break
+                end
+            end
+        end
+        if updated_dot_bib or reruncheck.comparefileinfo({bcffileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, output_bbl, auxstatus) then
           local bbl_dir = pathutil.dirname(file.abspath)
           local biber_command = {
             options.biber, -- Do not escape options.biber to allow additional options
