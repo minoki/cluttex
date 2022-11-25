@@ -407,7 +407,7 @@ local function single_run(auxstatus, iteration)
         for l in io.lines(file.abspath) do
             local bib = l:match("<bcf:datasource .*>(.*)</bcf:datasource>")
             if bib then
-                updated_dot_bib = not reruncheck.comparefiletime(pathutil.abspath(mainauxfile), "../"..bib, auxstatus) -- TODO absolute path for bib?
+                updated_dot_bib = not reruncheck.comparefiletime(pathutil.abspath(mainauxfile), original_wd.."/"..bib, auxstatus)
                 if updated_dot_bib then
                     message.info(".bib file is newer than main-aux")
                     break
