@@ -427,6 +427,27 @@ local function single_run(auxstatus, iteration)
     end
   end
 
+  if options.sagetex then
+    for _,file in ipairs(filelist) do
+        if pathutil.ext(file.path) == "sage" then
+            local sagefileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
+            if reruncheck.comparefileinfo({sagefileinfo}, auxstatus) then
+                local sage_command = {
+                    options.sagetex, -- Do not escape options.sagetex to allow additional options
+                    -- TODO handle output directory?
+                    pathutil.basename(file.abspath)
+                }
+                coroutine.yield(table.concat(sage_command, " "))
+            end
+        end
+    end
+  else
+      -- Check log file
+      if string.find(execlog, "Run Sage on") then
+          message.diag("You may want to use --sagetex option.")
+      end
+  end
+
   if string.find(execlog, "No pages of output.") then
     return "No pages of output."
   end

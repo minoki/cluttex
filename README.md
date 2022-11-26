@@ -19,7 +19,7 @@ Features
 * With pTeX-like engines, automatically run dvipdfmx to produce PDF file.
 * Automatically re-run (La)TeX to resolve cross-references and other things.
 * Watch input files for change (requires an external program). \[`--watch` option\]
-* Support for MakeIndex, BibTeX, Biber, makeglossaries commands. \[`--makeindex`, `--bibtex`, `--biber`, `--makeglossaries` options\]
+* Support for MakeIndex, BibTeX, Biber, makeglossaries, sagetex commands. \[`--makeindex`, `--bibtex`, `--biber`, `--makeglossaries`, `--sagetex` options\]
 
 Usage
 -----
@@ -107,6 +107,8 @@ Options to run auxiliary programs:
   Use Biber program to produce `.bbl` file from `.bcf` file.
 * `--makeglossaries[=COMMAND]`
   Use makeglossaries program to produce `.gls` file from `.glo` file.
+* `--sagetex[=COMMAND]`
+  Use sagetex program to produce `.sout` and `.scmd` file from `.sage` file.
 
 TeX-compatible options:
 
