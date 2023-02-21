@@ -1432,8 +1432,9 @@ Options:
                                  cross-references.  [default: 3]
       --start-with-draft       Start with draft mode.
       --[no-]change-directory  Change directory before running TeX.
-      --watch                  Watch input files for change.  Requires fswatch
-                                 program to be installed.
+      --watch[=ENGINE]         Watch input files for change.  Requires fswatch
+                                 or inotifywait to be installed. ENGINE is one of
+                                 `fswatch', `inotifywait' or `auto' [default: `auto']
       --tex-option=OPTION      Pass OPTION to TeX as a single option.
       --tex-options=OPTIONs    Pass OPTIONs to TeX as multiple options.
       --dvipdfmx-option[s]=OPTION[s]  Same for dvipdfmx.
@@ -1507,6 +1508,8 @@ local option_spec = {
   },
   {
     long = "watch",
+    param = true,
+    default = "auto",
   },
   {
     short = "h",
@@ -1697,7 +1700,7 @@ local function handle_cluttex_options(arg)
 
     elseif name == "watch" then
       assert(options.watch == nil, "multiple --watch options")
-      options.watch = true
+      options.watch = param
 
     elseif name == "help" then
       usage(arg)
@@ -1854,6 +1857,15 @@ local function handle_cluttex_options(arg)
   end
 
   set_default_values(options)
+
+  -- parameter validy check TODO should this be organized as function like
+  -- set_default_values and with a key in the option spec (list or function)?
+  if options.watch then
+	  if options.watch ~= "fswatch" and options.watch ~= "inotifywait" then
+		message.error("Unknown wait engine '", options.watch, "'.")
+		os.exit(1)
+	  end
+  end
 
   if options.output_format == "pdf" then
     if options.check_driver ~= nil then
@@ -3066,9 +3078,11 @@ end
 local original_wd = filesys.currentdir()
 if options.change_directory then
   local TEXINPUTS = os.getenv("TEXINPUTS") or ""
+  local LUAINPUTS = os.getenv("LUAINPUTS") or ""
   assert(filesys.chdir(options.output_directory))
   options.output = pathutil.abspath(options.output, original_wd)
   os.setenv("TEXINPUTS", original_wd .. pathsep .. TEXINPUTS)
+  os.setenv("LUAINPUTS", original_wd .. pathsep .. LUAINPUTS)
   -- after changing the pwd, '.' is always the output_directory (needed for some path generation)
   options.output_directory = "."
 end
@@ -3321,7 +3335,7 @@ local function single_run(auxstatus, iteration)
       bibtex_aux_hash2 = md5.sum(table.concat(biblines2, "\n"))
     end
     local output_bbl = path_in_output_directory("bbl")
-    if bibtex_aux_hash ~= bibtex_aux_hash2 or reruncheck.comparefiletime(mainauxfile, output_bbl, auxstatus) then
+    if bibtex_aux_hash ~= bibtex_aux_hash2 or reruncheck.comparefiletime(mainauxfile, output_bbl, auxstatus) then -- will most probably not work
       -- The input for BibTeX command has changed...
       local bibtex_command = {
         "cd", shellutil.escape(options.output_directory), "&&",
@@ -3340,18 +3354,40 @@ local function single_run(auxstatus, iteration)
     end
   elseif options.biber then
     for _,file in ipairs(filelist) do
+      -- usual compilation with biber
+      -- tex     -> pdflatex tex -> aux,bcf,pdf,run.xml
+      -- bcf     -> biber bcf    -> bbl
+      -- tex,bbl -> pdflatex tex -> aux,bcf,pdf,run.xml
       if pathutil.ext(file.path) == "bcf" then
         -- Run biber if the .bcf file is new or updated
         local bcffileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
         local output_bbl = pathutil.replaceext(file.abspath, "bbl")
-        if reruncheck.comparefileinfo({bcffileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, output_bbl, auxstatus) then
-          local bbl_dir = pathutil.dirname(file.abspath)
+        local updated_dot_bib = false
+        -- get the .bib files, the bcf uses as input
+        for l in io.lines(file.abspath) do
+            local bib = l:match("<bcf:datasource .*>(.*)</bcf:datasource>") -- might be unstable if biblatex adds e.g. a linebreak
+            if bib then
+              local bibfile = pathutil.join(original_wd, bib)
+              local succ, err = io.open(bibfile, "r") -- check if file is present, don't use touch to avoid triggering a rerun
+              if succ then
+                succ:close()
+                updated_dot_bib = not reruncheck.comparefiletime(pathutil.abspath(mainauxfile), bibfile, auxstatus)
+                if updated_dot_bib then
+                    message.info(bibfile.." is newer than aux")
+                end
+              else
+                message.warn(bibfile .. " is not accessible (" .. err .. ")")
+              end
+            end
+        end
+        if updated_dot_bib or reruncheck.comparefileinfo({bcffileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, output_bbl, auxstatus) then
           local biber_command = {
             options.biber, -- Do not escape options.biber to allow additional options
             "--output-directory", shellutil.escape(options.output_directory),
             pathutil.basename(file.abspath)
           }
           coroutine.yield(table.concat(biber_command, " "))
+          -- watch for changes in the bbl
           table.insert(filelist, {path = output_bbl, abspath = output_bbl, kind = "auxiliary"})
         else
           local succ, err = filesys.touch(output_bbl)
@@ -3514,7 +3550,7 @@ if options.watch then
       watcher:close()
       return true
     end
-  elseif shellutil.has_command("fswatch") then
+  elseif shellutil.has_command("fswatch") and (options.watch == "auto" or options.watch == "fswatch")  then
     if CLUTTEX_VERBOSITY >= 2 then
       message.info("Using `fswatch' command")
     end
@@ -3538,7 +3574,7 @@ if options.watch then
       end
       return false
     end
-  elseif shellutil.has_command("inotifywait") then
+  elseif shellutil.has_command("inotifywait") and (options.watch == "auto" or options.watch == "inotifywait") then
     if CLUTTEX_VERBOSITY >= 2 then
       message.info("Using `inotifywait' command")
     end
@@ -3563,7 +3599,13 @@ if options.watch then
       return false
     end
   else
-    message.error("Could not watch files because neither `fswatch' nor `inotifywait' was installed.")
+    if options.watch == "auto" then
+      message.error("Could not watch files because neither `fswatch' nor `inotifywait' was installed.")
+    elseif options.watch == "fswatch" then
+      message.error("Could not watch files because your selected engine `fswatch' was not installed.")
+    elseif options.watch == "inotifywait" then
+      message.error("Could not watch files because your selected engine `inotifywait' was not installed.")
+    end
     message.info("See ClutTeX's manual for details.")
     os.exit(1)
   end

@@ -399,29 +399,40 @@ local function single_run(auxstatus, iteration)
     end
   elseif options.biber then
     for _,file in ipairs(filelist) do
+      -- usual compilation with biber
+      -- tex     -> pdflatex tex -> aux,bcf,pdf,run.xml
+      -- bcf     -> biber bcf    -> bbl
+      -- tex,bbl -> pdflatex tex -> aux,bcf,pdf,run.xml
       if pathutil.ext(file.path) == "bcf" then
         -- Run biber if the .bcf file is new or updated
         local bcffileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
         local output_bbl = pathutil.replaceext(file.abspath, "bbl")
         local updated_dot_bib = false
+        -- get the .bib files, the bcf uses as input
         for l in io.lines(file.abspath) do
-            local bib = l:match("<bcf:datasource .*>(.*)</bcf:datasource>")
+            local bib = l:match("<bcf:datasource .*>(.*)</bcf:datasource>") -- might be unstable if biblatex adds e.g. a linebreak
             if bib then
-                updated_dot_bib = not reruncheck.comparefiletime(pathutil.abspath(mainauxfile), original_wd.."/"..bib, auxstatus)
+              local bibfile = pathutil.join(original_wd, bib)
+              local succ, err = io.open(bibfile, "r") -- check if file is present, don't use touch to avoid triggering a rerun
+              if succ then
+                succ:close()
+                updated_dot_bib = not reruncheck.comparefiletime(pathutil.abspath(mainauxfile), bibfile, auxstatus)
                 if updated_dot_bib then
-                    message.info(".bib file is newer than main-aux")
-                    break
+                    message.info(bibfile.." is newer than aux")
                 end
+              else
+                message.warn(bibfile .. " is not accessible (" .. err .. ")")
+              end
             end
         end
         if updated_dot_bib or reruncheck.comparefileinfo({bcffileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, output_bbl, auxstatus) then
-          local bbl_dir = pathutil.dirname(file.abspath)
           local biber_command = {
             options.biber, -- Do not escape options.biber to allow additional options
             "--output-directory", shellutil.escape(options.output_directory),
             pathutil.basename(file.abspath)
           }
           coroutine.yield(table.concat(biber_command, " "))
+          -- watch for changes in the bbl
           table.insert(filelist, {path = output_bbl, abspath = output_bbl, kind = "auxiliary"})
         else
           local succ, err = filesys.touch(output_bbl)
