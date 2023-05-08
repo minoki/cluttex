@@ -373,6 +373,28 @@ local function single_run(auxstatus, iteration)
     end
   end
 
+  if options.glossaries then
+    -- Look for configured files and run makeindex/xindy
+    for _,file in ipairs(filelist) do
+      for _, cfg in ipairs(options.glossaries) do
+        if pathutil.basename(file.path) == cfg.inp then
+          -- Run xindy/makeindex if the specified input-file is new or updated
+          local inputfileinfo = {path = file.path, abspath = file.abspath, kind = "auxiliary"}
+          local outputfile = cfg.out
+          if reruncheck.comparefileinfo({inputfileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, outputfile, auxstatus) then
+            coroutine.yield(cfg.cmd)
+            table.insert(filelist, {path = outputfile, abspath = outputfile, kind = "auxiliary"})
+          else
+            local succ, err = filesys.touch(outputfile)
+            if not succ then
+              message.warn("Failed to touch " .. output_ind .. " (" .. err .. ")")
+            end
+          end
+        end
+      end
+    end
+  end
+
   if options.bibtex then
     local biblines2 = extract_bibtex_from_aux_file(mainauxfile, options.output_directory)
     local bibtex_aux_hash2

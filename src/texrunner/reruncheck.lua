@@ -81,6 +81,12 @@ local function parse_recorder_file(file, options, filelist, filemap)
           -- Treat .idx files (to be processed by MakeIndex) as auxiliary
           kind = "auxiliary"
           -- ...and .ind files
+        elseif options.glossaries then
+          for _,i in ipairs(options.glossaries) do
+            if pathutil.basename(abspath) == i.inp then
+              kind = "auxiliary"
+            end
+          end
         elseif ext == "bcf" then -- biber
           kind = "auxiliary"
         elseif ext == "glo" then -- makeglossaries
