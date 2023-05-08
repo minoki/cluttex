@@ -513,6 +513,7 @@ local function handle_cluttex_options(arg)
       table.insert(options.dvipdfmx_extraoptions, param)
 
     elseif name == "makeindex" then
+      assert(not options.glossaries, "'makeindex' cannot be used together with 'glossaries'")
       assert(options.makeindex == nil, "multiple --makeindex options")
       options.makeindex = param
 
@@ -527,10 +528,13 @@ local function handle_cluttex_options(arg)
       options.biber = param
 
     elseif name == "makeglossaries" then
+      assert(not options.glossaries, "'makeglossaries' cannot be used together with 'glossaries'")
       assert(options.makeglossaries == nil, "multiple --makeglossaries options")
       options.makeglossaries = param
 
     elseif name == "glossaries" then
+      assert(not options.makeglossaries, "'glossaries' cannot be used together with 'makeglossaries'")
+      assert(not options.makeindex, "'glossaries' cannot be used together with 'makeindex'")
       if not options.glossaries then
         options.glossaries = {}
       end
