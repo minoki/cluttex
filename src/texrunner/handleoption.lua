@@ -57,18 +57,18 @@ local function parse_glossaries_option(opt)
     return nil, "Invalid glossaries parameter. \""..ret.type.."\" is unsupported"
   end
 
-  ret.log = s[2]
+  ret.out = s[2]
 
   if #s >= 3 and s[3] ~= "" then
-    ret.out = s[3]
+    ret.inp = s[3]
   else
-    ret.out = ret.log:sub(1,-2).."s"
+    ret.inp = ret.out:sub(1,-2).."o"
   end
 
   if #s >= 4 and s[4] ~= "" then
-    ret.inp = s[4]
+    ret.log = s[4]
   else
-    ret.inp = ret.log:sub(1,-2).."o"
+    ret.log = ret.out:sub(1,-2).."g"
   end
 
   if #s >= 5 and s[5] ~= "" then
@@ -135,21 +135,21 @@ Options:
       --biber[=COMMAND+OPTIONs]    Command for Biber.
       --makeglossaries[=COMMAND+OPTIONs]  Command for makeglossaries.
       --glossaries=[CONFIGURATION]  Configuration can contain
-                                    "type:logFile:outputFile:inputFile:pathToCommand:commandArgs" (":" can be escaped with "\").
-                                    Only the logFile and either type or pathToCommand
+                                    "type:outputFile:inputFile:logFile:pathToCommand:commandArgs" (":" can be escaped with "\").
+                                    Only the outputFile and either type or pathToCommand
                                     are required, the other options will be infered
-                                    automatically (does not work always for outputFile and
-                                    inputFile). If commandArgs is being specified,
+                                    automatically (does not work always for inputFile and
+                                    logFile). If commandArgs is being specified,
                                     these will be the only arguments passed to the
                                     command. If type is unspecified commandArgs must be
                                     specified. As types we support makeindex and xindy.
                                     Specify this option multiple times to register multiple
                                     glossaries. The default value works for a
-                                    configuration with the usual glossary (glg,glo,gls)
+                                    configuration with the usual glossary (glo,gls,glg)
                                     with a tex-file named "main.tex".
                                     A typical example is
-                                    "makeindex:main.alg:main.acr:main.acn" or
-                                    "makeindex:main.glg:main.glo:main.gls" (default)
+                                    "makeindex:main.acr:main.acn:main.alg" or
+                                    "makeindex:main.glo:main.gls:main.glg" (default)
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
@@ -341,7 +341,7 @@ local option_spec = {
   {
     long = "glossaries",
     param = true,
-    default = "makeindex:main.glg:main.glo:main.gls",
+    default = "makeindex:main.glo:main.gls:main.glg",
   },
 }
 
@@ -513,7 +513,7 @@ local function handle_cluttex_options(arg)
       table.insert(options.dvipdfmx_extraoptions, param)
 
     elseif name == "makeindex" then
-      assert(not options.glossaries, "'makeindex' cannot be used together with 'glossaries'")
+      assert(not options.glossaries, "'makeindex' cannot be used together with 'glossaries'\nUse e.g. --glossaries='makeindex:main.ind:main.idx:main.ilg' instead of makeindex")
       assert(options.makeindex == nil, "multiple --makeindex options")
       options.makeindex = param
 
@@ -528,13 +528,13 @@ local function handle_cluttex_options(arg)
       options.biber = param
 
     elseif name == "makeglossaries" then
-      assert(not options.glossaries, "'makeglossaries' cannot be used together with 'glossaries'")
+      assert(not options.glossaries, "'makeglossaries' cannot be used together with 'glossaries'\nUse e.g. --glossaries='makeindex:main.glo:main.gls:main.glg' instead of makeglossaries")
       assert(options.makeglossaries == nil, "multiple --makeglossaries options")
       options.makeglossaries = param
 
     elseif name == "glossaries" then
-      assert(not options.makeglossaries, "'glossaries' cannot be used together with 'makeglossaries'")
-      assert(not options.makeindex, "'glossaries' cannot be used together with 'makeindex'")
+      assert(not options.makeglossaries, "'glossaries' cannot be used together with 'makeglossaries'\nUse e.g. --glossaries='makeindex:main.glo:main.gls:main.glg' instead of makeglossaries")
+      assert(not options.makeindex, "'glossaries' cannot be used together with 'makeindex'\nUse e.g. --glossaries='makeindex:main.ind:main.idx:main.ilg' instead of makeindex")
       if not options.glossaries then
         options.glossaries = {}
       end
