@@ -77,11 +77,13 @@ local function parse_glossaries_option(opt)
     ret.path = ret.type
   end
 
+  ret.ist = pathutil.replaceext(ret.log, "ist")
+
   if #s >= 6 then
     ret.args = s[6]
   else
     if ret.type == "makeindex" then
-      ret.args = ("-t %s -o %s %s"):format(shellutil.escape(ret.log), shellutil.escape(ret.out), shellutil.escape(ret.inp))
+      ret.args = ("-s %s -t %s -o %s %s"):format(shellutil.escape(ret.ist), shellutil.escape(ret.log), shellutil.escape(ret.out), shellutil.escape(ret.inp))
     elseif ret.type == "xindy" then
       ret.args = ("-t %s -o %s %s"):format(shellutil.escape(ret.log), shellutil.escape(ret.out), shellutil.escape(ret.inp))
     else
