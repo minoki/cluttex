@@ -384,11 +384,11 @@ local function single_run(auxstatus, iteration)
           if reruncheck.comparefileinfo({inputfileinfo}, auxstatus) or reruncheck.comparefiletime(file.abspath, cfg.inp, auxstatus) then
             coroutine.yield(cfg.cmd)
             table.insert(filelist, {path = outputfile, abspath = outputfile, kind = "auxiliary"})
-          -- else TODO why is this here in the other "modules"? Here it only works without this one
-          --   local succ, err = filesys.touch(outputfile)
-          --   if not succ then
-          --     message.warn("Failed to touch " .. outputfile .. " (" .. err .. ")")
-          --   end
+          else
+            local succ, err = filesys.touch(outputfile)
+            if not succ then
+              message.warn("Failed to touch " .. outputfile .. " (" .. err .. ")")
+            end
           end
         end
       end
