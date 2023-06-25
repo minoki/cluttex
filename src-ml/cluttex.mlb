@@ -1,3 +1,17 @@
 $(SML_LIB)/basis/basis.mlb
-MD5.sml
-Main.sml
+$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+ann "sequenceNonUnit warn" "valDescInComments warn" in
+md5.sml
+map.sml
+shell-util.sml
+path-util.sml
+fs-util.sml
+app-options.sml
+message.sml
+tex-engine.sml
+auxfile.sml
+check-driver.sml
+luatexinit.sml
+handle-options.sml
+main.sml
+end
