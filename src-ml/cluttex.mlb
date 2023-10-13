@@ -6,9 +6,10 @@ map.sml
 shell-util.sml
 path-util.sml
 fs-util.sml
+types.sml
+tex-engine.sml
 app-options.sml
 message.sml
-tex-engine.sml
 auxfile.sml
 check-driver.sml
 luatexinit.sml

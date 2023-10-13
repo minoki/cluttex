@@ -3,18 +3,6 @@ structure AppOptions : sig
                             datatype driver = DVIPDFMX | DVIPS | DVISVGM
                             val fromString : string -> driver option
                         end
-              structure InteractionMode : sig
-                            datatype interaction = BATCHMODE | NONSTOPMODE | SCROLLMODE | ERRORSTOPMODE
-                            val fromString : string -> interaction option
-                            val toString : interaction -> string
-                        end
-              structure ShellEscape : sig
-                            datatype shell_escape = ALLOWED | RESTRICTED | FORBIDDEN
-                        end
-              structure OutputFormat : sig
-                            datatype format = PDF | DVI
-                            val fromString : string -> format option
-                        end
               datatype bibtex_or_biber = BIBTEX of string | BIBER of string
               structure WatchEngine : sig
                             datatype engine = FSWATCH | INOTIFYWAIT | AUTO
@@ -24,36 +12,64 @@ structure AppOptions : sig
                             datatype mode = ALWAYS | AUTO | NEVER
                             val fromString : string -> mode option
                         end
-              type options = { engine : string option
+              type initial_options = { engine : string option
+                                     , engine_executable : string option
+                                     , output : string option
+                                     , fresh : bool (* default: false *)
+                                     , max_iterations : int option
+                                     , start_with_draft : bool
+                                     , watch : WatchEngine.engine option
+                                     , color : ColorMode.mode option
+                                     , change_directory : bool option
+                                     , includeonly : string option
+                                     , make_depends : string option
+                                     , print_output_directory : bool (* default: false *)
+                                     , package_support : { minted : bool, epstopdf : bool }
+                                     , check_driver : DviDriver.driver option (* dvipdfmx | dvips | dvisvgm *)
+                                     , synctex : string option (* should be int? *)
+                                     , file_line_error : bool
+                                     , interaction : InteractionMode.interaction option (* batchmode | nonstopmode | scrollmode | errorstopmode *)
+                                     , halt_on_error : bool
+                                     , shell_escape : ShellEscape.shell_escape option
+                                     , jobname : string option
+                                     , fmt : string option
+                                     , output_directory : string option
+                                     , output_format : OutputFormat.format option (* pdf | dvi *)
+                                     , tex_extraoptions : string list
+                                     , dvipdfmx_extraoptions : string list
+                                     , makeindex : string option
+                                     , bibtex_or_biber : bibtex_or_biber option
+                                     , makeglossaries : string option
+                                     }
+              type options = { engine : TeXEngine.engine
                              , engine_executable : string option
                              , output : string option
-                             , fresh : bool (* default: false *)
-                             , max_iterations : int option
+                             , fresh : bool
+                             , max_iterations : int
                              , start_with_draft : bool
                              , watch : WatchEngine.engine option
-                             , color : ColorMode.mode option
-                             , change_directory : bool option
+                             , change_directory : bool
                              , includeonly : string option
                              , make_depends : string option
-                             , print_output_directory : bool (* default: false *)
+                             , print_output_directory : bool
                              , package_support : { minted : bool, epstopdf : bool }
-                             , check_driver : DviDriver.driver option (* dvipdfmx | dvips | dvisvgm *)
-                             , synctex : string option (* should be int? *)
+                             , check_driver : CherkDriver.driver option
+                             , synctex : string option
                              , file_line_error : bool
-                             , interaction : InteractionMode.interaction option (* batchmode | nonstopmode | scrollmode | errorstopmode *)
+                             , interaction : InteractionMode.interaction
                              , halt_on_error : bool
                              , shell_escape : ShellEscape.shell_escape option
                              , jobname : string option
                              , fmt : string option
-                             , output_directory : string option
-                             , output_format : OutputFormat.format option (* pdf | dvi *)
+                             , output_directory : string
+                             , output_format : OutputFormat.format
                              , tex_extraoptions : string list
                              , dvipdfmx_extraoptions : string list
                              , makeindex : string option
                              , bibtex_or_biber : bibtex_or_biber option
                              , makeglossaries : string option
                              }
-              val init : options
+              val init : initial_options
               val getVerbosity : unit -> int
               val beMoreVerbose : unit -> unit
           end = struct
@@ -62,27 +78,6 @@ datatype driver = DVIPDFMX | DVIPS | DVISVGM
 fun fromString "dvipdfmx" = SOME DVIPDFMX
   | fromString "dvips" = SOME DVIPS
   | fromString "dvisvgm" = SOME DVISVGM
-  | fromString _ = NONE
-end
-structure InteractionMode = struct
-datatype interaction = BATCHMODE | NONSTOPMODE | SCROLLMODE | ERRORSTOPMODE
-fun fromString "batchmode" = SOME BATCHMODE
-  | fromString "nonstopmode" = SOME NONSTOPMODE
-  | fromString "scrollmode" = SOME SCROLLMODE
-  | fromString "errorstopmode" = SOME ERRORSTOPMODE
-  | fromString _ = NONE
-fun toString BATCHMODE = "batchmode"
-  | toString NONSTOPMODE = "nonstopmode"
-  | toString SCROLLMODE = "scrollmode"
-  | toString ERRORSTOPMODE = "errorstopmode"
-end
-structure ShellEscape = struct
-datatype shell_escape = ALLOWED | RESTRICTED | FORBIDDEN
-end
-structure OutputFormat = struct
-datatype format = PDF | DVI
-fun fromString "pdf" = SOME PDF
-  | fromString "dvi" = SOME DVI
   | fromString _ = NONE
 end
 datatype bibtex_or_biber = BIBTEX of string | BIBER of string

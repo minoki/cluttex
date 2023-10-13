@@ -2,7 +2,7 @@ functor HandleOptions (val showMessageAndFail : string -> 'a
                        val showUsage : unit -> 'a
                        val showVersion : unit -> 'a
                       ) : sig
-            val parse : AppOptions.options * string list -> AppOptions.options * string list
+            val parse : AppOptions.initial_options * string list -> AppOptions.initial_options * string list
         end = struct
 open AppOptions
 datatype 'a option_action = SIMPLE of 'a

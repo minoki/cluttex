@@ -2,14 +2,14 @@ structure TeXEngine : sig
               type engine_type
               type run_options = { engine_executable : string option
                                  , halt_on_error : bool
-                                 , interaction : AppOptions.InteractionMode.interaction option
+                                 , interaction : InteractionMode.interaction option
                                  , file_line_error : bool
                                  , synctex : string option
-                                 , shell_escape : AppOptions.ShellEscape.shell_escape option
+                                 , shell_escape : ShellEscape.shell_escape option
                                  , jobname : string option
                                  , output_directory : string option
                                  , extra_options : string list
-                                 , output_format : AppOptions.OutputFormat.format
+                                 , output_format : OutputFormat.format
                                  , draftmode : bool (* pdfTeX / XeTeX / LuaTeX *)
                                  , fmt : string option
                                  , lua_initialization_script : string option (* LuaTeX only *)
@@ -22,6 +22,8 @@ structure TeXEngine : sig
                             , engine_type : engine_type
                             }
               val isLuaTeX : engine -> bool
+              val isPdfTeX : engine -> bool
+              val isXeTeX : engine -> bool
               val buildCommand : engine * string * run_options -> string
               val get : string -> engine option
           end = struct
@@ -48,6 +50,8 @@ type engine = { name : string
               , engine_type : engine_type
               }
 fun isLuaTeX ({ engine_type, ... } : engine) = engine_type = LUATEX
+fun isPdfTeX ({ engine_type, ... } : engine) = engine_type = PDFTEX
+fun isXeTeX ({ engine_type, ... } : engine) = engine_type = XETEX
 fun buildCommand (engine : engine, inputline, options : run_options)
     = let val executable = Option.getOpt (#engine_executable options, #executable engine)
           val revCommand = ["-recorder", executable]
