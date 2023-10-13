@@ -139,14 +139,15 @@ end
 
 -- Set `max_print_line' environment variable if not already set.
 if os.getenv("max_print_line") == nil then
-  os.setenv("max_print_line", "65536")
+  os.setenv("max_print_line", "16384")
 end
--- TODO: error_line, half_error_line
 --[[
   According to texmf.cnf:
     45 < error_line < 255,
     30 < half_error_line < error_line - 15,
     60 <= max_print_line.
+
+  On TeX Live 2023, (u)(p)bibtex fails if max_print_line >= 20000.
 ]]
 
 local function path_in_output_directory(ext)
