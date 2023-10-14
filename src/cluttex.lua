@@ -416,10 +416,11 @@ local function single_run(auxstatus, iteration)
               local succ, err = io.open(bibfile, "r") -- check if file is present, don't use touch to avoid triggering a rerun
               if succ then
                 succ:close()
-                updated_dot_bib = not reruncheck.comparefiletime(pathutil.abspath(mainauxfile), bibfile, auxstatus)
-                if updated_dot_bib then
+                local updated_dot_bib_tmp = not reruncheck.comparefiletime(pathutil.abspath(mainauxfile), bibfile, auxstatus)
+                if updated_dot_bib_tmp then
                     message.info(bibfile.." is newer than aux")
                 end
+                updated_dot_bib = updated_dot_bib_tmp or updated_dot_bib
               else
                 message.warn(bibfile .. " is not accessible (" .. err .. ")")
               end
