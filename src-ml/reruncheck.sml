@@ -10,7 +10,7 @@ structure Reruncheck :> sig
               val getFileInfo : recorded -> file_info list * file_info StringMap.map
               type aux_status = { mtime : Time.time option
                                 , size : Position.int option
-                                , md5sum : string option
+                                , md5sum : MD5.hash option
                                 }
               val collectFileInfo : file_info list * aux_status ref StringMap.map -> aux_status ref StringMap.map
               val compareFileTime : { srcAbs : string, dst : string, auxstatus : aux_status StringMap.map } -> bool
@@ -107,7 +107,7 @@ fun parseRecorderFileContinued { file, options : AppOptions.options, previousRes
 fun parseRecorderFile { file, options } = parseRecorderFileContinued { file = file, options = options, previousResult = ([], StringMap.empty) }
 
 type aux_status = { mtime : Time.time option
-                  , size : int option
+                  , size : Position.int option
                   , md5sum : MD5.hash option
                   }
 
@@ -117,8 +117,8 @@ fun md5sumOfFile (path : string) : MD5.hash
       in MD5.compute data
       end
 
-fun collectFileInfo (fileList, auxstatus : aux_status ref StringMap.map) : aux_status ref StringMap.map
-    = let fun go ({ abspath, kind, ... } : file_info, auxstatus)
+fun collectFileInfo (fileList : file_info list, auxstatus : aux_status ref StringMap.map) : aux_status ref StringMap.map
+    = let fun go ({ abspath, kind, ... } : file_info, auxstatus) : aux_status ref StringMap.map
               = if FSUtil.isFile abspath then
                     let val (status, auxstatus) = case StringMap.find (auxstatus, abspath) of
                                                       NONE => let val s = ref { mtime = NONE, size = NONE, md5sum = NONE }
@@ -150,7 +150,7 @@ fun collectFileInfo (fileList, auxstatus : aux_status ref StringMap.map) : aux_s
       in List.foldl go auxstatus fileList
       end
 
-fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap.map)
+fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap.map) : bool * aux_status ref StringMap.map
     = let fun go ([], newauxstatus) = (false, newauxstatus)
             | go ({ path = shortPath, abspath, kind } :: fileList, newauxstatus)
               = if FSUtil.isFile abspath then
@@ -163,11 +163,11 @@ fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap
                                          if Time.< (mtime', mtime) then
                                              (* Input file was updated during execution *)
                                              ( Message.info ("Input file '" ^ shortPath ^ "' was modified (by user, or some external commands).")
-                                             ; (true, StringMap.insert (newauxstatus, abspath, { mtime = SOME mtime, size = NONE, md5sum = NONE }))
+                                             ; (true, StringMap.insert (newauxstatus, abspath, ref { mtime = SOME mtime, size = NONE, md5sum = NONE }))
                                              )
                                          else
                                              (false, newauxstatus)
-                                       | NONE => (* New input file *)
+                                       | _ => (* New input file *)
                                          (false, newauxstatus)
                                   end
                                 | AUXILIARY => (* Auxiliary file: Compare file contents. *)
@@ -182,7 +182,7 @@ fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap
                                                      let val previousSize = case #size s of
                                                                                 SOME z => Position.toString z
                                                                               | NONE => "(N/A)"
-                                                     in (SOME ("size: " ^ previousSize ^ " -> " ^ Position.toString size), StringMap.insert (newauxstatus, abspath, { mtime = NONE, size = SOME size, md5sum = NONE }))
+                                                     in (SOME ("size: " ^ previousSize ^ " -> " ^ Position.toString size), StringMap.insert (newauxstatus, abspath, ref { mtime = NONE, size = SOME size, md5sum = NONE }))
                                                      end
                                                  else
                                                      let val md5sum = md5sumOfFile abspath
@@ -193,7 +193,7 @@ fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap
                                                             let val previousMd5sum = case #md5sum s of
                                                                                          SOME h => MD5.hashToLowerHexString h
                                                                                        | NONE => "(N/A)"
-                                                            in (SOME ("md5: " ^ previousMd5sum ^ " -> " ^ MD5.hashToLowerHexString md5sum), StringMap.insert (newauxstatus, abspath, { mtime = NONE, size = SOME size, md5sum = SOME md5sum }))
+                                                            in (SOME ("md5: " ^ previousMd5sum ^ " -> " ^ MD5.hashToLowerHexString md5sum), StringMap.insert (newauxstatus, abspath, ref { mtime = NONE, size = SOME size, md5sum = SOME md5sum }))
                                                             end
                                                         else
                                                             (NONE, newauxstatus)
@@ -214,14 +214,14 @@ fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap
                                                = if String.isSuffix ".aux" abspath then
                                                      let val size = OS.FileSys.fileSize abspath
                                                      in if size = 8 then
-                                                            let val ins = BinIO.openIn path
+                                                            let val ins = BinIO.openIn abspath
                                                                 val contents = BinIO.inputAll ins before BinIO.closeIn ins
                                                                 val isTrivial = Byte.bytesToString contents = "\\relax \n"
-                                                                val newauxstatus = StringMap.insert (newauxstatus, abspath, { mtime = NONE, size = SOME size, md5sum = SOME (MD5.compute contents) })
+                                                                val newauxstatus = StringMap.insert (newauxstatus, abspath, ref { mtime = NONE, size = SOME size, md5sum = SOME (MD5.compute contents) })
                                                             in (not isTrivial, newauxstatus)
                                                             end
                                                         else
-                                                            let val newauxstatus = StringMap.insert (newauxstatus, abspath, { mtime = NONE, size = SOME size, md5sum = NONE })
+                                                            let val newauxstatus = StringMap.insert (newauxstatus, abspath, ref { mtime = NONE, size = SOME size, md5sum = NONE })
                                                             in (true, newauxstatus)
                                                             end
                                                      end
@@ -248,7 +248,7 @@ fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap
       end
 
 (* true if src is newer than dst *)
-fun compareFileTime { srcAbs, dst, auxstatus }
+fun compareFileTime { srcAbs, dst, auxstatus : aux_status StringMap.map }
     = if not (FSUtil.isFile dst) then
           true
       else
