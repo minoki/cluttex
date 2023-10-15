@@ -7,7 +7,7 @@ structure PathUtil : sig
               val replaceext : { path : string, newext : string } -> string
               val join2 : string * string -> string
               val join : string list -> string
-              val abspath : { path : string, cwd : string } -> string
+              val abspath : { path : string, cwd : string option } -> string
           end = struct
 val luamod = LunarML.assumeDiscardable (fn () => Lua.call1 Lua.Lib.require #[Lua.fromString "texrunner.shellutil"]) ()
 val basename : string -> string = LunarML.assumeDiscardable (fn () => Lua.unsafeFromValue (Lua.field (luamod, "basename"))) ()
@@ -18,5 +18,8 @@ val ext : string -> string = LunarML.assumeDiscardable (fn () => Lua.unsafeFromV
 fun replaceext { path : string, newext : string } : string = Lua.unsafeFromValue (Lua.call1 (Lua.field (luamod, "replaceext")) #[Lua.fromString path, Lua.fromString newext])
 fun join2 (x : string, y : string) : string = Lua.unsafeFromValue (Lua.call1 (Lua.field (luamod, "join")) #[Lua.fromString x, Lua.fromString y])
 fun join (xs : string list) : string = Lua.unsafeFromValue (Lua.call1 (Lua.field (luamod, "join")) (Vector.map Lua.fromString (Vector.fromList xs)))
-fun abspath { path : string, cwd : string } : string = Lua.unsafeFromValue (Lua.call1 (Lua.field (luamod, "abspath")) #[Lua.fromString path, Lua.fromString cwd])
+fun abspath { path : string, cwd : string option } : string
+    = case cwd of
+          SOME cwd => Lua.unsafeFromValue (Lua.call1 (Lua.field (luamod, "abspath")) #[Lua.fromString path, Lua.fromString cwd])
+        | NONE => Lua.unsafeFromValue (Lua.call1 (Lua.field (luamod, "abspath")) #[Lua.fromString path])
 end;

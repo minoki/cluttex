@@ -1,4 +1,6 @@
 $(SML_LIB)/basis/basis.mlb
+$(SML_LIB)/basis/lunarml.mlb
+$(SML_LIB)/basis/lua.mlb
 $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 ann "sequenceNonUnit warn" "valDescInComments warn" in
 md5.sml
@@ -14,5 +16,7 @@ auxfile.sml
 check-driver.sml
 luatexinit.sml
 handle-options.sml
-main.sml
+recovery.sml
+reruncheck.sml
+(* main.sml *)
 end

@@ -1,9 +1,13 @@
 signature MD5 = sig
-    val compute : Word8Vector.vector -> Word32.word * Word32.word * Word32.word * Word32.word
+    type hash = Word32.word * Word32.word * Word32.word * Word32.word
+    val compute : Word8Vector.vector -> hash
+    val hashToLowerHexString : hash -> string
+    val hashToUpperHexString : hash -> string
     val md5AsLowerHex : Word8Vector.vector -> string
     val md5AsUpperHex : Word8Vector.vector -> string
 end
 structure MD5 : MD5 = struct
+type hash = Word32.word * Word32.word * Word32.word * Word32.word
 infix |>
 fun x |> f = f x
 val << = Word32.<<
@@ -167,12 +171,10 @@ fun word32ToHexString (x : Word32.word) = String.concat [ cc (x andb 0wxff)
                                                         , cc ((x >> 0w16) andb 0wxff)
                                                         , cc (x >> 0w24)
                                                         ]
-fun md5AsLowerHex (content : Word8Vector.vector) : string
-    = let val (a, b, c, d) = compute content
-      in word32ToHexString a ^ word32ToHexString b ^ word32ToHexString c ^ word32ToHexString d
-      end
-fun md5AsUpperHex (content : Word8Vector.vector) : string
-    = String.map Char.toUpper (md5AsLowerHex content)
+fun hashToLowerHexString (a, b, c, d) = word32ToHexString a ^ word32ToHexString b ^ word32ToHexString c ^ word32ToHexString d
+fun hashToUpperHexString h = String.map Char.toUpper (hashToLowerHexString h)
+fun md5AsLowerHex content = hashToLowerHexString (compute content)
+fun md5AsUpperHex content = hashToUpperHexString (compute content)
 end;
 (*
 print (MD5.md5AsLowerHex (Byte.stringToBytes "") ^ "\n"); (* d41d8cd98f00b204e9800998ecf8427e *)

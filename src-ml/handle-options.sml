@@ -159,7 +159,7 @@ val optionDescs = [(SHORT "-e", WITH_ARG OPT_ENGINE)
                   ,(LONG "--biber", WITH_OPTIONAL_ARG { action = OPT_BIBER, default = "biber" })
                   ,(LONG "--makeglossaries", WITH_OPTIONAL_ARG { action = OPT_MAKEGLOSSARIES, default = "makeglossaries" })
                   ]
-fun parse (opts : options, args)
+fun parse (opts : initial_options, args)
     = case parseOption (optionDescs, args) of
           SOME (OPT_ENGINE engine, args) => (case #engine opts of
                                                  NONE => parse ({ opts where engine = SOME engine }, args)

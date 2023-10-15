@@ -30,14 +30,14 @@ structure TeXEngine : sig
 datatype engine_type = PDFTEX | XETEX | LUATEX | OTHER
 type run_options = { engine_executable : string option
                    , halt_on_error : bool
-                   , interaction : AppOptions.InteractionMode.interaction option
+                   , interaction : InteractionMode.interaction option
                    , file_line_error : bool
                    , synctex : string option
-                   , shell_escape : AppOptions.ShellEscape.shell_escape option
+                   , shell_escape : ShellEscape.shell_escape option
                    , jobname : string option
                    , output_directory : string option
                    , extra_options : string list
-                   , output_format : AppOptions.OutputFormat.format
+                   , output_format : OutputFormat.format
                    , draftmode : bool (* pdfTeX / XeTeX / LuaTeX *)
                    , fmt : string option
                    , lua_initialization_script : string option (* LuaTeX only *)
@@ -63,7 +63,7 @@ fun buildCommand (engine : engine, inputline, options : run_options)
                              | true => "-halt-on-error" :: revCommand
           val revCommand = case #interaction options of
                                NONE => revCommand
-                             | SOME mode => "-interaction=" ^ AppOptions.InteractionMode.toString mode :: revCommand
+                             | SOME mode => "-interaction=" ^ InteractionMode.toString mode :: revCommand
           val revCommand = case #file_line_error options of
                                false => revCommand
                              | true => "-file-line-error" :: revCommand
@@ -72,9 +72,9 @@ fun buildCommand (engine : engine, inputline, options : run_options)
                              | SOME synctex => "-synctex=" ^ ShellUtil.escape synctex :: revCommand
           val revCommand = case #shell_escape options of
                                NONE => revCommand
-                             | SOME AppOptions.ShellEscape.FORBIDDEN => "-no-shell-escape" :: revCommand
-                             | SOME AppOptions.ShellEscape.RESTRICTED => "-shell-restricted" :: revCommand
-                             | SOME AppOptions.ShellEscape.ALLOWED => "-shell-escape" :: revCommand
+                             | SOME ShellEscape.FORBIDDEN => "-no-shell-escape" :: revCommand
+                             | SOME ShellEscape.RESTRICTED => "-shell-restricted" :: revCommand
+                             | SOME ShellEscape.ALLOWED => "-shell-escape" :: revCommand
           val revCommand = case #jobname options of
                                NONE => revCommand
                              | SOME jobname => "-jobname=" ^ ShellUtil.escape jobname :: revCommand
@@ -88,10 +88,10 @@ fun buildCommand (engine : engine, inputline, options : run_options)
                                                               else
                                                                   revCommand
                                          in case #output_format options of
-                                                AppOptions.OutputFormat.DVI => "-output-format=dvi" :: revCommand
-                                              | AppOptions.OutputFormat.PDF => revCommand
+                                                OutputFormat.DVI => "-output-format=dvi" :: revCommand
+                                              | OutputFormat.PDF => revCommand
                                          end
-                             | XETEX => if #draftmode options orelse #output_format options = AppOptions.OutputFormat.DVI then
+                             | XETEX => if #draftmode options orelse #output_format options = OutputFormat.DVI then
                                             "-no-pdf" :: revCommand
                                         else
                                             revCommand
@@ -103,8 +103,8 @@ fun buildCommand (engine : engine, inputline, options : run_options)
                                                               else
                                                                   revCommand
                                          in case #output_format options of
-                                                AppOptions.OutputFormat.DVI => "--output-format=dvi" :: revCommand
-                                              | AppOptions.OutputFormat.PDF => revCommand
+                                                OutputFormat.DVI => "--output-format=dvi" :: revCommand
+                                              | OutputFormat.PDF => revCommand
                                          end
           val revCommand = List.revAppend (#extra_options options, revCommand)
           val revCommand = ShellUtil.escape inputline :: revCommand

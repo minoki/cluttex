@@ -11,13 +11,13 @@ val isFile : string -> bool = LunarML.assumeDiscardable (fn () => Lua.unsafeFrom
 val isDirectory : string -> bool = LunarML.assumeDiscardable (fn () => Lua.unsafeFromValue (Lua.field (luamod, "isdir"))) ()
 fun mkDirRec path = let val (succ, err) = Lua.call2 (Lua.field (luamod, "mkdir_rec")) #[Lua.fromString path]
                     in if Lua.isFalsy succ then
-                           raise Lua.LuaError err
+                           raise Lua.Error err
                        else
                            ()
                     end
 fun removeRec path = let val (succ, err) = Lua.call2 (Lua.field (luamod, "remove_rec")) #[Lua.fromString path]
                      in if Lua.isFalsy succ then
-                            raise Lua.LuaError err
+                            raise Lua.Error err
                         else
                             ()
                      end
