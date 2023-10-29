@@ -380,7 +380,7 @@ local function single_run(auxstatus, iteration)
       bibtex_aux_hash2 = md5.sum(table.concat(biblines2, "\n"))
     end
     local output_bbl = path_in_output_directory("bbl")
-    if bibtex_aux_hash ~= bibtex_aux_hash2 or reruncheck.comparefiletime(mainauxfile, output_bbl, auxstatus) then -- will most probably not work
+    if bibtex_aux_hash ~= bibtex_aux_hash2 or reruncheck.comparefiletime(pathutil.abspath(mainauxfile), output_bbl, auxstatus) then
       -- The input for BibTeX command has changed...
       local bibtex_command = {
         "cd", shellutil.escape(options.output_directory), "&&",
