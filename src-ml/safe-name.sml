@@ -13,7 +13,7 @@ local
                                   "_" ^ s
                            end
                        else
-                           c
+                           String.str c
 in
 fun escapeJobname name = String.translate escapeChar name
 end
@@ -26,7 +26,7 @@ local
       | handleSpecialChar #"}" = "~\\}"
       | handleSpecialChar #"~" = "~\\~"
       | handleSpecialChar #"#" = "~\\#"
-      | handleSpecialChar c = c
+      | handleSpecialChar c = String.str c
     fun handleSpaces s = let fun go (s, acc) = if Substring.isEmpty s then
                                                    Substring.concat (List.rev acc)
                                                else
@@ -35,7 +35,7 @@ local
                                                        val c' = Substring.full (String.concatWith "~" (List.map String.str (Substring.explode c)))
                                                    in go (d, c' :: a :: acc)
                                                    end
-                         in go (String.full s, [])
+                         in go (Substring.full s, [])
                          end
     fun handleNonAscii s = let fun go (s, acc) = if Substring.isEmpty s then
                                                      Substring.concat (List.rev acc)
@@ -48,7 +48,7 @@ local
                                                                       Substring.full ("\\detokenize{" ^ Substring.string c ^ "}")
                                                      in go (d, c' :: a :: acc)
                                                      end
-                           in go (String.full s, [])
+                           in go (Substring.full s, [])
                            end
 in
 fun safeInput { name, isPdfTeX } = let val escaped = handleSpaces (String.translate handleSpecialChar name)

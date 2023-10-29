@@ -58,7 +58,7 @@ fun extractBibTeXLines' { auxfile, outdir, revLines }
                                                                                               )
                                                                                   | NONE => false
                                                          in if isBibTeXLine then
-                                                                ( if AppOptions.getVerbosity () >= 2 then
+                                                                ( if Message.getVerbosity () >= 2 then
                                                                       Message.info ("BibTeX line: " ^ Substring.string (Substring.dropr Char.isSpace (Substring.full line)))
                                                                   else
                                                                       ()

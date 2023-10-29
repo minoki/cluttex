@@ -197,7 +197,7 @@ fun parse (opts : initial_options, args)
                                          )
         | SOME (OPT_HELP, args) => showUsage ()
         | SOME (OPT_VERSION, args) => showVersion ()
-        | SOME (OPT_VERBOSE, args) => ( AppOptions.beMoreVerbose ()
+        | SOME (OPT_VERBOSE, args) => ( Message.beMoreVerbose ()
                                       ; parse (opts, args)
                                       )
         | SOME (OPT_COLOR mode, args) => (case #color opts of
@@ -228,7 +228,7 @@ fun parse (opts : initial_options, args)
         | SOME (OPT_PACKAGE_SUPPORT s, args) => let val packages = String.tokens (fn c => c = #"," orelse Char.isSpace c) s
                                                     val ps = List.foldl (fn ("minted", ps) => { ps where minted = true }
                                                                         | ("epstopdf", ps) => { ps where epstopdf = true }
-                                                                        | (pkg, ps) => ( if AppOptions.getVerbosity () >= 1 then
+                                                                        | (pkg, ps) => ( if Message.getVerbosity () >= 1 then
                                                                                              Message.warn ("ClutTeX provides no special support for '" ^ pkg ^ "'.")
                                                                                          else
                                                                                              ()

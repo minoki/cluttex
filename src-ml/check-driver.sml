@@ -84,7 +84,7 @@ fun correctDrivers DVIPS = { graphics = graphics.DVIPS
                             , xypic = SOME xypic.PDF
                             }
 fun checkDriver (expected_driver, filelist)
-    = let val () = if AppOptions.getVerbosity () >= 1 then
+    = let val () = if Message.getVerbosity () >= 1 then
                        Message.info ("checkdriver: expects " ^ toString expected_driver)
                    else
                        ()
@@ -158,7 +158,7 @@ fun checkDriver (expected_driver, filelist)
                                       )
                              else
                                  NONE
-          val () = if AppOptions.getVerbosity () >= 1 then
+          val () = if Message.getVerbosity () >= 1 then
                        ( Message.info ("checkdriver: graphics=" ^ (case graphics_driver of NONE => "not loaded" | SOME d => graphics.toString d))
                        ; Message.info ("checkdriver: expl3=" ^ (case expl3_driver of NONE => "not loaded" | SOME d => expl3.toString d))
                        ; Message.info ("checkdriver: hyperref=" ^ (case hyperref_driver of NONE => "not loaded" | SOME d => hyperref.toString d))

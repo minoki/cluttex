@@ -9,7 +9,7 @@ structure AppOptions : sig
                             val fromString : string -> engine option
                         end
               structure ColorMode : sig
-                            datatype mode = ALWAYS | AUTO | NEVER
+                            datatype mode = datatype Message.mode
                             val fromString : string -> mode option
                         end
               type initial_options = { engine : string option
@@ -53,13 +53,13 @@ structure AppOptions : sig
                              , make_depends : string option
                              , print_output_directory : bool
                              , package_support : { minted : bool, epstopdf : bool }
-                             , check_driver : DviDriver.driver option
+                             , check_driver : CheckDriver.driver option
                              , synctex : string option
                              , file_line_error : bool
                              , interaction : InteractionMode.interaction
                              , halt_on_error : bool
                              , shell_escape : ShellEscape.shell_escape option
-                             , jobname : string option
+                             , jobname : string
                              , fmt : string option
                              , output_directory : string
                              , output_format : OutputFormat.format
@@ -70,8 +70,6 @@ structure AppOptions : sig
                              , makeglossaries : string option
                              }
               val init : initial_options
-              val getVerbosity : unit -> int
-              val beMoreVerbose : unit -> unit
           end = struct
 structure DviDriver = struct
 datatype driver = DVIPDFMX | DVIPS | DVISVGM
@@ -89,7 +87,7 @@ fun fromString "fswatch" = SOME FSWATCH
   | fromString _ = NONE
 end
 structure ColorMode = struct
-datatype mode = ALWAYS | AUTO | NEVER
+datatype mode = datatype Message.mode
 fun fromString "always" = SOME ALWAYS
   | fromString "auto" = SOME AUTO
   | fromString "never" = SOME NEVER
@@ -136,13 +134,13 @@ type options = { engine : TeXEngine.engine
                , make_depends : string option
                , print_output_directory : bool
                , package_support : { minted : bool, epstopdf : bool }
-               , check_driver : DviDriver.driver option
+               , check_driver : CheckDriver.driver option
                , synctex : string option
                , file_line_error : bool
                , interaction : InteractionMode.interaction
                , halt_on_error : bool
                , shell_escape : ShellEscape.shell_escape option
-               , jobname : string option
+               , jobname : string
                , fmt : string option
                , output_directory : string
                , output_format : OutputFormat.format
@@ -181,7 +179,4 @@ val init : initial_options = { engine = NONE
                              , bibtex_or_biber = NONE
                              , makeglossaries = NONE
                              }
-val verbosity = ref 0
-fun getVerbosity () = !verbosity
-fun beMoreVerbose () = verbosity := !verbosity + 1
 end;

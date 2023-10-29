@@ -8,15 +8,17 @@ map.sml
 shell-util.sml
 path-util.sml
 fs-util.sml
+os-util.sml
 types.sml
+safe-name.sml
 tex-engine.sml
-app-options.sml
 message.sml
-auxfile.sml
 check-driver.sml
+app-options.sml
+auxfile.sml
 luatexinit.sml
 handle-options.sml
 recovery.sml
 reruncheck.sml
-(* main.sml *)
+main.sml
 end

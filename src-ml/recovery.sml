@@ -8,7 +8,7 @@ fun createMissingDirectories { execlog, auxfile, outdir }
           (* There is a possibility that there are some subfiles under subdirectories.
            * Directories for sub-auxfiles are not created automatically, so we need to provide them. *)
           let val (madeNewDirectory, _) = AuxFile.createMissingDirectories { auxfile = auxfile, outdir = outdir, seen = StringSet.empty }
-          in if madeNewDirectory andalso AppOptions.getVerbosity () >= 1 then
+          in if madeNewDirectory andalso Message.getVerbosity () >= 1 then
                  Message.info "Created missing directories."
              else
                  ()
@@ -29,7 +29,7 @@ fun runEpstopdf { options : AppOptions.options, execlog : string, originalWorkin
                                 val infileAbs = PathUtil.abspath { path = infile, cwd = SOME originalWorkingDirectory }
                             in if FSUtil.isFile infileAbs then (* input file exists *)
                                    let val outfileAbs = PathUtil.abspath { path = outfile, cwd = SOME (#output_directory options) }
-                                       val () = if AppOptions.getVerbosity () >= 1 then
+                                       val () = if Message.getVerbosity () >= 1 then
                                                     Message.info ("Running epstopdf on " ^ infile ^ ".")
                                                 else
                                                     ()

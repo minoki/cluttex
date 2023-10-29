@@ -1,13 +1,19 @@
 structure Message : sig
-              datatype mode = datatype AppOptions.ColorMode.mode
+              datatype mode = ALWAYS | AUTO | NEVER
               val setColors : mode -> unit
               val exec : string -> unit
               val error : string -> unit
               val warn : string -> unit
               val diag : string -> unit
               val info : string -> unit
+              val getVerbosity : unit -> int
+              val beMoreVerbose : unit -> unit
           end = struct
-datatype mode = datatype AppOptions.ColorMode.mode
+val verbosity = ref 0
+fun getVerbosity () = !verbosity
+fun beMoreVerbose () = verbosity := !verbosity + 1
+
+datatype mode = ALWAYS | AUTO | NEVER
 val useColors = ref false
 fun setColors ALWAYS = let val isatty = Lua.call1 Lua.Lib.require #[Lua.fromString "texrunner.isatty"]
                            val enableVirtualTerminal = Lua.field (isatty, "enable_virtual_terminal")
@@ -15,7 +21,7 @@ fun setColors ALWAYS = let val isatty = Lua.call1 Lua.Lib.require #[Lua.fromStri
                        in useColors := true
                         ; if not (Lua.isFalsy enableVirtualTerminal) then
                               let val succ = Lua.call1 enableVirtualTerminal #[stderr]
-                              in if Lua.isFalsy succ andalso AppOptions.getVerbosity () >= 2 then
+                              in if Lua.isFalsy succ andalso getVerbosity () >= 2 then
                                      TextIO.output (TextIO.stdErr, "ClutTeX: Failed to enable virtual terminal\n")
                                  else
                                      ()
@@ -31,7 +37,7 @@ fun setColors ALWAYS = let val isatty = Lua.call1 Lua.Lib.require #[Lua.fromStri
                       ; if u andalso not (Lua.isFalsy enableVirtualTerminal) then
                             let val succ : bool = Lua.unsafeFromValue (Lua.call1 enableVirtualTerminal #[stderr])
                             in useColors := succ
-                             ; if not succ andalso AppOptions.getVerbosity () >= 2 then
+                             ; if not succ andalso getVerbosity () >= 2 then
                                    TextIO.output (TextIO.stdErr, "ClutTeX: Failed to enable virtual terminal\n")
                                else
                                    ()

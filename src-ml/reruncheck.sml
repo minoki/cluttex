@@ -202,7 +202,7 @@ fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap
                                               SOME reason => ( Message.info ("File '" ^ shortPath ^ "' was modified (" ^ reason ^ ").")
                                                              ; (true, newauxstatus)
                                                              )
-                                            | NONE => ( if AppOptions.getVerbosity () >= 1 then
+                                            | NONE => ( if Message.getVerbosity () >= 1 then
                                                             Message.info ("File '" ^ shortPath ^ "' unmodified (size and md5sum).")
                                                         else
                                                             ()
@@ -229,7 +229,7 @@ fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap
                                                      (true, newauxstatus)
                                        in if shouldRerun then
                                               Message.info ("New auxiliary file '" ^ shortPath ^ "'.")
-                                          else if AppOptions.getVerbosity () >= 1 then
+                                          else if Message.getVerbosity () >= 1 then
                                               Message.info ("Ignoring almost-empty auxiliary file '" ^ shortPath ^ "'.")
                                           else
                                               ()
