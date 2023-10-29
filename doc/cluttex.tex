@@ -8,9 +8,9 @@
 \newcommand\texpkg[1]{\texttt{#1}}
 \newcommand\metavar[1]{\textnormal{\textsf{#1}}}
 
-\title{\ClutTeX\ manual\\(Version 0.5.1)}
+\title{\ClutTeX\ manual\\(Version 0.6)}
 \author{ARATA Mizuki}
-\date{2021-11-04}
+\date{2023-??-??}
 
 \begin{document}
 \maketitle
@@ -66,7 +66,7 @@ Basic options:
 \item[\texttt{--max-iterations=\metavar{N}}]
   Set maximum number of run, for resolving cross-references and etc.
   Default: 3
-\item[\texttt{--watch}]
+\item[\texttt{--watch[=\metavar{ENGINE}]}]
   Watch input files for change.
   May need an external program to be available.
   See \autoref{sec:watch-mode} for details.
@@ -155,6 +155,7 @@ If \texttt{--watch} option is given, \ClutTeX\ enters \emph{watch mode} after pr
 
 On Windows, a built-in filesystem watcher is implemented.
 On other platforms, an auxiliary program \texttt{fswatch}\footnote{\url{http://emcrisostomo.github.io/fswatch/}} or \texttt{inotifywait} needs to be installed.
+The auxiliary program will be detected automatically, but it could also be specified by the \metavar{ENGINE} argument.
 
 \section{MakeIndex and \BibTeX}
 If you want to generate index or bibliography, using MakeIndex or \BibTeX, set \texttt{--makeindex}, \texttt{--bibtex}, or \texttt{--biber} option.

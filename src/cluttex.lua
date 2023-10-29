@@ -1,6 +1,6 @@
 #!/usr/bin/env texlua
 --[[
-  Copyright 2016-2021 ARATA Mizuki
+  Copyright 2016-2023 ARATA Mizuki
 
   This file is part of ClutTeX.
 
@@ -18,7 +18,7 @@
   along with ClutTeX.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-CLUTTEX_VERSION = "v0.5.1"
+CLUTTEX_VERSION = "v0.6"
 
 -- Standard libraries
 local table = table

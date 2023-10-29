@@ -11,9 +11,9 @@
 \crefformat{section}{#2セクション#1#3}
 \crefformat{subsection}{#2サブセクション#1#3}
 
-\title{\ClutTeX{}マニュアル\\（バージョン0.5.1）}
+\title{\ClutTeX{}マニュアル\\（バージョン0.6）}
 \author{ARATA Mizuki}
-\date{2021年11月4日}
+\date{2023年??月??日}
 
 \begin{document}
 \maketitle
@@ -72,7 +72,7 @@
 \item[\texttt{--max-iterations=\metavar{N}}]
   相互参照の解決等のために最大何回処理を行うかを指定する。
   デフォルト：3
-\item[\texttt{--watch}]
+\item[\texttt{--watch[=\metavar{ENGINE}]}]
   入力ファイルを監視する。
   別途、\texttt{fswatch}プログラムまたは\texttt{inotifywait}プログラムが必要となる場合がある。
   詳しくは\cref{sec:watch-mode}を参照。
@@ -162,6 +162,7 @@
 
 Windows上では、\ClutTeX{}単体でファイルシステムの監視を行う。
 一方で、それ以外のOS（Unix系）では、\texttt{fswatch}\footnote{\url{http://emcrisostomo.github.io/fswatch/}}プログラムまたは\texttt{inotifywait}プログラムが予めインストールされている必要がある。
+補助プログラムは自動検出されるが、\metavar{ENGINE}引数で明示的に指定することもできる。
 
 \section{MakeIndexや\BibTeX}
 MakeIndexや\BibTeX を使って処理を行う場合は、\texttt{--makeindex}や\texttt{--bibtex}等のオプションを指定する。

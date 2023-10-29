@@ -1,10 +1,14 @@
-Unreleased Version
+Version 0.6 (2023-??-??)
 -----
 
 Changes:
 
 * Fix "arg" table in luatexinit to support luamplib
 * Handle the combination of `--output-directory` and `--change-directory` properly ([Issue #7](https://github.com/minoki/cluttex/issues/7), thanks to @atticus-sullivan)
+* Change `LUAINPUTS` environment variable to find Lua files if `--change-directory` is used ([PR #11](https://github.com/minoki/cluttex/pull/11), thanks to @atticus-sullivan)
+* Watch engine can be selected via an optional argument to `--watch` ([PR #10](https://github.com/minoki/cluttex/pull/10), thanks to @atticus-sullivan)
+* Decrease `max_print_line` to avoid issue with BibTeX from TeX Live 2023.
+* Rerun biber if bib files are updated ([PR #12](https://github.com/minoki/cluttex/pull/12), thanks to @atticus-sullivan)
 
 Version 0.5.1 (2021-11-04)
 -----
