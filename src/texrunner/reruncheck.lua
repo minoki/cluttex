@@ -85,6 +85,8 @@ local function parse_recorder_file(file, options, filelist, filemap)
           kind = "auxiliary"
         elseif ext == "glo" then -- makeglossaries
           kind = "auxiliary"
+        elseif ext == "sage" then -- sagetex
+          kind = "auxiliary"
         end
         fileinfo = {path = path, abspath = abspath, kind = kind}
         table.insert(filelist, fileinfo)

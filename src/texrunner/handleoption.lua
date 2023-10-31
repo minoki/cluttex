@@ -58,6 +58,7 @@ Options:
       --bibtex=COMMAND+OPTIONs     Command for BibTeX, such as
                                      `bibtex' or `pbibtex'.
       --biber[=COMMAND+OPTIONs]    Command for Biber.
+      --sagetex[=COMMAND+OPTIONS]  Command for sagetex
       --makeglossaries[=COMMAND+OPTIONs]  Command for makeglossaries.
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
@@ -241,6 +242,11 @@ local option_spec = {
     long = "biber",
     param = true,
     default = "biber",
+  },
+  {
+    long = "sagetex",
+    param = true,
+    default = "sage",
   },
   {
     long = "makeglossaries",
@@ -433,6 +439,10 @@ local function handle_cluttex_options(arg)
     elseif name == "makeglossaries" then
       assert(options.makeglossaries == nil, "multiple --makeglossaries options")
       options.makeglossaries = param
+
+    elseif name == "sagetex" then
+      assert(options.sagetex == nil, "multiple --sagetex options")
+      options.sagetex = param
 
     end
   end
