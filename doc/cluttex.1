@@ -1,0 +1,144 @@
+.Dd November 1, 2023
+.Dt CLUTTEX 1
+.Os
+.Sh NAME
+.Nm cluttex
+.Nd a tool for processing TeX files
+.Sh SYNOPSIS
+.Nm
+.Fl e
+.Ar ENGINE
+.Op options
+.Op Fl \-
+.Ar FILE.tex
+.Sh DESCRIPTION
+Process TeX files without cluttering your working directory.
+.Pp
+The following options are accepted:
+.Bl -tag -width Ds
+.It Fl e , Fl \-engine Ns = Ns Ar ENGINE
+Specify which TeX engine to use.
+.Ar ENGINE
+is one of the following:
+pdflatex, pdftex,
+lualatex, luatex, luajittex,
+xelatex, xetex, latex, etex, tex,
+platex, eptex, ptex,
+uplatex, euptex, uptex,
+.It Fl \-engine\-executable Ns = Ns Ar COMMAND+OPTIONs
+The actual TeX command to use.
+[default:
+.Ar ENGINE ]
+.It Fl o , Fl \-output Ns = Ns Ar FILE
+The name of output file.
+[default:
+.Ar JOBNAME Ns
+\&.pdf or
+.Ar JOBNAME Ns
+\&.dvi]
+.It Fl \-fresh
+Clean intermediate files before running TeX.
+Cannot be used with --output-directory.
+.It Fl \-max-iterations Ns = Ns Ar N
+Maximum number of running TeX to resolve cross-references.
+[default: 3]
+.It Fl \-start-with-draft
+Start with draft mode.
+.It Fl \-change-directory , Fl \-no-change-directory
+Change directory before running TeX.
+[default: no]
+.It Fl \-watch Ns Op = Ns Ar ENGINE
+Watch input files for change.
+Requires fswatch or inotifywait to be installed.
+.Ar ENGINE
+is one of
+.Sq fswatch ,
+.Sq inotifywait
+or
+.Sq auto .
+[default: auto]
+.It Fl \-tex-option Ns = Ns Ar OPTION
+Pass
+.Ar OPTION
+to TeX as a single option.
+.It Fl \-tex-options Ns = Ns Ar OPTIONs
+Pass
+.Ar OPTIONs
+to TeX as multiple options.
+.It Fl \-dvipdfmx-option Ns = Ns Ar OPTION , Fl \-dvipdfmx-options Ns = Ns Ar OPTIONs
+Same for dvipdfmx.
+.It Fl \-makeindex Ns = Ns Ar COMMAND+OPTIONs
+Command to generate index, such as
+.Sq makeindex
+or
+.Sq mendex .
+.It Fl \-bibtex Ns = Ns Ar COMMAND+OPTIONs
+Command for BibTeX, such as
+.Sq bibtex
+or
+.Sq pbibtex .
+.It Fl \-biber Ns Op = Ns Ar COMMAND+OPTIONs
+Command for Biber.
+.It Fl \-makeglossaries Ns Op = Ns Ar COMMAND+OPTIONs
+Command for makeglossaries.
+.It Fl h , Fl \-help
+Print this message and exit.
+.It Fl v , Fl \-version
+Print version information and exit.
+.It Fl V , Fl \-verbose
+Be more verbose.
+.It Fl \-color Ns Op = Ns Ar WHEN
+Make ClutTeX's message more colorful.
+.Ar WHEN
+is one of
+.Sq always ,
+.Sq auto ,
+or
+.Sq never .
+[default:
+.Sq auto
+if Fl \-color is omitted,
+.Sq always
+if
+.Ar WHEN
+is omitted]
+.It Fl \-includeonly Ns = Ns Ar NAMEs
+Insert
+.Sq \eincludeonly{ Ns Ar NAMEs Ns } .
+.It Fl \-make-depends Ns = Ns Ar FILE
+Write dependencies as a Makefile rule.
+.It Fl \-print\-output\-directory
+Print the output directory and exit.
+.It Fl \-package\-support Ns = Ns Ar PKG1 Ns Op , Ns Ar PKG2 Ns ,...
+Enable special support for some shell-escaping packages.
+Currently supported: minted, epstopdf.
+.It Fl \-check\-driver Ns = Ns Ar DRIVER
+Check that the correct driver file is loaded.
+.Ar DRIVER
+is one of
+.Sq dvipdfmx ,
+.Sq dvips ,
+.Sq dvisvgm .
+.It Fl \-shell-escape , Fl \-no-shell-escape
+.It Fl \-shell-restricted
+.It Fl \-synctex Ns = Ns Ar NUMBER
+.It Fl \-fmt Ns = Ns Ar FMTNAME
+.It Fl \-file-line-error , Fl \-no-file-line-error
+[default: yes]
+.It Fl \-halt-on-error , Fl \-no-halt-on-error
+[default: yes]
+.It Fl \-interaction Ns = Ns Ar STRING
+[default: nonstopmode]
+.It Fl \-jobname Ns = Ns Ar STRING
+.It Fl \-output-directory Ns = Ns Ar DIR
+[default: somewhere in the temporary directory]
+.It Fl \-output-format Ns = Ns Ar FORMAT
+.Ar FORMAT
+is
+.Sq pdf
+or
+.Sq dvi .
+[default: pdf]
+.El
+.Sh EXIT STATUS
+.Ex -std
