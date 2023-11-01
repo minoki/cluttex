@@ -1,6 +1,6 @@
 all: bin/cluttex bin/cluttex.bat
 
-.PHONY: all archive
+.PHONY: all archive check-version
 
 sources= \
  src/texrunner/pathutil.lua \
@@ -37,7 +37,15 @@ bin/cluttex.bat: $(sources) build.lua
 
 version_file=$(shell bin/cluttex --version 2>&1 | grep --only-matching -E 'v\d+(\.\d+)*' | sed 's/^v/VERSION_/;s/\./_/g')
 
-archive: all
+check-version: all
+	@bin/cluttex --version
+	grep VERSION src/cluttex.lua
+	grep VERSION bin/cluttex
+	grep VERSION bin/cluttex.bat
+	grep -i VERSION doc/cluttex.tex
+	grep -i VERSION doc/cluttex-ja.tex
+
+archive: all check-version
 	@bin/cluttex --version
 	git archive --format=tar --prefix=cluttex/ -o cluttex.tar HEAD
 	mkdir -p cluttex && touch cluttex/$(version_file) && tar -r -f cluttex.tar cluttex/$(version_file)
