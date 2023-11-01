@@ -35,7 +35,10 @@ bin/cluttex.bat: $(sources) build.lua
 	lua build.lua --windows-batchfile $@
 	lua checkglobal.lua $@
 
+version_file=$(shell bin/cluttex --version 2>&1 | grep --only-matching -E 'v\d+(\.\d+)*' | sed 's/^v/VERSION_/;s/\./_/g')
+
 archive: all
 	@bin/cluttex --version
 	git archive --format=tar --prefix=cluttex/ -o cluttex.tar HEAD
+	mkdir -p cluttex && touch cluttex/$(version_file) && tar -r -f cluttex.tar cluttex/$(version_file)
 	gzip -k9 cluttex.tar

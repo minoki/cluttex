@@ -3,3 +3,4 @@ example/*/*.pdf
 *.tar
 *.tar.gz
 *.dep
+cluttex/VERSION_*
