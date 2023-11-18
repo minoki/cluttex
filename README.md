@@ -60,7 +60,7 @@ Command-line Options
   \[default: 3\]
 * `--[no-]change-directory`
   Change the current working directory to the output directory when running TeX.
-* `--watch`
+* `--watch[=ENGINE]`
   Watch input files for change.
   Requires [fswatch](http://emcrisostomo.github.io/fswatch/) program or `inotifywait` program to be installed on Unix systems.
 * `--color[=WHEN]`
