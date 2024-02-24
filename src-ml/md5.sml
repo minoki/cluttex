@@ -33,7 +33,7 @@ fun Round1 X y = let fun ABCD (k, t) (a, b, c, d) = let val a = b + ((a + F (b, 
                      fun BCDA (k, t) (d, a, b, c) = let val a = b + ((a + F (b, c, d) + Word32VectorSlice.sub (X, k) + t) <<< 0w22)
                                                     in (d, a, b, c)
                                                     end
-                 in y 
+                 in y
                         |> ABCD (0,  0wxd76aa478)
                         |> DABC (1,  0wxe8c7b756)
                         |> CDAB (2,  0wx242070db)
@@ -63,7 +63,7 @@ fun Round2 X y = let fun ABCD (k, t) (a, b, c, d) = let val a = b + ((a + G (b, 
                      fun BCDA (k, t) (d, a, b, c) = let val a = b + ((a + G (b, c, d) + Word32VectorSlice.sub (X, k) + t) <<< 0w20)
                                                     in (d, a, b, c)
                                                     end
-                 in y 
+                 in y
                         |> ABCD (1,  0wxf61e2562)
                         |> DABC (6,  0wxc040b340)
                         |> CDAB (11, 0wx265e5a51)

@@ -46,7 +46,7 @@ fun toString PDF = "pdf"
   | toString DVIPS = "dvips"
   | toString UNKNOWN = "unknown"
 end
-(*! val correctDrivers : driver -> { graphics : graphics.driver, expl3_old : expl3.driver, expl3_new : expl3.driver, hyperref : hyperref.driver option, xypic : xypic.driver option } *)
+(*: val correctDrivers : driver -> { graphics : graphics.driver, expl3_old : expl3.driver, expl3_new : expl3.driver, hyperref : hyperref.driver option, xypic : xypic.driver option } *)
 fun correctDrivers DVIPS = { graphics = graphics.DVIPS
                            , expl3_old = expl3.DVIPS
                            , expl3_new = expl3.DVIPS

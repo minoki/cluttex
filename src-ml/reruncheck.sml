@@ -12,7 +12,7 @@ structure Reruncheck :> sig
                                 , size : Position.int option
                                 , md5sum : MD5.hash option
                                 }
-              val collectFileInfo : file_info list * aux_status ref StringMap.map -> aux_status ref StringMap.map
+              val collectFileInfo : file_info list * aux_status StringMap.map -> aux_status StringMap.map
               val compareFileTime : { srcAbs : string, dst : string, auxstatus : aux_status StringMap.map } -> bool
           end = struct
 datatype file_kind = INPUT | OUTPUT | AUXILIARY
@@ -117,7 +117,7 @@ fun md5sumOfFile (path : string) : MD5.hash
       in MD5.compute data
       end
 
-fun collectFileInfo (fileList : file_info list, auxstatus : aux_status ref StringMap.map) : aux_status ref StringMap.map
+fun collectFileInfo (fileList : file_info list, auxstatus : aux_status StringMap.map) : aux_status StringMap.map
     = let fun go ({ abspath, kind, ... } : file_info, auxstatus) : aux_status ref StringMap.map
               = if FSUtil.isFile abspath then
                     let val (status, auxstatus) = case StringMap.find (auxstatus, abspath) of
@@ -147,7 +147,7 @@ fun collectFileInfo (fileList : file_info list, auxstatus : aux_status ref Strin
                     end
                 else
                     auxstatus
-      in List.foldl go auxstatus fileList
+      in StringMap.map ! (List.foldl go (StringMap.map ref auxstatus) fileList)
       end
 
 fun compareFileInfo (fileList : file_info list, auxstatus : aux_status StringMap.map) : bool * aux_status ref StringMap.map

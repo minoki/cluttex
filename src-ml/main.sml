@@ -27,6 +27,153 @@ structure HandleOptions = HandleOptions (fun showMessageAndFail message = (TextI
                                          val showUsage = showUsage
                                          fun showVersion () = (TextIO.output (TextIO.stdErr, "cluttex version x.x\n"); OS.Process.exit OS.Process.failure)
                                         )
+(*: val pathInOutputDirectory : AppOptions.options * string -> string *)
+fun pathInOutputDirectory (options : AppOptions.options, ext) = PathUtil.join2 (#output_directory options, #jobname options ^ "." ^ ext)
+(*: val executeCommand : string * (unit -> bool) option -> unit *)
+fun executeCommand (command, recover)
+    = let val () = Message.exec command
+          val status = OS.Process.system command
+          val success_or_recoverd = if OS.Process.isSuccess status then
+                                        true
+                                    else
+                                        case recover of
+                                            SOME f => f ()
+                                          | NONE => false
+      in if success_or_recoverd then
+             ()
+         else
+             ( Message.error "Command exit abnormally" (* TODO: show status code: Unix.fromStatus *)
+             ; raise Abort
+             )
+      end
+datatype single_run_result = SHOULD_RERUN of Reruncheck.aux_status StringMap.map
+                           | NO_NEED_TO_RERUN
+                           | NO_PAGES_OF_OUTPUT
+(*: val singleRun : AppOptions.options * string * TeXEngine.engine * TeXEngine.run_options * Reruncheck.aux_status StringMap.map * int -> single_run_result *)
+fun singleRun (options : AppOptions.options, inputfile, engine, tex_options : TeXEngine.run_options, auxstatus, iteration)
+    = let val mainauxfile = pathInOutputDirectory "aux"
+          val { auxstatus, minted, epstopdf, bibtex_aux_hash }
+              = if FSUtil.isFile recorderfile then
+                    (* Recorder file already exists *)
+                    let val recorded = Reruncheck.parseRecorderFile { file = recorderfile, options = options }
+                        val recorded = if Engine.isLuaTeX engine andalso FSUtil.isFile recorderfile2 then
+                                           Reruncheck.parseRecorderFileContinued { file = recorderfile2, options = options, previousResult = recorded }
+                                       else
+                                           recorded
+                        val (filelist, filemap) = Reruncheck.getFileInfo recorded
+                        val auxstatus = Reruncheck.collectFileInfo (filelist, auxstatus)
+                        val { minted, epstopdf } = List.foldl (fn ({ path, ... }, { minted, epstopdf }) =>
+                                                                  { minted = minted orelse String.isSuffix "minted/minted.sty" path
+                                                                  , epstopdf = epstopdf orelse String.isSuffix "epstopdf.sty" path
+                                                                  }
+                                                              ) { minted = false, epstopdf = false } filelist
+                        val bibtex_aux_hash = case #bibtex_or_biber options of
+                                                  SOME (AppOptions.BIBTEX _) =>
+                                                  let val biblines = AuxFile.extractBibTeXLines { auxfile = mainauxfile, outdir = #output_directory options }
+                                                  in SOME (MD5.compute (Byte.stringToBytes (String.concatWith "\n" biblines)))
+                                                  end
+                                                | _ => NONE
+                    in { auxstatus, minted, epstopdf, bibtex_aux_hash }
+                    end
+                else
+                    (* This is the first execution *)
+                    if StringMap.isEmpty auxstatus then
+                        { auxstatus = StringMap.empty, minted = false, epstopdf = false, bibtex_aux_hash = NONE }
+                    else
+                        ( Message.error "Recorder file was not generated during the execution!"
+                        ; raise Abort
+                        )
+          val tex_injection = case #includeonly options of
+                                  SOME io => "\\includeonly{" ^ io ^ "}"
+                                | NONE => ""
+          val tex_injection = if minted orelse #minted (#package_support options) then
+                                  let val () = if not (#minted (#package_support options)) then
+                                                   Message.diag "You may want to use --package-support=minted option."
+                                               else
+                                                   ()
+                                      val outdir = #output_directory options
+                                      val outdir = if OSUtil.isWindows then
+                                                       String.map (fn #"\\" => #"/" | c => c) outdir (* Use forward slashes *)
+                                                   else
+                                                       outdir
+                                  in tex_injection ^ "\\PassOptionsToPackage{outputdir=" ^ outdir ^ "}{minted}"
+                                  end
+                              else
+                                  tex_injection
+          val tex_injection = if epstopdf orelse #epstopdf (#package_support options) then
+                                  let val () = if not (#epstopdf (#package_support options)) then
+                                                   Message.diag "You may want to use --package-support=epstopdf option."
+                                               else
+                                                   ()
+                                      val outdir = #output_directory options
+                                      val outdir = if OSUtil.isWindows then
+                                                       String.map (fn #"\\" => #"/" | c => c) outdir (* Use forward slashes *)
+                                                   else
+                                                       outdir
+                                      val outdir = if String.isSuffix "/" outdir then
+                                                       outdir
+                                                   else
+                                                       outdir ^ "/" (* Must end with a directory separator *)
+                                  in tex_injection ^ "\\PassOptionsToPackage{outdir=" ^ outdir ^ "}{epstopdf}"
+                                  end
+                              else
+                                  tex_injection
+          val inputline = tex_injection ^ SafeName.safeInput { name = inputfile, isPdfTeX = TeXEngine.isPdfTeX engine }
+          val (current_tex_options, lightweight_mode)
+              = if iteration = 1 andalso #start_with_draft options then
+                    if #supports_draftmode engine then
+                        ({ tex_options where draftmode = true, interaction = InteractionMode.BATCHMODE }, true)
+                    else
+                        ({ tex_options where interaction = InteractionMode.BATCHMODE }, true)
+                else
+                    ({ tex_options where draftmode = false }, false)
+          val command = TeXEngine.buildCommand (engine, inputline, current_tex_options)
+          val execlogCache = ref NONE
+          fun getExecLog () = case !execlogCache of
+                                  NONE => let val ins = TextIO.openIn (options, pathInOutputDirectory (options, "log"))
+                                              val log = TextIO.inputAll ins
+                                              val () = TextIO.closeIn ins
+                                          in execlogCache := SOME log
+                                           ; log
+                                          end
+                                | SOME log => log
+          val recovered = ref false
+          fun recover () = let val execlog = getExecLog ()
+                               val r = Recovery.tryRecovery { options = options, execlog = execlog, auxfile = pathInOutputDirectory (options, "aux"), originalWorkingDirectory = original_wd }
+                           in recovered := true
+                            ; r
+                           end
+          val () = executeCommand (command, recover)
+      in if !recovered then
+             SHOULD_RERUN StringMap.empty
+         else
+             let val recorded = Reruncheck.parseRecorderFile { file = recorderfile, options = options }
+                 val recorded = if Engine.isLuaTeX engine andalso FSUtil.isFile recorderfile2 then
+                                    Reruncheck.parseRecorderFileContinued { file = recorderfile2, options = options, previousResult = recorded }
+                                else
+                                    recorded
+                 val (filelist, filemap) = Reruncheck.getFileInfo recorded
+                 val execlog = getExecLog ()
+
+                 (* Check driver *)
+                 val () = case #check_driver options of
+                              NONE => ()
+                            | SOME driver => CheckDriver.checkDriver (driver, List.map (fn { path, abspath, kind } => { path = path, kind = case kind of Reruncheck.INPUT => "input" | Reruncheck.OUTPUT => "output" | Reruncheck.AUXILIARY => "auxiliary"}) filelist)
+
+                 (* makeindex *)
+                 val () = case #makeindex options of
+                              NONE => if Lua.isFalsy (Lua.call1 Lua.Lib.string.format #[Lua.fromString execlog, Lua.fromString "No file [^\n]+%.ind%."]) then
+                                          ()
+                                      else
+                                          Message.diag "You may want to use --makeindex option."
+                            | SOME makeindex =>
+                              Message.warn "makeindex: not implemented yet"
+             in if String.isSubstring "No pages of output." execlog then
+                    NO_PAGES_OF_OUTPUT
+                else
+                    
+             end
+      end
 fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, CommandLine.arguments ());
                   val () = case #color options of
                                NONE => Message.setColors Message.AUTO
@@ -205,27 +352,8 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                         , lua_initialization_script = lua_initialization_script
                         }
 
-                  fun executeCommand (command, recover)
-                      = let val () = Message.exec command
-                            val status = OS.Process.system command
-                            val success_or_recoverd = if OS.Process.isSuccess status then
-                                                          true
-                                                      else
-                                                          case recover of
-                                                              SOME f => f ()
-                                                            | NONE => false
-                        in if success_or_recoverd then
-                               ()
-                           else
-                               ( Message.error "Command exit abnormally" (* TODO: show status code: Unix.fromStatus *)
-                               ; raise Abort
-                               )
-                        end
 
-                  fun singleRun (auxstatus, iteration)
-                      = let val () = ()
-                        in ()
-                        end
+
 
               in ()
               end
