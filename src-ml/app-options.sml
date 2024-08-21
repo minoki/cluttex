@@ -43,7 +43,7 @@ structure AppOptions : sig
                                      }
               type options = { engine : TeXEngine.engine
                              , engine_executable : string option
-                             , output : string option
+                             , output : string
                              , fresh : bool
                              , max_iterations : int
                              , start_with_draft : bool
@@ -124,7 +124,7 @@ type initial_options = { engine : string option
                        }
 type options = { engine : TeXEngine.engine
                , engine_executable : string option
-               , output : string option
+               , output : string
                , fresh : bool
                , max_iterations : int
                , start_with_draft : bool

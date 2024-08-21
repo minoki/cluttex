@@ -46,17 +46,29 @@ fun executeCommand (command, recover)
              ; raise Abort
              )
       end
+
+type run_params = { options : AppOptions.options
+                  , inputfile : string
+                  , engine : TeXEngine.engine
+                  , tex_options : TeXEngine.run_options
+                  , recorderfile : string
+                  , recorderfile2 : string
+                  , original_wd : string
+                  , output_extension : string
+                  }
 datatype single_run_result = SHOULD_RERUN of Reruncheck.aux_status StringMap.map
                            | NO_NEED_TO_RERUN
                            | NO_PAGES_OF_OUTPUT
-(*: val singleRun : AppOptions.options * string * TeXEngine.engine * TeXEngine.run_options * Reruncheck.aux_status StringMap.map * int -> single_run_result *)
-fun singleRun (options : AppOptions.options, inputfile, engine, tex_options : TeXEngine.run_options, auxstatus, iteration)
-    = let val mainauxfile = pathInOutputDirectory "aux"
+
+(* Run TeX command ( *tex, *latex) *)
+(*: val singleRun : run_params * Reruncheck.aux_status StringMap.map * int -> single_run_result *)
+fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorderfile2, original_wd, ... } : run_params, auxstatus, iteration)
+    = let val mainauxfile = pathInOutputDirectory (options, "aux")
           val { auxstatus, minted, epstopdf, bibtex_aux_hash }
               = if FSUtil.isFile recorderfile then
                     (* Recorder file already exists *)
                     let val recorded = Reruncheck.parseRecorderFile { file = recorderfile, options = options }
-                        val recorded = if Engine.isLuaTeX engine andalso FSUtil.isFile recorderfile2 then
+                        val recorded = if TeXEngine.isLuaTeX engine andalso FSUtil.isFile recorderfile2 then
                                            Reruncheck.parseRecorderFileContinued { file = recorderfile2, options = options, previousResult = recorded }
                                        else
                                            recorded
@@ -122,15 +134,15 @@ fun singleRun (options : AppOptions.options, inputfile, engine, tex_options : Te
           val (current_tex_options, lightweight_mode)
               = if iteration = 1 andalso #start_with_draft options then
                     if #supports_draftmode engine then
-                        ({ tex_options where draftmode = true, interaction = InteractionMode.BATCHMODE }, true)
+                        ({ tex_options where draftmode = true, interaction = SOME InteractionMode.BATCHMODE }, true)
                     else
-                        ({ tex_options where interaction = InteractionMode.BATCHMODE }, true)
+                        ({ tex_options where interaction = SOME InteractionMode.BATCHMODE }, true)
                 else
                     ({ tex_options where draftmode = false }, false)
           val command = TeXEngine.buildCommand (engine, inputline, current_tex_options)
           val execlogCache = ref NONE
           fun getExecLog () = case !execlogCache of
-                                  NONE => let val ins = TextIO.openIn (options, pathInOutputDirectory (options, "log"))
+                                  NONE => let val ins = TextIO.openIn (pathInOutputDirectory (options, "log"))
                                               val log = TextIO.inputAll ins
                                               val () = TextIO.closeIn ins
                                           in execlogCache := SOME log
@@ -143,12 +155,12 @@ fun singleRun (options : AppOptions.options, inputfile, engine, tex_options : Te
                            in recovered := true
                             ; r
                            end
-          val () = executeCommand (command, recover)
+          val () = executeCommand (command, SOME recover)
       in if !recovered then
              SHOULD_RERUN StringMap.empty
          else
              let val recorded = Reruncheck.parseRecorderFile { file = recorderfile, options = options }
-                 val recorded = if Engine.isLuaTeX engine andalso FSUtil.isFile recorderfile2 then
+                 val recorded = if TeXEngine.isLuaTeX engine andalso FSUtil.isFile recorderfile2 then
                                     Reruncheck.parseRecorderFileContinued { file = recorderfile2, options = options, previousResult = recorded }
                                 else
                                     recorded
@@ -161,19 +173,130 @@ fun singleRun (options : AppOptions.options, inputfile, engine, tex_options : Te
                             | SOME driver => CheckDriver.checkDriver (driver, List.map (fn { path, abspath, kind } => { path = path, kind = case kind of Reruncheck.INPUT => "input" | Reruncheck.OUTPUT => "output" | Reruncheck.AUXILIARY => "auxiliary"}) filelist)
 
                  (* makeindex *)
-                 val () = case #makeindex options of
-                              NONE => if Lua.isFalsy (Lua.call1 Lua.Lib.string.format #[Lua.fromString execlog, Lua.fromString "No file [^\n]+%.ind%."]) then
+                 val filelist = case #makeindex options of
+                                    NONE => (* Check log file *)
+                                    ( if Lua.isFalsy (Lua.call1 Lua.Lib.string.find #[Lua.fromString execlog, Lua.fromString "No file [^\n]+%.ind%."]) then
                                           ()
                                       else
                                           Message.diag "You may want to use --makeindex option."
-                            | SOME makeindex =>
-                              Message.warn "makeindex: not implemented yet"
+                                    ; filelist
+                                    )
+                                  | SOME makeindex =>
+                                    let fun go (file, filelist_acc) (* Look for .idx files and run MakeIndex *)
+                                            = if PathUtil.ext (#path file) = "idx" then
+                                                  (* Run makeindex if the .idx file is new or updated *)
+                                                  let val idxfileinfo = { path = #path file, abspath = #abspath file, kind = Reruncheck.AUXILIARY }
+                                                      val output_ind = PathUtil.replaceext { path = #abspath file, newext = "ind" }
+                                                  in if #1 (Reruncheck.compareFileInfo ([idxfileinfo], auxstatus)) orelse Reruncheck.compareFileTime { srcAbs = #abspath file, dst = output_ind, auxstatus = auxstatus } then
+                                                         let val idx_dir = PathUtil.dirname (#abspath file)
+                                                             val makeindex_command = [
+                                                                 "cd", ShellUtil.escape idx_dir, "&&",
+                                                                 makeindex, (* Do not escape `makeindex` to allow additional options *)
+                                                                 "-o", PathUtil.basename output_ind,
+                                                                 PathUtil.basename (#abspath file)
+                                                             ]
+                                                         in executeCommand (String.concatWith " " makeindex_command, NONE)
+                                                          ; { path = output_ind, abspath = output_ind, kind = Reruncheck.AUXILIARY } :: filelist_acc
+                                                         end
+                                                     else
+                                                         ( FSUtil.touch output_ind handle Lua.Error err => Message.warn ("Failed to touch " ^ output_ind ^ " (" ^ Lua.unsafeFromValue err ^ ")")
+                                                         ; filelist_acc
+                                                         )
+                                                  end
+                                              else
+                                                  filelist_acc
+                                    in List.foldl go filelist filelist
+                                    end
+                                        (* TODO: makeglossaries *)
+                                        (* TODO: bibtex/biber *)
              in if String.isSubstring "No pages of output." execlog then
                     NO_PAGES_OF_OUTPUT
                 else
-                    
+                    let val (should_rerun, auxstatus) = Reruncheck.compareFileInfo (filelist, auxstatus)
+                    in if should_rerun orelse lightweight_mode then
+                           SHOULD_RERUN auxstatus
+                       else
+                           NO_NEED_TO_RERUN
+                    end
              end
       end
+
+(* Run (La)TeX (possibly multiple times) and produce a PDF/DVI file. *)
+(*: val doTypeset : run_params -> unit *)
+fun doTypeset (run_params as { options, engine, output_extension, ... } : run_params)
+    = let fun loop (iteration, auxstatus)
+              = let val iteration = iteration + 1
+                in case singleRun (run_params, auxstatus, iteration) of
+                       NO_PAGES_OF_OUTPUT => ( Message.warn "No pages of output."
+                                             ; false
+                                             )
+                     | NO_NEED_TO_RERUN => true
+                     | SHOULD_RERUN auxstatus => if iteration >= #max_iterations options then
+                                                     ( Message.warn "LaTeX should be run once more."
+                                                     ; true
+                                                     )
+                                                 else
+                                                     loop (iteration, auxstatus)
+                end
+      in if loop (0, StringMap.empty) then
+             (* Successful *)
+             ( if #output_format options = OutputFormat.DVI orelse #supports_pdf_generation engine then
+                   (* Output file (DVI/PDF) is generated in the output directory *)
+                   let val outfile = pathInOutputDirectory (options, output_extension)
+                       val onCopyError = if OSUtil.isWindows then
+                                             SOME (fn () => let val output_format = case #output_format options of
+                                                                                        OutputFormat.DVI => "DVI"
+                                                                                      | OutputFormat.PDF => "PDF"
+                                                            in Message.error ("Failed to copy file.  Some applications may be locking the " ^ output_format ^ " file.")
+                                                             ; false
+                                                            end
+                                                  )
+                                         else
+                                             NONE
+                   in executeCommand (FSUtil.copyCommand { from = outfile, to = #output options }, onCopyError)
+                    ; if List.null (#dvipdfmx_extraoptions options) then
+                          ()
+                      else
+                          Message.warn "--dvipdfmx-option[s] are ignored."
+                   end
+               else
+                   (* DVI file is generated, but PDF file is wanted *)
+                   let val dvifile = pathInOutputDirectory (options, "dvi")
+                       val dvipdfmx_command = "dvipdfmx" :: "-o" :: ShellUtil.escape (#output options) :: #dvipdfmx_extraoptions options @ [ShellUtil.escape dvifile]
+                   in executeCommand (String.concatWith " " dvipdfmx_command, NONE)
+                   end
+             ; (* Copy SyncTeX file if necessary *)
+               if #output_format options = OutputFormat.PDF then
+                   let val synctex = Lua.unsafeFromValue (Lua.call1 Lua.Lib.tonumber #[Lua.fromString (Option.getOpt (#synctex options, "0"))]) : int
+                       val synctex_ext = if synctex > 0 then
+                                             (* Compressed SyncTeX file (.synctex.gz) *)
+                                             SOME "synctex.gz"
+                                         else if synctex < 0 then
+                                             (* Uncompressed SyncTeX file (.synctex) *)
+                                             SOME "synctex"
+                                         else
+                                             NONE
+                   in case synctex_ext of
+                          SOME ext => executeCommand (FSUtil.copyCommand { from = pathInOutputDirectory (options, ext), to = PathUtil.replaceext { path = #output options, newext = ext } }, NONE)
+                        | NONE => ()
+                   end
+               else
+                   ()
+             ; (* TODO: Write dependencies file *)
+               case #make_depends options of
+                   SOME make_depends => Message.warn "--make-depends not implemented yet."
+                 | NONE => ()
+             ; (* Successful *)
+               if Message.getVerbosity () >= 1 then
+                   Message.info "Command exited successfully"
+               else
+                   ()
+             )
+         else
+             (* No pages of output. *)
+             ()
+      end
+
 fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, CommandLine.arguments ());
                   val () = case #color options of
                                NONE => Message.setColors Message.AUTO
@@ -351,11 +474,45 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                         , draftmode = false
                         , lua_initialization_script = lua_initialization_script
                         }
-
-
-
-
-              in ()
+                  val options : AppOptions.options
+                      = { engine = engine
+                        , engine_executable = #engine_executable options
+                        , output = output
+                        , fresh = #fresh options
+                        , max_iterations = Option.getOpt (#max_iterations options, 3)
+                        , start_with_draft = #start_with_draft options
+                        , watch = #watch options
+                        , change_directory = Option.getOpt (#change_directory options, false)
+                        , includeonly = #includeonly options
+                        , make_depends = #make_depends options
+                        , print_output_directory = #print_output_directory options
+                        , package_support = #package_support options
+                        , check_driver = check_driver
+                        , synctex = #synctex options
+                        , file_line_error = #file_line_error options
+                        , interaction = Option.getOpt (#interaction options, InteractionMode.NONSTOPMODE)
+                        , halt_on_error = #halt_on_error options
+                        , shell_escape = #shell_escape options
+                        , jobname = jobname
+                        , fmt = #fmt options
+                        , output_directory = output_directory
+                        , output_format = output_format
+                        , tex_extraoptions = #tex_extraoptions options
+                        , dvipdfmx_extraoptions = #dvipdfmx_extraoptions options
+                        , makeindex = #makeindex options
+                        , bibtex_or_biber = #bibtex_or_biber options
+                        , makeglossaries = #makeglossaries options
+                        }
+              in doTypeset { options = options
+                           , inputfile = inputfile
+                           , engine = engine
+                           , tex_options = tex_options
+                           , recorderfile = recorderfile
+                           , recorderfile2 = recorderfile2
+                           , original_wd = original_wd
+                           , output_extension = output_extension
+                           }
+                 handle Abort => OS.Process.exit OS.Process.failure
               end
 end;
 val () = Main.main ();

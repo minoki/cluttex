@@ -9,7 +9,7 @@ structure PathUtil : sig
               val join : string list -> string
               val abspath : { path : string, cwd : string option } -> string
           end = struct
-val luamod = LunarML.assumeDiscardable (fn () => Lua.call1 Lua.Lib.require #[Lua.fromString "texrunner.shellutil"]) ()
+val luamod = LunarML.assumeDiscardable (fn () => Lua.call1 Lua.Lib.require #[Lua.fromString "texrunner.pathutil"]) ()
 val basename : string -> string = LunarML.assumeDiscardable (fn () => Lua.unsafeFromValue (Lua.field (luamod, "basename"))) ()
 val dirname : string -> string = LunarML.assumeDiscardable (fn () => Lua.unsafeFromValue (Lua.field (luamod, "dirname"))) ()
 val parentdir : string -> string = LunarML.assumeDiscardable (fn () => Lua.unsafeFromValue (Lua.field (luamod, "parentdir"))) ()
