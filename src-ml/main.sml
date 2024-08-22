@@ -329,7 +329,99 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
                                     in List.foldl go filelist filelist
                                     end
 
-                 (* TODO: bibtex/biber *)
+                 (* bibtex/biber *)
+                 val filelist = case #bibtex_or_biber options of
+                                    NONE => ( if Lua.isFalsy (Lua.call1 Lua.Lib.string.find #[Lua.fromString execlog, Lua.fromString "No file [^\n]+%.bbl%."]) then
+                                                  ()
+                                              else
+                                                  Message.diag "You may want to use --bibtex or biber option."
+                                            ; filelist
+                                            )
+                                  | SOME (AppOptions.BIBTEX bibtex) =>
+                                    let val biblines2 = AuxFile.extractBibTeXLines { auxfile = mainauxfile, outdir = #output_directory options }
+                                        val bibtex_aux_hash2 = if List.null biblines2 then
+                                                                   NONE
+                                                               else
+                                                                   SOME (MD5.compute (Byte.stringToBytes (String.concatWith "\n" biblines2)))
+                                        val output_bbl = pathInOutputDirectory (options, "bbl")
+                                    in if bibtex_aux_hash <> bibtex_aux_hash2 orelse Reruncheck.compareFileTime { srcAbs = PathUtil.abspath { path = mainauxfile, cwd = NONE }, dst = output_bbl, auxstatus = auxstatus } then
+                                           (* The input for BibTeX command has changed... *)
+                                           let val bibtex_command = [
+                                                   "cd", ShellUtil.escape (#output_directory options), "&&",
+                                                   bibtex,
+                                                   PathUtil.basename mainauxfile
+                                               ]
+                                           in executeCommand (String.concatWith " " bibtex_command, NONE)
+                                           end
+                                       else
+                                           ( if Message.getVerbosity () >= 1 then
+                                                 Message.info "No need to run BibTeX."
+                                             else
+                                                 ()
+                                           ; FSUtil.touch output_bbl handle Lua.Error err => Message.warn ("Failed to touch " ^ output_bbl ^ " (" ^ Lua.unsafeFromValue err ^ ")")
+                                           )
+                                     ; filelist
+                                    end
+                            | SOME (AppOptions.BIBER biber) =>
+                              let fun go (file, filelist_acc)
+                                      (* Usual compilation with biber
+                                       * tex     -> pdflatex tex -> aux,bcf,pdf,run.xml
+                                       * bcf     -> biber bcf    -> bbl
+                                       * tex,bbl -> pdflatex tex -> aux,bcf,pdf,run.xml
+                                       *)
+                                      = if PathUtil.ext (#path file) = "bcf" then
+                                            (* Run biber if the .bcf file is new or updated *)
+                                            let val bcffileinfo = { path = #path file, abspath = #abspath file, kind = Reruncheck.AUXILIARY }
+                                                val output_bbl = PathUtil.replaceext { path = #abspath file, newext = "bbl" }
+                                                fun check_bib_update abspath
+                                                    = let val ins = TextIO.openIn abspath
+                                                          fun go updated_dot_bib
+                                                              = case TextIO.inputLine ins of
+                                                                    NONE => updated_dot_bib
+                                                                  | SOME l =>
+                                                                    let val bib = Lua.call1 Lua.Lib.string.match #[Lua.fromString l, Lua.fromString "<bcf:datasource .*>(.*)</bcf:datasource>"]
+                                                                    in if Lua.isFalsy bib then
+                                                                           go updated_dot_bib (* continue *)
+                                                                       else
+                                                                           let val bib = Lua.unsafeFromValue bib : string
+                                                                               val bibfile = PathUtil.join2 (original_wd, bib)
+                                                                               val updated_dot_bib = if FSUtil.isFile bibfile then
+                                                                                                         let val updated_dot_bib_tmp = not (Reruncheck.compareFileTime { srcAbs = PathUtil.abspath { path = mainauxfile, cwd = NONE }, dst = bibfile, auxstatus = auxstatus })
+                                                                                                         in if updated_dot_bib_tmp then
+                                                                                                                Message.info (bibfile ^ " is newer than aux")
+                                                                                                            else
+                                                                                                                ()
+                                                                                                          ; updated_dot_bib orelse updated_dot_bib_tmp
+                                                                                                         end
+                                                                                                     else
+                                                                                                         ( Message.warn (bibfile ^ " is not accessible")
+                                                                                                         ; updated_dot_bib
+                                                                                                         )
+                                                                           in go updated_dot_bib
+                                                                           end
+                                                                    end
+                                                      in go false before TextIO.closeIn ins
+                                                      end
+                                                val updated_dot_bib = check_bib_update (#abspath file)
+                                            in if updated_dot_bib orelse #1 (Reruncheck.compareFileInfo ([bcffileinfo], auxstatus)) orelse Reruncheck.compareFileTime { srcAbs = #abspath file, dst = output_bbl, auxstatus = auxstatus } then
+                                                   let val biber_command = [
+                                                           biber, (* Do not escape `biber` to allow additional options *)
+                                                           "--output-directory", ShellUtil.escape (#output_directory options),
+                                                           PathUtil.basename (#abspath file)
+                                                       ]
+                                                   in executeCommand (String.concatWith " " biber_command, NONE)
+                                                    ; { path = output_bbl, abspath = output_bbl, kind = Reruncheck.AUXILIARY } :: filelist
+                                                   end
+                                               else
+                                                   ( FSUtil.touch output_bbl handle Lua.Error err => Message.warn ("Failed to touch " ^ output_bbl ^ " (" ^ Lua.unsafeFromValue err ^ ")")
+                                                   ; filelist_acc
+                                                   )
+                                            end
+                                        else
+                                            filelist_acc
+                              in List.foldl go filelist filelist
+                              end
+
              in if String.isSubstring "No pages of output." execlog then
                     NO_PAGES_OF_OUTPUT
                 else
