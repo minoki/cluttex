@@ -311,6 +311,6 @@ fun parse (opts : initial_options, args)
                            showMessageAndFail ("Unrecognized option: " ^ arg ^ ".\n")
                        else
                            (opts, args)
-                     | [] => showMessageAndFail "No input given. Try --help.\n"
+                     | [] => showUsage () (* showMessageAndFail "No input given. Try --help.\n" *)
                   )
 end;

@@ -2,6 +2,23 @@
 structure Main = struct
 val CLUTTEX_VERSION = "v0.6"
 
+val COPYRIGHT_NOTICE =
+"Copyright (C) 2016-2024  ARATA Mizuki\n\
+\\n\
+\This program is free software: you can redistribute it and/or modify\n\
+\it under the terms of the GNU General Public License as published by\n\
+\the Free Software Foundation, either version 3 of the License, or\n\
+\(at your option) any later version.\n\
+\\n\
+\This program is distributed in the hope that it will be useful,\n\
+\but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
+\MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
+\GNU General Public License for more details.\n\
+\\n\
+\You should have received a copy of the GNU General Public License\n\
+\along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\
+\";
+
 exception Abort
 
 (* Workaround for recent Universal CRT *)
@@ -11,6 +28,7 @@ fun getEnvMulti [] = NONE
   | getEnvMulti (name :: xs) = case OS.Process.getEnv name of
                                    SOME x => SOME x
                                  | NONE => getEnvMulti xs
+
 fun genOutputDirectory (xs : string list)
     = let val message = String.concatWith "\000" xs
           val hash = MD5.md5AsLowerHex (Byte.stringToBytes message)
@@ -22,11 +40,80 @@ fun genOutputDirectory (xs : string list)
       in OS.Path.joinDirFile { dir = tmpdir, file = "cluttex-" ^ hash }
       end
 
-fun showUsage () = (TextIO.output (TextIO.stdErr, "Usage: cluttex\n"); OS.Process.exit OS.Process.failure) (* TODO *)
+fun showUsage () = let val progName = CommandLine.name ()
+                   in TextIO.output (TextIO.stdErr,
+"ClutTeX: Process TeX files without cluttering your working directory\n\
+\\n\
+\Usage:\n\
+\  " ^ progName ^ " [options] [--] FILE.tex\n\
+\\n\
+\Options:\n\
+\  -e, --engine=ENGINE          Specify which TeX engine to use.\n\
+\                                 ENGINE is one of the following:\n\
+\                                     pdflatex, pdftex,\n\
+\                                     lualatex, luatex, luajittex,\n\
+\                                     xelatex, xetex, latex, etex, tex,\n\
+\                                     platex, eptex, ptex,\n\
+\                                     uplatex, euptex, uptex,\n\
+\      --engine-executable=COMMAND+OPTIONs\n\
+\                               The actual TeX command to use.\n\
+\                                 [default: ENGINE]\n\
+\  -o, --output=FILE            The name of output file.\n\
+\                                 [default: JOBNAME.pdf or JOBNAME.dvi]\n\
+\      --fresh                  Clean intermediate files before running TeX.\n\
+\                                 Cannot be used with --output-directory.\n\
+\      --max-iterations=N       Maximum number of running TeX to resolve\n\
+\                                 cross-references.  [default: 3]\n\
+\      --start-with-draft       Start with draft mode.\n\
+\      --[no-]change-directory  Change directory before running TeX.\n\
+\      --watch[=ENGINE]         Watch input files for change.  Requires fswatch\n\
+\                                 or inotifywait to be installed. ENGINE is one of\n\
+\                                 `fswatch', `inotifywait' or `auto' [default: `auto']\n\
+\      --tex-option=OPTION      Pass OPTION to TeX as a single option.\n\
+\      --tex-options=OPTIONs    Pass OPTIONs to TeX as multiple options.\n\
+\      --dvipdfmx-option[s]=OPTION[s]  Same for dvipdfmx.\n\
+\      --makeindex=COMMAND+OPTIONs  Command to generate index, such as\n\
+\                                     `makeindex' or `mendex'.\n\
+\      --bibtex=COMMAND+OPTIONs     Command for BibTeX, such as\n\
+\                                     `bibtex' or `pbibtex'.\n\
+\      --biber[=COMMAND+OPTIONs]    Command for Biber.\n\
+\      --makeglossaries[=COMMAND+OPTIONs]  Command for makeglossaries.\n\
+\  -h, --help                   Print this message and exit.\n\
+\  -v, --version                Print version information and exit.\n\
+\  -V, --verbose                Be more verbose.\n\
+\      --color[=WHEN]           Make ClutTeX's message colorful. WHEN is one of\n\
+\                                 `always', `auto', or `never'.\n\
+\                                 [default: `auto' if --color is omitted,\n\
+\                                           `always' if WHEN is omitted]\n\
+\      --includeonly=NAMEs      Insert '\\includeonly{NAMEs}'.\n\
+\      --make-depends=FILE      Write dependencies as a Makefile rule.\n\
+\      --print-output-directory  Print the output directory and exit.\n\
+\      --package-support=PKG1[,PKG2,...]\n\
+\                               Enable special support for some shell-escaping\n\
+\                                 packages.\n\
+\                               Currently supported: minted, epstopdf\n\
+\      --check-driver=DRIVER    Check that the correct driver file is loaded.\n\
+\                               DRIVER is one of `dvipdfmx', `dvips', `dvisvgm'.\n\
+\\n\
+\      --[no-]shell-escape\n\
+\      --shell-restricted\n\
+\      --synctex=NUMBER\n\
+\      --fmt=FMTNAME\n\
+\      --[no-]file-line-error   [default: yes]\n\
+\      --[no-]halt-on-error     [default: yes]\n\
+\      --interaction=STRING     [default: nonstopmode]\n\
+\      --jobname=STRING\n\
+\      --output-directory=DIR   [default: somewhere in the temporary directory]\n\
+\      --output-format=FORMAT   FORMAT is `pdf' or `dvi'.  [default: pdf]\n\
+\\n" ^ COPYRIGHT_NOTICE)
+                    ; OS.Process.exit OS.Process.failure
+                   end
+
 structure HandleOptions = HandleOptions (fun showMessageAndFail message = (TextIO.output (TextIO.stdErr, message ^ "\n"); OS.Process.exit OS.Process.failure)
                                          val showUsage = showUsage
                                          fun showVersion () = (TextIO.output (TextIO.stdErr, "cluttex version x.x\n"); OS.Process.exit OS.Process.failure)
                                         )
+
 (*: val pathInOutputDirectory : AppOptions.options * string -> string *)
 fun pathInOutputDirectory (options : AppOptions.options, ext) = PathUtil.join2 (#output_directory options, #jobname options ^ "." ^ ext)
 (*: val executeCommand : string * (unit -> bool) option -> unit *)
