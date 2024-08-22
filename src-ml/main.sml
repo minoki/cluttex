@@ -294,8 +294,42 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
                                                   filelist_acc
                                     in List.foldl go filelist filelist
                                     end
-                                        (* TODO: makeglossaries *)
-                                        (* TODO: bibtex/biber *)
+
+                 (* makeglossaries *)
+                 val filelist = case #makeglossaries options of
+                                    NONE => (* Check log file *)
+                                    ( if Lua.isFalsy (Lua.call1 Lua.Lib.string.find #[Lua.fromString execlog, Lua.fromString "No file [^\n]+%.gls%."]) then
+                                          ()
+                                      else
+                                          Message.diag "You may want to use --makeglossaries option."
+                                    ; filelist
+                                    )
+                                  | SOME makeglossaries =>
+                                    let fun go (file, filelist_acc) (* Look for .glo files and run makeglossaries *)
+                                            = if PathUtil.ext (#path file) = "glo" then
+                                                  (* Run makeglossaries if the .glo file is new or updated *)
+                                                  let val glofileinfo = { path = #path file, abspath = #abspath file, kind = Reruncheck.AUXILIARY }
+                                                      val output_gls = PathUtil.replaceext { path = #abspath file, newext = "gls" }
+                                                  in if #1 (Reruncheck.compareFileInfo ([glofileinfo], auxstatus)) orelse Reruncheck.compareFileTime { srcAbs = #abspath file, dst = output_gls, auxstatus = auxstatus } then
+                                                         let val makeglossaries_command = [
+                                                                 makeglossaries,
+                                                                 "-d", ShellUtil.escape (#output_directory options),
+                                                                 PathUtil.trimext (PathUtil.basename (#path file))
+                                                             ]
+                                                         in executeCommand (String.concatWith " " makeglossaries_command, NONE)
+                                                          ; { path = output_gls, abspath = output_gls, kind = Reruncheck.AUXILIARY } :: filelist_acc
+                                                         end
+                                                     else
+                                                         ( FSUtil.touch output_gls handle Lua.Error err => Message.warn ("Failed to touch " ^ output_gls ^ " (" ^ Lua.unsafeFromValue err ^ ")")
+                                                         ; filelist_acc
+                                                         )
+                                                  end
+                                              else
+                                                  filelist_acc
+                                    in List.foldl go filelist filelist
+                                    end
+
+                 (* TODO: bibtex/biber *)
              in if String.isSubstring "No pages of output." execlog then
                     NO_PAGES_OF_OUTPUT
                 else
