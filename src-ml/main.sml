@@ -117,6 +117,7 @@ structure HandleOptions = HandleOptions (fun showMessageAndFail message = (TextI
 (*: val pathInOutputDirectory : AppOptions.options * string -> string *)
 fun pathInOutputDirectory (options : AppOptions.options, ext) = PathUtil.join2 (#output_directory options, #jobname options ^ "." ^ ext)
 (*: val executeCommand : string * (unit -> bool) option -> unit *)
+(*
 fun executeCommand (command, recover)
     = let val () = Message.exec command
           val status = OS.Process.system command
@@ -129,7 +130,30 @@ fun executeCommand (command, recover)
       in if success_or_recoverd then
              ()
          else
-             ( Message.error "Command exit abnormally" (* TODO: show status code: Unix.fromStatus *)
+             ( Message.error "Command exited abnormally" (* TODO: show status code: Unix.fromStatus *)
+             ; raise Abort
+             )
+      end
+*)
+fun executeCommand (command, recover)
+    = let val () = Message.exec command
+          val (success, termination, status_or_signal) = Lua.call3 Lua.Lib.os.execute #[Lua.fromString command]
+          val (success, termination, status_or_signal) : bool * string option * Lua.value
+              = if Lua.typeof success = "number" then (* Lua 5.1 or LuaTeX *)
+                    (Lua.== (success, Lua.fromInt 0), NONE, success)
+                else
+                    (Lua.unsafeFromValue success, SOME (Lua.unsafeFromValue termination), status_or_signal)
+          val success_or_recovered = success orelse (case recover of
+                                                         SOME f => f ()
+                                                       | NONE => false
+                                                    )
+      in if success_or_recovered then
+             ()
+         else
+             ( case termination of
+                   SOME "exit" => Message.error ("Command exited abnormally: exit status " ^ Lua.unsafeFromValue (Lua.call1 Lua.Lib.tostring #[status_or_signal]))
+                 | SOME "signal" => Message.error ("Command exited abnormally: signal " ^ Lua.unsafeFromValue (Lua.call1 Lua.Lib.tostring #[status_or_signal]))
+                 | _ => Message.error ("Command exited abnormally: " ^ Lua.unsafeFromValue (Lua.call1 Lua.Lib.tostring #[status_or_signal]))
              ; raise Abort
              )
       end

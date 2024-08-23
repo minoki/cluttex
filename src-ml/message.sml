@@ -9,9 +9,11 @@ structure Message : sig
               val getVerbosity : unit -> int
               val beMoreVerbose : unit -> unit
           end = struct
-val verbosity = ref 0
-fun getVerbosity () = !verbosity
-fun beMoreVerbose () = verbosity := !verbosity + 1
+val () = Lua.setGlobal ("CLUTTEX_VERBOSITY", Lua.fromInt 0)
+fun getVerbosity () : int = Lua.unsafeFromValue (Lua.global "CLUTTEX_VERBOSITY")
+fun beMoreVerbose () = let val verbosity = Lua.global "CLUTTEX_VERBOSITY"
+                       in Lua.setGlobal ("CLUTTEX_VERBOSITY", Lua.+ (verbosity, Lua.fromInt 1))
+                       end
 
 datatype mode = ALWAYS | AUTO | NEVER
 val useColors = ref false
