@@ -1,0 +1,35 @@
+on: [push, pull_request]
+name: build
+jobs:
+  lunarml:
+    name: Build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install lua5.3 liblua5.3-dev
+          docker pull ghcr.io/minoki/lunarml:0.2.0
+          sudo ln -s /usr/bin/lua /usr/local/bin/texlua
+      - name: Install LuaFileSystem
+        run: |
+          curl -LO "https://github.com/lunarmodules/luafilesystem/archive/refs/tags/v1_8_0.tar.gz"
+          tar xf v1_8_0.tar.gz
+          cd luafilesystem-1_8_0
+          make LUA_VERSION=5.3
+          sudo make LUA_VERSION=5.3 install
+      - name: Build
+        run: |
+          make lunarml="docker run --rm --platform linux/amd64 -v \"$(pwd)\":/work -w /work ghcr.io/minoki/lunarml:0.2.0 lunarml"
+      - name: Show version
+        run: make check-version
+      - name: Archive
+        run: make archive
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive
+          path: |
+            cluttex-*.tar.gz
+            cluttex-*.zip
