@@ -16,8 +16,7 @@ val COPYRIGHT_NOTICE =
 \GNU General Public License for more details.\n\
 \\n\
 \You should have received a copy of the GNU General Public License\n\
-\along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\
-\";
+\along with this program.  If not, see <http://www.gnu.org/licenses/>.\n";
 
 exception Abort
 
@@ -534,7 +533,142 @@ fun doTypeset (run_params as { options, engine, output_extension, ... } : run_pa
              ()
       end
 
-fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, CommandLine.arguments ());
+(*: val doWatchWindows : Lua.value -> string list -> bool *)
+fun doWatchWindows fswatcherlib files
+    = let val watcher = Lua.call1 Lua.Lib.assert (Lua.call (Lua.field (fswatcherlib, "new")) #[])
+          val () = List.app (fn file => Lua.call0 Lua.Lib.assert (Lua.method (watcher, "add") #[Lua.fromString file])) files
+          val result = Lua.call1 Lua.Lib.assert (Lua.method (watcher, "next") #[])
+          val () = if Message.getVerbosity () >= 2 then
+                       Message.info (Lua.unsafeFromValue (Lua.field (result, "action")) ^ " " ^ Lua.unsafeFromValue (Lua.field (result, "path")))
+                   else
+                       ()
+          val () = Lua.method0 (watcher, "close") #[]
+      in true
+      end
+
+(*: val doWatchFswatch : string list -> bool *)
+fun doWatchFswatch files
+    = let val fswatch_command = "fswatch" :: "--one-event" :: "--event=Updated" :: "--" :: List.map ShellUtil.escape files
+          val fswatch_command_str = String.concatWith " " fswatch_command
+          val () = if Message.getVerbosity () >= 1 then
+                       Message.exec fswatch_command_str
+                   else
+                       ()
+          val fswatch = Lua.call1 Lua.Lib.assert (Lua.call Lua.Lib.io.popen #[Lua.fromString fswatch_command_str, Lua.fromString "r"])
+          val readLine = Lua.method1 (fswatch, "lines") #[]
+          fun go () = let val l = Lua.call1 readLine #[]
+                      in if Lua.isFalsy l then
+                             false
+                         else if List.exists (fn path => Lua.unsafeFromValue l = path) files then
+                             true
+                         else
+                             go ()
+                      end
+      in go () before Lua.method0 (fswatch, "close") #[]
+      end
+
+(*: val doWatchInotifywait : string list -> bool *)
+fun doWatchInotifywait files
+    = let val inotifywait_command = "inotifywait" :: "--event=modify" :: "--event=attrib" :: "--format=%w" :: "--quiet" :: List.map ShellUtil.escape files
+          val inotifywait_command_str = String.concatWith " " inotifywait_command
+          val () = if Message.getVerbosity () >= 1 then
+                       Message.exec inotifywait_command_str
+                   else
+                       ()
+          val inotifywait = Lua.call1 Lua.Lib.assert (Lua.call Lua.Lib.io.popen #[Lua.fromString inotifywait_command_str, Lua.fromString "r"])
+          val readLine = Lua.method1 (inotifywait, "lines") #[]
+          fun go () = let val l = Lua.call1 readLine #[]
+                      in if Lua.isFalsy l then
+                             false
+                         else if List.exists (fn path => Lua.unsafeFromValue l = path) files then
+                             true
+                         else
+                             go ()
+                      end
+      in go () before Lua.method0 (inotifywait, "close") #[]
+      end
+
+(*: val runWatchMode : AppOptions.WatchEngine.engine * run_params -> unit *)
+fun runWatchMode (watch_engine, run_params as { options, engine, recorderfile, recorderfile2, ... } : run_params)
+    = let val fswatcherlib = if OSUtil.isWindows then
+                                 (* Windows: Try built-in filesystem watcher *)
+                                 let val (succ, result) = Lua.call2 Lua.Lib.pcall #[Lua.Lib.require, Lua.fromString "texrunner.fswatcher_windows"]
+                                 in if Lua.isFalsy succ then
+                                        ( if Message.getVerbosity () >= 1 then
+                                              Message.warn ("Failed to load texrunner.fswatcher_windows: " ^ Lua.unsafeFromValue result)
+                                          else
+                                              ()
+                                        ; NONE
+                                        )
+                                    else
+                                        SOME result
+                                 end
+                             else
+                                 NONE
+          val doWatch = case fswatcherlib of
+                            SOME fswatcherlib =>
+                            ( if Message.getVerbosity () >= 2 then
+                                  Message.info "Using built-in filesystem watcher for Windows"
+                              else
+                                  ()
+                            ; doWatchWindows fswatcherlib
+                            )
+                          | NONE => if ShellUtil.hasCommand "fswatch" andalso (watch_engine = AppOptions.WatchEngine.AUTO orelse watch_engine = AppOptions.WatchEngine.AUTO) then
+                                        ( if Message.getVerbosity () >= 2 then
+                                              Message.info "Using `fswatch' command"
+                                          else
+                                              ()
+                                        ; doWatchFswatch
+                                        )
+                                    else if ShellUtil.hasCommand "inotifywait" andalso (watch_engine = AppOptions.WatchEngine.AUTO orelse watch_engine = AppOptions.WatchEngine.INOTIFYWAIT) then
+                                        ( if Message.getVerbosity () >= 2 then
+                                              Message.info "Using `inotifywait' command"
+                                          else
+                                              ()
+                                        ; doWatchInotifywait
+                                        )
+                                    else
+                                        ( case watch_engine of
+                                              AppOptions.WatchEngine.AUTO => Message.error "Could not watch files because neither `fswatch' nor `inotifywait' was installed."
+                                            | AppOptions.WatchEngine.FSWATCH => Message.error "Could not watch files because your selected engine `fswatch' was not installed."
+                                            | AppOptions.WatchEngine.INOTIFYWAIT => Message.error "Could not watch files because your selected engine `inotifywait' was not installed."
+                                        ; Message.info "See ClutTeX's manual for details."
+                                        ; OS.Process.exit OS.Process.failure
+                                        )
+
+          val _ = (doTypeset run_params; true) handle Abort => false
+          (* TODO: filenames here can be UTF-8 if command_line_encoding=utf-8 *)
+          val recorded = Reruncheck.parseRecorderFile { file = recorderfile, options = options }
+          val recorded = if TeXEngine.isLuaTeX engine andalso FSUtil.isFile recorderfile2 then
+                             Reruncheck.parseRecorderFileContinued { file = recorderfile2, options = options, previousResult = recorded }
+                         else
+                             recorded
+          val (filelist, _) = Reruncheck.getFileInfo recorded
+          val inputFilesToWatch = List.mapPartial (fn { path = _, abspath, kind = Reruncheck.INPUT } => SOME abspath | _ => NONE) filelist
+          fun loop inputFilesToWatch
+              = if doWatch inputFilesToWatch then
+                    let val success = (doTypeset run_params; true) handle Abort => false
+                    in if success then
+                           let val recorded = Reruncheck.parseRecorderFile { file = recorderfile, options = options }
+                               val recorded = if TeXEngine.isLuaTeX engine andalso FSUtil.isFile recorderfile2 then
+                                                  Reruncheck.parseRecorderFileContinued { file = recorderfile2, options = options, previousResult = recorded }
+                                              else
+                                                  recorded
+                               val (filelist, _) = Reruncheck.getFileInfo recorded
+                               val inputFilesToWatch = List.mapPartial (fn { path = _, abspath, kind = Reruncheck.INPUT } => SOME abspath | _ => NONE) filelist
+                           in loop inputFilesToWatch
+                           end
+                       else
+                           loop inputFilesToWatch (* error; watch the same files again *)
+                    end
+                else
+                    () (* exit *)
+      in loop inputFilesToWatch
+      end
+
+
+fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, CommandLine.arguments ())
+                  val watch = #watch options
                   val () = case #color options of
                                NONE => Message.setColors Message.AUTO
                              | _ => ()
@@ -740,16 +874,18 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                         , bibtex_or_biber = #bibtex_or_biber options
                         , makeglossaries = #makeglossaries options
                         }
-              in doTypeset { options = options
-                           , inputfile = inputfile
-                           , engine = engine
-                           , tex_options = tex_options
-                           , recorderfile = recorderfile
-                           , recorderfile2 = recorderfile2
-                           , original_wd = original_wd
-                           , output_extension = output_extension
-                           }
-                 handle Abort => OS.Process.exit OS.Process.failure
+                  val run_params = { options = options
+                                   , inputfile = inputfile
+                                   , engine = engine
+                                   , tex_options = tex_options
+                                   , recorderfile = recorderfile
+                                   , recorderfile2 = recorderfile2
+                                   , original_wd = original_wd
+                                   , output_extension = output_extension
+                                   }
+              in case watch of
+                     NONE => (doTypeset run_params handle Abort => OS.Process.exit OS.Process.failure)
+                   | SOME watch_engine => runWatchMode (watch_engine, run_params)
               end
 end;
 val () = Main.main ();
