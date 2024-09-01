@@ -459,7 +459,7 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
 
 (* Run (La)TeX (possibly multiple times) and produce a PDF/DVI file. *)
 (*: val doTypeset : run_params -> unit *)
-fun doTypeset (run_params as { options, engine, output_extension, ... } : run_params)
+fun doTypeset (run_params as { options, engine, output_extension, recorderfile, recorderfile2, ... } : run_params)
     = let fun loop (iteration, auxstatus)
               = let val iteration = iteration + 1
                 in case singleRun (run_params, auxstatus, iteration) of
@@ -518,9 +518,22 @@ fun doTypeset (run_params as { options, engine, output_extension, ... } : run_pa
                    end
                else
                    ()
-             ; (* TODO: Write dependencies file *)
+             ; (* Write dependencies file *)
                case #make_depends options of
-                   SOME make_depends => Message.warn "--make-depends not implemented yet."
+                   SOME make_depends =>
+                   let val recorded = Reruncheck.parseRecorderFile { file = recorderfile, options = options }
+                       val recorded = if TeXEngine.isLuaTeX engine andalso FSUtil.isFile recorderfile2 then
+                                          Reruncheck.parseRecorderFileContinued { file = recorderfile2, options = options, previousResult = recorded }
+                                      else
+                                          recorded
+                       val (filelist, _) = Reruncheck.getFileInfo recorded
+                       val outs = TextIO.openOut make_depends
+                   in TextIO.output (outs, #output options ^ ":") (* TODO: quote *)
+                    ; List.app (fn { path, abspath = _, kind = Reruncheck.INPUT } => TextIO.output (outs, " " ^ path) (* TODO: quote *)
+                               | _ => ()) filelist
+                    ; TextIO.output (outs, "\n")
+                    ; TextIO.closeOut outs
+                   end
                  | NONE => ()
              ; (* Successful *)
                if Message.getVerbosity () >= 1 then
