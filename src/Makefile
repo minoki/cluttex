@@ -22,16 +22,16 @@ ml_sources = \
   main.sml
 
 lua_sources = \
-  ../src/texrunner/fsutil.lua \
-  ../src/texrunner/luatexinit.lua \
-  ../src/texrunner/isatty.lua \
-  ../src/texrunner/pathutil.lua \
-  ../src/texrunner/pathutil_unix.lua \
-  ../src/texrunner/pathutil_windows.lua \
-  ../src/texrunner/shellutil.lua \
-  ../src/texrunner/shellutil_unix.lua \
-  ../src/texrunner/shellutil_windows.lua \
-  ../src/texrunner/fswatcher_windows.lua
+  texrunner/fsutil.lua \
+  texrunner/luatexinit.lua \
+  texrunner/isatty.lua \
+  texrunner/pathutil.lua \
+  texrunner/pathutil_unix.lua \
+  texrunner/pathutil_windows.lua \
+  texrunner/shellutil.lua \
+  texrunner/shellutil_unix.lua \
+  texrunner/shellutil_windows.lua \
+  texrunner/fswatcher_windows.lua
 
 all: cluttex.lua cluttex
 .PHONY: all

@@ -17,7 +17,7 @@
   along with ClutTeX.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-local srcdir = "../src/"
+local srcdir = "./"
 local mode
 local default_os
 if arg[1] == "--unix-shellscript" then
