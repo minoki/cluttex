@@ -48,52 +48,16 @@ local modules = {
     path = "texrunner/fsutil.lua",
   },
   {
-    name = "texrunner.option",
-    path = "texrunner/option.lua",
-  },
-  {
-    name = "texrunner.tex_engine",
-    path = "texrunner/tex_engine.lua",
-  },
-  {
-    name = "texrunner.reruncheck",
-    path = "texrunner/reruncheck.lua",
-  },
-  {
-    name = "texrunner.auxfile",
-    path = "texrunner/auxfile.lua",
-  },
-  {
     name = "texrunner.luatexinit",
     path = "texrunner/luatexinit.lua",
-  },
-  {
-    name = "texrunner.recovery",
-    path = "texrunner/recovery.lua",
-  },
-  {
-    name = "texrunner.handleoption",
-    path = "texrunner/handleoption.lua",
   },
   {
     name = "texrunner.isatty",
     path = "texrunner/isatty.lua",
   },
   {
-    name = "texrunner.message",
-    path = "texrunner/message.lua",
-  },
-  {
     name = "texrunner.fswatcher_windows",
     path = "texrunner/fswatcher_windows.lua",
-  },
-  {
-    name = "texrunner.safename",
-    path = "texrunner/safename.lua",
-  },
-  {
-    name = "texrunner.checkdriver",
-    path = "texrunner/checkdriver.lua",
   },
 }
 
@@ -129,14 +93,16 @@ local function load_module_code(path)
   return strip_test_code(assert(io.open(srcdir .. path, "r")):read("*a"))
 end
 
-assert(loadfile(srcdir .. "cluttex.lua")) -- Check syntax
+assert(loadfile(srcdir .. "cluttex-ml.lua")) -- Check syntax
 
-local shebang = nil
-local main = assert(io.open(srcdir .. "cluttex.lua", "r")):read("*a")
+local shebang = "#!/usr/bin/env texlua\n"
+local main = assert(io.open(srcdir .. "cluttex-ml.lua", "r")):read("*a")
+--[[
 if main:sub(1,2) == "#!" then
   -- shebang
   shebang,main = main:match("^([^\n]+\n)(.*)$")
 end
+]]
 
 local lines = {}
 if mode == "batchfile" then
@@ -154,7 +120,6 @@ end
 
 if not preserve_location_info then
   table.insert(lines, string.format("local %s = %s\n", table.concat(imported_globals, ", "), table.concat(imported_globals, ", ")))
-  table.insert(lines, "local CLUTTEX_VERBOSITY, CLUTTEX_VERSION\n")
 end
 
 if default_os then
@@ -177,7 +142,7 @@ if preserve_location_info then
     end
   end
   table.insert(lines, string.format("assert(loadstring(%q, %q))(...)\n", main, "=cluttex.lua"))
-else  
+else
   for _,m in ipairs(modules) do
     if m.path_windows or m.path_unix then
       table.insert(lines, 'if os.type == "windows" then\n')

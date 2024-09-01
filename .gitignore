@@ -1,6 +1,9 @@
+bin/cluttex
+bin/cluttex.lua
 example/*/*.pdf
 *.synctex.gz
 *.tar
 *.tar.gz
 *.dep
-cluttex/VERSION_*
+src/cluttex-ml.lua
+VERSION_*

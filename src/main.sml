@@ -1,6 +1,6 @@
 (* This file is part of ClutTeX. *)
 structure Main = struct
-val CLUTTEX_VERSION = "v0.6"
+val CLUTTEX_VERSION = "v0.7.0"
 
 val COPYRIGHT_NOTICE =
 "Copyright (C) 2016-2024  ARATA Mizuki\n\
@@ -105,12 +105,12 @@ fun showUsage () = let val progName = CommandLine.name ()
 \      --output-directory=DIR   [default: somewhere in the temporary directory]\n\
 \      --output-format=FORMAT   FORMAT is `pdf' or `dvi'.  [default: pdf]\n\
 \\n" ^ COPYRIGHT_NOTICE)
-                    ; OS.Process.exit OS.Process.failure
+                    ; OS.Process.exit OS.Process.success
                    end
 
 structure HandleOptions = HandleOptions (fun showMessageAndFail message = (TextIO.output (TextIO.stdErr, message ^ "\n"); OS.Process.exit OS.Process.failure)
                                          val showUsage = showUsage
-                                         fun showVersion () = (TextIO.output (TextIO.stdErr, "cluttex version x.x\n"); OS.Process.exit OS.Process.failure)
+                                         fun showVersion () = (TextIO.output (TextIO.stdErr, "cluttex " ^ CLUTTEX_VERSION ^ "\n"); OS.Process.exit OS.Process.success)
                                         )
 
 (*: val pathInOutputDirectory : AppOptions.options * string -> string *)
