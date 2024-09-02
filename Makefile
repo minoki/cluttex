@@ -1,5 +1,6 @@
 lua = lua
 lunarml = lunarml
+smlfmt = smlfmt
 VERSION = 0.7.0
 
 ml_sources = \
@@ -21,6 +22,21 @@ ml_sources = \
   src/recovery.sml \
   src/reruncheck.sml \
   src/main.sml
+
+# smlfmt doesn't support vector expressions #[], record extension { ... = <exp> }, record update { ... where ... }
+non_formatted_sources = \
+  src/shell-util.sml \
+  src/path-util.sml \
+  src/fs-util.sml \
+  src/os-util.sml \
+  src/tex-engine.sml \
+  src/message.sml \
+  src/luatexinit.sml \
+  src/handle-options.sml \
+  src/reruncheck.sml \
+  src/main.sml
+
+formatted_sources = $(filter-out $(non_formatted_sources),$(ml_sources))
 
 lua_sources = \
   src/texrunner/fsutil.lua \
@@ -50,6 +66,14 @@ bin/cluttex: build.lua src/cluttex-ml.lua $(lua_sources)
 	$(lua) build.lua --unix-shellscript $@
 	$(lua) checkglobal.lua $@
 	chmod +x $@
+
+.PHONY: format
+format:
+	$(smlfmt) --force $(formatted_sources)
+
+.PHONY: check-format
+check-format:
+	$(smlfmt) --check $(formatted_sources)
 
 version_file=$(shell bin/cluttex --version 2>&1 | grep --only-matching -E 'v[[:digit:]]+(\.[[:digit:]]+)*' | sed 's/^v/VERSION_/;s/\./_/g')
 
