@@ -35,8 +35,9 @@ See [example/](example/) for some examples.
 Install
 -----
 
-Click \[Clone or download\] button on GitHub and \[Download ZIP\].
-Unpack `cluttex-master.zip` and copy `bin/cluttex` (or `bin/cluttex.bat` on Windows) to somewhere in PATH.
+ClutTeX is included in [TeX Live](https://tug.org/texlive/).
+
+If you want to install it manually, go [Releases](https://github.com/minoki/cluttex/releases) page and download the latest archive (zip or tar.gz). Unpack the archive and copy `bin/cluttex` to somewhere in PATH.
 
 Command-line Options
 -----
