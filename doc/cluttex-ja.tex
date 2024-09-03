@@ -29,9 +29,9 @@
   alxspmode={`\>,postonly},
 }
 
-\title{\ClutTeX{}マニュアル\\（バージョン0.6）}%VERSION
+\title{\ClutTeX{}マニュアル\\（バージョン0.7.0）}%VERSION
 \author{ARATA Mizuki}
-\date{2023年11月18日}
+\date{2024年9月3日}
 
 \begin{document}
 \maketitle
@@ -123,6 +123,8 @@
   いくつかのパッケージについて、正しいドライバーファイルが読み込まれていることを検査する。
   \metavar{DRIVER}は\texttt{dvipdfmx}, \texttt{dvips}, or \texttt{dvisvgm}のいずれかである。
   このオプションは\texttt{--output-format=dvi}が指定された場合にのみ指定できる。
+\item[\texttt{--config-file=TOML}]
+  指定された設定ファイルを使用する。\cref{sec:config-file}も参照。
 \end{description}
 
 補助コマンド実行用のオプション：
@@ -159,7 +161,7 @@
 \item[\texttt{--output-directory=\metavar{DIR}}]
   （\TeX{}処理系にとっての）出力ディレクトリを指定する。
   補助ファイルはここで指定されたディレクトリに生成される。
-  デフォルト：テンポラリディレクトリのどこか
+  デフォルト：設定項目\texttt{temporary-directory}に基づく。
 \item[\texttt{--output-format=\metavar{FORMAT}}]
   出力フォーマットを指定する。
   \texttt{pdf}または\texttt{dvi}を指定できる。
@@ -298,4 +300,69 @@ cluttex -e pdflatex --shell-escape --package-support=minted document.tex
 PDFモードの場合、ドライバーの検査は常に行われる。
 DVIモードで検査を有効にするには、\texttt{--check-driver}オプションを使用する。
 
+\section{設定ファイルによるカスタマイズ}\label{sec:config-file}
+
+\ClutTeX{}のいくつかの挙動は、設定ファイルによりカスタマイズできる。
+
+\ClutTeX{}の設定ファイルは、以下の順序で探索される：
+\begin{enumerate}
+\item \texttt{--config-file}コマンドラインオプション。
+\item \texttt{CLUTTEX\_CONFIG\_FILE}環境変数。
+\item （Unixのみ）\texttt{\$XDG\_CONFIG\_HOME/cluttex/config.toml}
+\item （Unixのみ）\texttt{\$HOME/.config/cluttex/config.toml}
+\item （Windowsのみ）\texttt{\%APPDATA\%\textbackslash cluttex\textbackslash config.toml}
+\end{enumerate}
+
+\ClutTeX{}の設定ファイルはTOML\footnote{\url{https://toml.io/en/}}形式に従う。
+
+設定可能なキーは以下の通りである：
+\begin{description}
+\item[\texttt{temporary-directory}（文字列）]
+  補助ファイルの作成先。
+  \texttt{--output-directory}のデフォルト値は\texttt{temporary-directory}以下のどこかとなる。
+  省略された場合は、テンポラリディレクトリ以下のどこかが使用される。
+\item[\texttt{color.\{type,execute,warning,diagnostic,information\}}（テーブル）]
+  \ClutTeX{}によるメッセージの色を指定する。
+  それぞれのテーブルは以下のキーを持てる：
+  \texttt{fore}（色を表す文字列）、
+  \texttt{back}（色を表す文字列）、
+  \texttt{bold}（真理値）、
+  \texttt{dim}（真理値）、
+  \texttt{underline}（真理値）、
+  \texttt{blink}（真理値）、
+  \texttt{reverse}（真理値）、
+  \texttt{italic}（真理値）、
+  \texttt{strike}（真理値）。
+  色を表す文字列は以下のいずれかである：
+  \texttt{default}、
+  \texttt{black}、
+  \texttt{red}、
+  \texttt{green}、
+  \texttt{yellow}、
+  \texttt{blue}、
+  \texttt{magenta}、
+  \texttt{cyan}、
+  \texttt{white}、
+  \texttt{brightblack}、
+  \texttt{brightred}、
+  \texttt{brightgreen}、
+  \texttt{brightyellow}、
+  \texttt{brightblue}、
+  \texttt{brightmagenta}、
+  \texttt{brightcyan}、
+  \texttt{brightwhite}。
+\end{description}
+
+設定ファイルの例は以下のようになる：
+\begin{verbatim}
+# 実際の出力ディレクトリは
+# "/home/user/.cache/cluttex/cluttex-<hash>"
+# のようになる
+temporary-directory = "/home/user/.cache/cluttex"
+
+[color]
+type = { reverse = true }
+error = { fore = "brightred", back = "brightwhite" }
+\end{verbatim}
+  
 \end{document}

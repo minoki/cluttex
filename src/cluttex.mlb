@@ -2,6 +2,7 @@ $(SML_LIB)/basis/basis.mlb
 $(SML_LIB)/basis/lunarml.mlb
 $(SML_LIB)/basis/lua.mlb
 $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+../lib/sml-toml/toml.mlb
 ann "sequenceNonUnit warn" "valDescInComments warn" in
 md5.sml
 map.sml
@@ -12,6 +13,7 @@ os-util.sml
 types.sml
 safe-name.sml
 tex-engine.sml
+ansi-color.sml
 message.sml
 check-driver.sml
 app-options.sml
@@ -20,5 +22,6 @@ luatexinit.sml
 handle-options.sml
 recovery.sml
 reruncheck.sml
+config-file.sml
 main.sml
 end

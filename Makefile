@@ -13,6 +13,7 @@ ml_sources = \
   src/types.sml \
   src/safe-name.sml \
   src/tex-engine.sml \
+  src/ansi-color.sml \
   src/message.sml \
   src/check-driver.sml \
   src/app-options.sml \
@@ -21,6 +22,7 @@ ml_sources = \
   src/handle-options.sml \
   src/recovery.sml \
   src/reruncheck.sml \
+  src/config-file.sml \
   src/main.sml
 
 # smlfmt doesn't support vector expressions #[], record extension { ... = <exp> }, record update { ... where ... }

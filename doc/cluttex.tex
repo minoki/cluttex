@@ -1,4 +1,5 @@
 \documentclass[a4paper]{report}
+\usepackage{verbatim}
 \usepackage[unicode]{hyperref}
 \usepackage{amsmath}
 \newcommand\ClutTeX{Clut\TeX}
@@ -8,9 +9,9 @@
 \newcommand\texpkg[1]{\texttt{#1}}
 \newcommand\metavar[1]{\textnormal{\textsf{#1}}}
 
-\title{\ClutTeX\ manual\\(Version 0.6)}
+\title{\ClutTeX\ manual\\(Version 0.7.0)}
 \author{ARATA Mizuki}
-\date{2023-11-18}
+\date{2024-09-03}
 
 \begin{document}
 \maketitle
@@ -100,6 +101,8 @@ Basic options:
   Check that the correct driver file is loaded for certain packages.
   \metavar{DRIVER} is one of \texttt{dvipdfmx}, \texttt{dvips}, or \texttt{dvisvgm}.
   Can only be used with \texttt{--output-format=dvi}.
+\item[\texttt{--config-file=FILE}]
+  Use the specified config file. See \autoref{sec:config-file}.
 \end{description}
 
 Options for running auxiliary programs:
@@ -134,7 +137,7 @@ Options for running auxiliary programs:
 \item[\texttt{--output-directory=\metavar{DIR}}]
   Set output directory for \TeX\ engine.
   Auxiliary files are produced in this directory.
-  Default: somewhere in the temporary directory.
+  Default: Based on the \texttt{temporary-directory} configuration.
 \item[\texttt{--output-format=\metavar{FORMAT}}]
   Set output format.
   Possible values are \texttt{pdf} or \texttt{dvi}.
@@ -270,5 +273,69 @@ Currently, the list of supported packages are \texpkg{graphics}, \texpkg{color},
 
 The check is always done with PDF mode.
 To check the driver with DVI mode, use \texttt{--check-driver} option.
+
+\section{Customization via a configuration file}\label{sec:config-file}
+
+Some behavior of \ClutTeX\ can be customized via a configuration file.
+
+The configuration file for \ClutTeX\ is looked for in the following order:
+\begin{enumerate}
+\item \texttt{--config-file} command-line option.
+\item \texttt{CLUTTEX\_CONFIG\_FILE} environment variable.
+\item (Unix only) \texttt{\$XDG\_CONFIG\_HOME/cluttex/config.toml}
+\item (Unix only) \texttt{\$HOME/.config/cluttex/config.toml}
+\item (Windows only) \texttt{\%APPDATA\%\textbackslash cluttex\textbackslash config.toml}
+\end{enumerate}
+
+The configuration file for \ClutTeX\ must be written in TOML\footnote{\url{https://toml.io/en/}} format.
+
+Available keys are:
+\begin{description}
+\item[\texttt{temporary-directory} (string)]
+  The location to create auxiliary files.
+  The default value for \texttt{--output-directory} will be somewhere under \texttt{temporary-directory}.
+  If omitted, somewhere in the temporary directory will be used.
+\item[\texttt{color.\{type,execute,warning,diagnostic,information\}} (table)]
+  Set the colors for messages from \ClutTeX.
+  The table may have the following keys:
+  \texttt{fore} (color string),
+  \texttt{back} (color string),
+  \texttt{bold} (boolean),
+  \texttt{dim} (boolean),
+  \texttt{underline} (boolean),
+  \texttt{blink} (boolean),
+  \texttt{reverse} (boolean),
+  \texttt{italic} (boolean),
+  \texttt{strike} (boolean).
+  A color string is one of the following:
+  \texttt{default},
+  \texttt{black},
+  \texttt{red},
+  \texttt{green},
+  \texttt{yellow},
+  \texttt{blue},
+  \texttt{magenta},
+  \texttt{cyan},
+  \texttt{white},
+  \texttt{brightblack},
+  \texttt{brightred},
+  \texttt{brightgreen},
+  \texttt{brightyellow},
+  \texttt{brightblue},
+  \texttt{brightmagenta},
+  \texttt{brightcyan},
+  \texttt{brightwhite}.
+\end{description}
+
+An example configuration file might look like:
+\begin{verbatim}
+# The actual output directory will be something like
+# "/home/user/.cache/cluttex/cluttex-<hash>"
+temporary-directory = "/home/user/.cache/cluttex"
+
+[color]
+type = { reverse = true }
+error = { fore = "brightred", back = "brightwhite" }
+\end{verbatim}
 
 \end{document}

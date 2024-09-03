@@ -45,6 +45,7 @@ sig
     , makeindex: string option
     , bibtex_or_biber: bibtex_or_biber option
     , makeglossaries: string option
+    , config_file: string option
     }
   type options =
     { engine: TeXEngine.engine
@@ -132,6 +133,7 @@ struct
     , makeindex: string option
     , bibtex_or_biber: bibtex_or_biber option
     , makeglossaries: string option
+    , config_file: string option
     }
   type options =
     { engine: TeXEngine.engine
@@ -191,5 +193,6 @@ struct
     , makeindex = NONE
     , bibtex_or_biber = NONE
     , makeglossaries = NONE
+    , config_file = NONE
     }
 end;

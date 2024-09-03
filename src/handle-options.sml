@@ -100,6 +100,7 @@ datatype option = OPT_ENGINE of string (* -e,--engine=ENGINE *)
                 | OPT_BIBTEX of string
                 | OPT_BIBER of string
                 | OPT_MAKEGLOSSARIES of string
+                | OPT_CONFIG_FILE of string
 val optionDescs = [(SHORT "-e", WITH_ARG OPT_ENGINE)
                   ,(LONG "--engine", WITH_ARG OPT_ENGINE)
                   ,(LONG "--engine-executable", WITH_ARG OPT_ENGINE_EXECUTABLE)
@@ -158,6 +159,7 @@ val optionDescs = [(SHORT "-e", WITH_ARG OPT_ENGINE)
                   ,(LONG "--bibtex", WITH_ARG OPT_BIBTEX)
                   ,(LONG "--biber", WITH_OPTIONAL_ARG { action = OPT_BIBER, default = "biber" })
                   ,(LONG "--makeglossaries", WITH_OPTIONAL_ARG { action = OPT_MAKEGLOSSARIES, default = "makeglossaries" })
+                  ,(LONG "--config-file", WITH_ARG OPT_CONFIG_FILE)
                   ]
 fun parse (opts : initial_options, args)
     = case parseOption (optionDescs, args) of
@@ -304,6 +306,10 @@ fun parse (opts : initial_options, args)
                                                     NONE => parse ({ opts where makeglossaries = SOME x }, args)
                                                   | SOME _ => showMessageAndFail "multiple --makeglossaries options"
                                                )
+        | SOME (OPT_CONFIG_FILE x, args) => (case #config_file opts of
+                                                 NONE => parse ({ opts where config_file = SOME x }, args)
+                                               | SOME _ => showMessageAndFail "multiple --config-file options"
+                                            )
         | NONE => (case args of
                        "--" :: args => (opts, args)
                      | arg :: args' =>

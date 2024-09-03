@@ -8,6 +8,12 @@ structure Message : sig
               val info : string -> unit
               val getVerbosity : unit -> int
               val beMoreVerbose : unit -> unit
+              val setTypeStyle : ANSIStyle.style -> unit
+              val setExecuteStyle : ANSIStyle.style -> unit
+              val setErrorStyle : ANSIStyle.style -> unit
+              val setWarningStyle : ANSIStyle.style -> unit
+              val setDiagnosticStyle : ANSIStyle.style -> unit
+              val setInformationStyle : ANSIStyle.style -> unit
           end = struct
 val () = Lua.setGlobal ("CLUTTEX_VERBOSITY", Lua.fromInt 0)
 fun getVerbosity () : int = Lua.unsafeFromValue (Lua.global "CLUTTEX_VERBOSITY")
@@ -89,24 +95,104 @@ val bg_x_cyan    = "\027[106m"
 val bg_x_white   = "\027[107m"
 end
 
+val typeStyle : string ref
+  = ref (ANSIStyle.toString { foreground = SOME ANSIColor.BRIGHT_WHITE
+                            , background = SOME ANSIColor.RED
+                            , bold = false
+                            , dim = false
+                            , underline = false
+                            , blink = false
+                            , reverse = false
+                            , italic = false
+                            , strike = false
+                            }
+        )
+val executeStyle : string ref
+  = ref (ANSIStyle.toString { foreground = SOME ANSIColor.CYAN
+                            , background = NONE
+                            , bold = false
+                            , dim = false
+                            , underline = false
+                            , blink = false
+                            , reverse = false
+                            , italic = false
+                            , strike = false
+                            }
+        )
+val errorStyle : string ref
+  = ref (ANSIStyle.toString { foreground = SOME ANSIColor.RED
+                            , background = NONE
+                            , bold = false
+                            , dim = false
+                            , underline = false
+                            , blink = false
+                            , reverse = false
+                            , italic = false
+                            , strike = false
+                            }
+        )
+val warningStyle : string ref
+  = ref (ANSIStyle.toString { foreground = SOME ANSIColor.BLUE
+                            , background = NONE
+                            , bold = false
+                            , dim = false
+                            , underline = false
+                            , blink = false
+                            , reverse = false
+                            , italic = false
+                            , strike = false
+                            }
+        )
+val diagnosticStyle : string ref
+  = ref (ANSIStyle.toString { foreground = SOME ANSIColor.BLUE
+                            , background = NONE
+                            , bold = false
+                            , dim = false
+                            , underline = false
+                            , blink = false
+                            , reverse = false
+                            , italic = false
+                            , strike = false
+                            }
+        )
+val informationStyle : string ref
+  = ref (ANSIStyle.toString { foreground = SOME ANSIColor.MAGENTA
+                            , background = NONE
+                            , bold = false
+                            , dim = false
+                            , underline = false
+                            , blink = false
+                            , reverse = false
+                            , italic = false
+                            , strike = false
+                            }
+        )
+
+fun setTypeStyle style = typeStyle := ANSIStyle.toString style
+fun setExecuteStyle style = executeStyle := ANSIStyle.toString style
+fun setErrorStyle style = errorStyle := ANSIStyle.toString style
+fun setWarningStyle style = warningStyle := ANSIStyle.toString style
+fun setDiagnosticStyle style = diagnosticStyle := ANSIStyle.toString style
+fun setInformationStyle style = informationStyle := ANSIStyle.toString style
+
 fun exec commandline = if !useColors then
-                           TextIO.output (TextIO.stdErr, CMD.fg_x_white ^ CMD.bg_red ^ "[EXEC]" ^ CMD.reset ^ " " ^ CMD.fg_cyan ^ commandline ^ CMD.reset ^ "\n")
+                           TextIO.output (TextIO.stdErr, !typeStyle ^ "[EXEC]" ^ ANSIStyle.resetAll ^ " " ^ !executeStyle ^ commandline ^ ANSIStyle.resetAll ^ "\n")
                        else
                            TextIO.output (TextIO.stdErr, "[EXEC] " ^ commandline ^ "\n")
 fun error message = if !useColors then
-                        TextIO.output (TextIO.stdErr, CMD.fg_x_white ^ CMD.bg_red ^ "[ERROR]" ^ CMD.reset ^ " " ^ CMD.fg_red ^ message ^ CMD.reset ^ "\n")
+                        TextIO.output (TextIO.stdErr, !typeStyle ^ "[ERROR]" ^ ANSIStyle.resetAll ^ " " ^ !errorStyle ^ message ^ ANSIStyle.resetAll ^ "\n")
                     else
                         TextIO.output (TextIO.stdErr, "[ERROR] " ^ message ^ "\n")
 fun warn message = if !useColors then
-                        TextIO.output (TextIO.stdErr, CMD.fg_x_white ^ CMD.bg_red ^ "[WARN]" ^ CMD.reset ^ " " ^ CMD.fg_blue ^ message ^ CMD.reset ^ "\n")
+                        TextIO.output (TextIO.stdErr, !typeStyle ^ "[WARN]" ^ ANSIStyle.resetAll ^ " " ^ !warningStyle ^ message ^ ANSIStyle.resetAll ^ "\n")
                     else
                         TextIO.output (TextIO.stdErr, "[WARN] " ^ message ^ "\n")
 fun diag message = if !useColors then
-                        TextIO.output (TextIO.stdErr, CMD.fg_x_white ^ CMD.bg_red ^ "[DIAG]" ^ CMD.reset ^ " " ^ CMD.fg_blue ^ message ^ CMD.reset ^ "\n")
+                        TextIO.output (TextIO.stdErr, !typeStyle ^ "[DIAG]" ^ ANSIStyle.resetAll ^ " " ^ !diagnosticStyle ^ message ^ ANSIStyle.resetAll ^ "\n")
                     else
                         TextIO.output (TextIO.stdErr, "[DIAG] " ^ message ^ "\n")
 fun info message = if !useColors then
-                        TextIO.output (TextIO.stdErr, CMD.fg_x_white ^ CMD.bg_red ^ "[INFO]" ^ CMD.reset ^ " " ^ CMD.fg_magenta ^ message ^ CMD.reset ^ "\n")
+                        TextIO.output (TextIO.stdErr, !typeStyle ^ "[INFO]" ^ ANSIStyle.resetAll ^ " " ^ !informationStyle ^ message ^ ANSIStyle.resetAll ^ "\n")
                     else
                         TextIO.output (TextIO.stdErr, "[INFO] " ^ message ^ "\n")
 end;

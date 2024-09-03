@@ -28,14 +28,16 @@ fun getEnvMulti [] = NONE
                                    SOME x => SOME x
                                  | NONE => getEnvMulti xs
 
-fun genOutputDirectory (xs : string list)
+fun genOutputDirectory (temporary_directory : string option, xs : string list)
     = let val message = String.concatWith "\000" xs
           val hash = MD5.md5AsLowerHex (Byte.stringToBytes message)
-          val tmpdir = case getEnvMulti ["TMPDIR", "TMP", "TEMP"] of
+          val tmpdir = case temporary_directory of
                            SOME tmpdir => tmpdir
-                         | NONE => case getEnvMulti ["HOME", "USERPROFILE"] of
-                                       SOME home => OS.Path.joinDirFile { dir = home, file = ".latex-build-temp" } (* $XDG_CACHE_HOME/cluttex, $HOME/.cache/cluttex *)
-                                     | NONE => raise Fail "environment variable 'TMPDIR' not set!"
+                         | NONE => case getEnvMulti ["TMPDIR", "TMP", "TEMP"] of
+                                       SOME tmpdir => tmpdir
+                                     | NONE => case getEnvMulti ["HOME", "USERPROFILE"] of
+                                                   SOME home => OS.Path.joinDirFile { dir = home, file = ".latex-build-temp" } (* $XDG_CACHE_HOME/cluttex, $HOME/.cache/cluttex *)
+                                                 | NONE => raise Fail "environment variable 'TMPDIR' not set!"
       in OS.Path.joinDirFile { dir = tmpdir, file = "cluttex-" ^ hash }
       end
 
@@ -679,8 +681,38 @@ fun runWatchMode (watch_engine, run_params as { options, engine, recorderfile, r
       in loop inputFilesToWatch
       end
 
+fun getConfigFilePath (SOME configFilePath) = SOME configFilePath
+  | getConfigFilePath NONE = case OS.Process.getEnv "CLUTTEX_CONFIG_FILE" of
+                                 SOME f => SOME f
+                               | NONE => if OSUtil.isWindows then
+                                            case OS.Process.getEnv "APPDATA" of
+                                                SOME appData => SOME (appData ^ "\\cluttex\\config.toml")
+                                              | NONE => NONE
+                                         else
+                                            case OS.Process.getEnv "XDG_CONFIG_HOME" of
+                                                SOME xdgConfigHome => SOME (xdgConfigHome ^ "/cluttex/config.toml")
+                                              | NONE => case OS.Process.getEnv "HOME" of
+                                                            SOME home => SOME (home ^ "/.config/cluttex/config.toml")
+                                                          | NONE => NONE
+
+fun loadConfig configFileOpt = case getConfigFilePath configFileOpt of
+                                   NONE => ConfigFile.defaultConfig
+                                 | SOME path => (ConfigFile.loadConfig path handle IO.Io _ => ConfigFile.defaultConfig
+                                                                                 | ValidateUtf8.InvalidUtf8 => (Message.error ("Config file " ^ path ^ " is not UTF-8 encoded."); ConfigFile.defaultConfig)
+                                                                                 | TomlParseError.ParseError e => (Message.error ("Config file " ^ path ^ " is not a valid TOML file: " ^ TomlParseError.toString e); ConfigFile.defaultConfig)
+                                                )
 
 fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, CommandLine.arguments ())
+                  val config = loadConfig (#config_file options)
+
+                  (* Apply colors *)
+                  val () = Option.app Message.setTypeStyle (#type_ (#color config))
+                  val () = Option.app Message.setExecuteStyle (#execute (#color config))
+                  val () = Option.app Message.setErrorStyle (#error (#color config))
+                  val () = Option.app Message.setWarningStyle (#warning (#color config))
+                  val () = Option.app Message.setDiagnosticStyle (#diagnostic (#color config))
+                  val () = Option.app Message.setInformationStyle (#information (#color config))
+
                   val watch = #watch options
                   val () = case #color options of
                                NONE => Message.setColors Message.AUTO
@@ -761,7 +793,7 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                                         else
                                             dir
                           | NONE => let val inputfile_abs = PathUtil.abspath { path = inputfile, cwd = NONE }
-                                        val output_directory = genOutputDirectory [inputfile_abs, jobname, Option.getOpt (#engine_executable options, #executable engine)]
+                                        val output_directory = genOutputDirectory (#temporary_directory config, [inputfile_abs, jobname, Option.getOpt (#engine_executable options, #executable engine)])
                                     in if not (FSUtil.isDirectory output_directory) then
                                            FSUtil.mkDirRec output_directory
                                        else if #fresh options then

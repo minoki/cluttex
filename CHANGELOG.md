@@ -3,6 +3,10 @@ Version 0.7.0 (2024-XX-XX)
 
 The main part of ClutTeX is now written in Standard ML, and compiled to Lua by LunarML.
 
+Changes:
+
+* Some behavior of ClutTeX can now be customized with a configuration file: `temporary-directory` and `color` keys are available.
+
 Version 0.6 (2023-11-18)
 -----
 

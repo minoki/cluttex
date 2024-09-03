@@ -95,6 +95,8 @@ Command-line Options
   Check that the correct driver file is loaded.
   `DRIVER` is one of `dvipdfmx`, `dvips`, `dvisvgm`.
   Can only be used with `--output-format=dvi`.
+* `--config-file=FILE`
+  Use the specified config file.
 
 Options to run auxiliary programs:
 
