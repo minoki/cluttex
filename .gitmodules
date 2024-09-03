@@ -1,0 +1,3 @@
+[submodule "lib/sml-toml"]
+	path = lib/sml-toml
+	url = https://github.com/minoki/sml-toml.git
