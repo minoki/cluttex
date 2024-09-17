@@ -52,6 +52,13 @@ local function parse_recorder_file(file, options, filelist, filemap)
           if ext == "bbl" then
             kind = "auxiliary"
           end
+          if options.glossaries then
+            for _,i in ipairs(options.glossaries) do
+              if pathutil.basename(abspath) == i.out then
+                kind = "auxiliary"
+              end
+            end
+          end
           fileinfo = {path = path, abspath = abspath, kind = kind}
           table.insert(filelist, fileinfo)
           filemap[abspath] = fileinfo
@@ -81,6 +88,12 @@ local function parse_recorder_file(file, options, filelist, filemap)
           -- Treat .idx files (to be processed by MakeIndex) as auxiliary
           kind = "auxiliary"
           -- ...and .ind files
+        elseif options.glossaries then
+          for _,i in ipairs(options.glossaries) do
+            if pathutil.basename(abspath) == i.inp then
+              kind = "auxiliary"
+            end
+          end
         elseif ext == "bcf" then -- biber
           kind = "auxiliary"
         elseif ext == "glo" then -- makeglossaries

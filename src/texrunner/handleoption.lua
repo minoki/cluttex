@@ -21,6 +21,83 @@ local parseoption  = require "texrunner.option".parseoption
 local KnownEngines = require "texrunner.tex_engine"
 local message      = require "texrunner.message"
 
+local function split(opt)
+  local ret,builder,state = {},{},0
+  for c in opt:gmatch(".") do
+    if state == 0 then
+      if c == ":" then
+        table.insert(ret, table.concat(builder, ""))
+        builder = {}
+      elseif c == "\\" then
+        state = 1
+      else
+        table.insert(builder, c)
+      end
+
+    elseif state == 1 then
+      -- escaped
+      table.insert(builder, c)
+      state = 0
+    end
+  end
+  table.insert(ret, table.concat(builder, ""))
+  return ret
+end
+
+local function parse_glossaries_option(opt)
+  local s = split(opt)
+  if #s < 2 or #s > 6 then
+    return nil, "Error on splitting the glossaries parameter \""..opt.."\""
+  end
+
+  local ret = {}
+
+  ret.type = s[1]
+  if ret.type ~= "makeindex" and ret.type ~= "xindy" and (#s ~= 7 or s[5] == "") then
+    return nil, "Invalid glossaries parameter. \""..ret.type.."\" is unsupported"
+  end
+
+  ret.out = s[2]
+
+  if #s >= 3 and s[3] ~= "" then
+    ret.inp = s[3]
+  else
+    ret.inp = ret.out:sub(1,-2).."o"
+  end
+
+  if #s >= 4 and s[4] ~= "" then
+    ret.log = s[4]
+  else
+    ret.log = ret.out:sub(1,-2).."g"
+  end
+
+  if #s >= 5 and s[5] ~= "" then
+    ret.path = s[5]
+  else
+    ret.path = ret.type
+  end
+
+  ret.ist = pathutil.replaceext(ret.log, "ist")
+
+  if #s >= 6 then
+    ret.args = s[6]
+  else
+    if ret.type == "makeindex" then
+      ret.args = ("-s %s -t %s -o %s %s"):format(shellutil.escape(ret.ist), shellutil.escape(ret.log), shellutil.escape(ret.out), shellutil.escape(ret.inp))
+    elseif ret.type == "xindy" then
+      ret.args = ("-t %s -o %s %s"):format(shellutil.escape(ret.log), shellutil.escape(ret.out), shellutil.escape(ret.inp))
+    else
+      return nil, "Error on parsing the glossaries parameter \""..opt.."\""
+    end
+  end
+
+  -- build command
+  ret.cmd = ret.path.." "..ret.args
+
+  return ret
+end
+
+
 local function usage(arg)
   io.write(string.format([[
 ClutTeX: Process TeX files without cluttering your working directory
@@ -59,6 +136,22 @@ Options:
                                      `bibtex' or `pbibtex'.
       --biber[=COMMAND+OPTIONs]    Command for Biber.
       --makeglossaries[=COMMAND+OPTIONs]  Command for makeglossaries.
+      --glossaries=[CONFIGURATION]  Configuration can contain
+                                    "type:outputFile:inputFile:logFile:pathToCommand:commandArgs" (":" can be escaped with "\").
+                                    Only the outputFile and either type or pathToCommand
+                                    are required, the other options will be infered
+                                    automatically (does not work always for inputFile and
+                                    logFile). If commandArgs is being specified,
+                                    these will be the only arguments passed to the
+                                    command. If type is unspecified commandArgs must be
+                                    specified. As types we support makeindex and xindy.
+                                    Specify this option multiple times to register multiple
+                                    glossaries. The default value works for a
+                                    configuration with the usual glossary (glo,gls,glg)
+                                    with a tex-file named "main.tex".
+                                    A typical example is
+                                    "makeindex:main.acr:main.acn:main.alg" or
+                                    "makeindex:main.glo:main.gls:main.glg" (default)
   -h, --help                   Print this message and exit.
   -v, --version                Print version information and exit.
   -V, --verbose                Be more verbose.
@@ -247,6 +340,11 @@ local option_spec = {
     param = true,
     default = "makeglossaries",
   },
+  {
+    long = "glossaries",
+    param = true,
+    default = "makeindex:main.glo:main.gls:main.glg",
+  },
 }
 
 -- Default values for options
@@ -417,6 +515,7 @@ local function handle_cluttex_options(arg)
       table.insert(options.dvipdfmx_extraoptions, param)
 
     elseif name == "makeindex" then
+      assert(not options.glossaries, "'makeindex' cannot be used together with 'glossaries'\nUse e.g. --glossaries='makeindex:main.ind:main.idx:main.ilg' instead of makeindex")
       assert(options.makeindex == nil, "multiple --makeindex options")
       options.makeindex = param
 
@@ -431,10 +530,21 @@ local function handle_cluttex_options(arg)
       options.biber = param
 
     elseif name == "makeglossaries" then
+      assert(not options.glossaries, "'makeglossaries' cannot be used together with 'glossaries'\nUse e.g. --glossaries='makeindex:main.glo:main.gls:main.glg' instead of makeglossaries")
       assert(options.makeglossaries == nil, "multiple --makeglossaries options")
       options.makeglossaries = param
 
+    elseif name == "glossaries" then
+      assert(not options.makeglossaries, "'glossaries' cannot be used together with 'makeglossaries'\nUse e.g. --glossaries='makeindex:main.glo:main.gls:main.glg' instead of makeglossaries")
+      assert(not options.makeindex, "'glossaries' cannot be used together with 'makeindex'\nUse e.g. --glossaries='makeindex:main.ind:main.idx:main.ilg' instead of makeindex")
+      if not options.glossaries then
+        options.glossaries = {}
+      end
+      local cfg = assert(parse_glossaries_option(param))
+      table.insert(options.glossaries, cfg)
+
     end
+
   end
 
   if options.color == nil then
