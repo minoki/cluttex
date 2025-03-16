@@ -895,7 +895,7 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                         , engine_executable = #engine_executable options
                         , output = output
                         , fresh = #fresh options
-                        , max_iterations = Option.getOpt (#max_iterations options, 3)
+                        , max_iterations = Option.getOpt (#max_iterations options, 4)
                         , start_with_draft = #start_with_draft options
                         , watch = #watch options
                         , change_directory = Option.getOpt (#change_directory options, false)

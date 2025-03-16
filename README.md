@@ -58,7 +58,7 @@ Command-line Options
   Cannot be used with `--output-directory`.
 * `--max-iterations=N`
   Maximum number of running TeX to resolve cross-references.
-  \[default: 3\]
+  \[default: 4\]
 * `--[no-]change-directory`
   Change the current working directory to the output directory when running TeX.
 * `--watch[=ENGINE]`
