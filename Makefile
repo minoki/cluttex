@@ -88,7 +88,7 @@ check-version: all
 .PHONY: check-version
 
 archive: all check-version
-	touch $(version_file)
+	bin/cluttex --version 2>&1 | awk '{print $2}' > $(version_file)
 	git archive -o "cluttex-$(VERSION).tar.gz" --prefix=cluttex/bin/ --add-file=bin/cluttex --prefix=cluttex/ --add-file=$(version_file) HEAD
 	git archive -o "cluttex-$(VERSION).zip" --prefix=cluttex/bin/ --add-file=bin/cluttex --prefix=cluttex/ --add-file=$(version_file) HEAD
 .PHONY: archive
