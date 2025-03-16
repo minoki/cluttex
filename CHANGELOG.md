@@ -1,4 +1,4 @@
-Version 0.7.0 (2025-XX-XX)
+Version 0.7.0 (2025-03-16)
 -----
 
 The main part of ClutTeX is now written in Standard ML, and compiled to Lua by LunarML.
