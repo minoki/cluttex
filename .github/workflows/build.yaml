@@ -1,7 +1,19 @@
 on: [push, pull_request]
 name: build
 jobs:
-  lunarml:
+  prepare-release:
+    name: Prepare a release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make a release
+        run: |
+          gh release create "${{ github.ref_name }}" --draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+
+  cluttex:
     name: Build
     runs-on: ubuntu-24.04
     steps:
@@ -35,3 +47,9 @@ jobs:
           path: |
             cluttex-*.tar.gz
             cluttex-*.zip
+      - name: Attach tarballs to the release
+        run: |
+          gh release upload "${{ github.ref_name }}" cluttex-*.tar.gz cluttex-*.zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
