@@ -2,3 +2,4 @@
 .gitattributes export-ignore
 .gitmodules export-ignore
 /.github export-ignore
+/lib export-ignore
