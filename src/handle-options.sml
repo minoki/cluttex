@@ -83,6 +83,7 @@ datatype option = OPT_ENGINE of string (* -e,--engine=ENGINE *)
                 | OPT_PRINT_OUTPUT_DIRECTORY
                 | OPT_PACKAGE_SUPPORT of string
                 | OPT_CHECK_DRIVER of string
+                | OPT_SOURCE_DATE_EPOCH of string
                 | OPT_SYNCTEX of string
                 | OPT_FILE_LINE_ERROR of bool
                 | OPT_INTERACTION of string
@@ -125,6 +126,7 @@ val optionDescs = [(SHORT "-e", WITH_ARG OPT_ENGINE)
                   ,(LONG "--print-output-directory", SIMPLE OPT_PRINT_OUTPUT_DIRECTORY)
                   ,(LONG "--package-support", WITH_ARG OPT_PACKAGE_SUPPORT)
                   ,(LONG "--check-driver", WITH_ARG OPT_CHECK_DRIVER)
+                  ,(LONG "--source-date-epoch", WITH_ARG OPT_SOURCE_DATE_EPOCH)
                   ,(LONG "-synctex", WITH_ARG OPT_SYNCTEX)
                   ,(LONG "--synctex", WITH_ARG OPT_SYNCTEX)
                   ,(LONG "-file-line-error", SIMPLE (OPT_FILE_LINE_ERROR true))
@@ -230,6 +232,7 @@ fun parse (opts : initial_options, args)
         | SOME (OPT_PACKAGE_SUPPORT s, args) => let val packages = String.tokens (fn c => c = #"," orelse Char.isSpace c) s
                                                     val ps = List.foldl (fn ("minted", ps) => { ps where minted = true }
                                                                         | ("epstopdf", ps) => { ps where epstopdf = true }
+                                                                        | ("pdfx", ps) => { ps where pdfx = true }
                                                                         | (pkg, ps) => ( if Message.getVerbosity () >= 1 then
                                                                                              Message.warn ("ClutTeX provides no special support for '" ^ pkg ^ "'.")
                                                                                          else
@@ -246,6 +249,13 @@ fun parse (opts : initial_options, args)
                                                                )
                                                      | SOME _ => showMessageAndFail "multiple --check-driver options"
                                                   )
+        | SOME (OPT_SOURCE_DATE_EPOCH time, args) => (case #source_date_epoch opts of
+                                                          NONE => (case SourceDateEpoch.fromString time of
+                                                                       SOME time => parse ({ opts where source_date_epoch = SOME time }, args)
+                                                                     | NONE => showMessageAndFail "invalid value for --source-date-epoch option"
+                                                                  )
+                                                        | SOME _ => showMessageAndFail "multiple --source-date-epoch options"
+                                                     )
         | SOME (OPT_SYNCTEX x, args) => (case #synctex opts of
                                              NONE => parse ({ opts where synctex = SOME x }, args)
                                            | SOME _ => showMessageAndFail "multiple --synctex options"

@@ -7,6 +7,7 @@ Changes:
 
 * Some behavior of ClutTeX can now be customized with a configuration file: `temporary-directory` and `color` keys are available.
 * The default value for `--max-iterations` is now 4 (previous: 3).
+* Add `--source-date-epoch` option and support `--package-support=pdfx`.
 
 Version 0.6 (2023-11-18)
 -----

@@ -95,6 +95,9 @@ fun showUsage () = let val progName = CommandLine.name ()
 \                               Currently supported: minted, epstopdf\n\
 \      --check-driver=DRIVER    Check that the correct driver file is loaded.\n\
 \                               DRIVER is one of `dvipdfmx', `dvips', `dvisvgm'.\n\
+\      --source-date-epoch=TIME\n\
+\                               Set SOURCE_DATE_EPOCH variable.\n\
+\                               TIME is `now' or an integer.\n\
 \\n\
 \      --[no-]shell-escape\n\
 \      --shell-restricted\n\
@@ -159,6 +162,10 @@ fun executeCommand (command, recover)
              )
       end
 
+(* The value to be used for SOURCE_DATE_EPOCH *)
+fun getTimeSinceEpoch () : string
+  = Lua.unsafeFromValue (Lua.call1 Lua.Lib.tostring #[Lua.call1 Lua.Lib.os.time #[]])
+
 type run_params = { options : AppOptions.options
                   , inputfile : string
                   , engine : TeXEngine.engine
@@ -167,6 +174,7 @@ type run_params = { options : AppOptions.options
                   , recorderfile2 : string
                   , original_wd : string
                   , output_extension : string
+                  , source_date_epoch_info : { time_since_epoch : string, time : Time.time } ref option
                   }
 datatype single_run_result = SHOULD_RERUN of Reruncheck.aux_status StringMap.map
                            | NO_NEED_TO_RERUN
@@ -174,9 +182,9 @@ datatype single_run_result = SHOULD_RERUN of Reruncheck.aux_status StringMap.map
 
 (* Run TeX command ( *tex, *latex) *)
 (*: val singleRun : run_params * Reruncheck.aux_status StringMap.map * int -> single_run_result *)
-fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorderfile2, original_wd, ... } : run_params, auxstatus, iteration)
+fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorderfile2, original_wd, source_date_epoch_info, ... } : run_params, auxstatus, iteration)
     = let val mainauxfile = pathInOutputDirectory (options, "aux")
-          val { auxstatus, minted, epstopdf, bibtex_aux_hash }
+          val { filelist, auxstatus, minted, epstopdf, pdfx, bibtex_aux_hash }
               = if FSUtil.isFile recorderfile then
                     (* Recorder file already exists *)
                     let val recorded = Reruncheck.parseRecorderFile { file = recorderfile, options = options }
@@ -186,27 +194,85 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
                                            recorded
                         val (filelist, filemap) = Reruncheck.getFileInfo recorded
                         val auxstatus = Reruncheck.collectFileInfo (filelist, auxstatus)
-                        val { minted, epstopdf } = List.foldl (fn ({ path, ... }, { minted, epstopdf }) =>
-                                                                  { minted = minted orelse String.isSuffix "minted/minted.sty" path
-                                                                  , epstopdf = epstopdf orelse String.isSuffix "epstopdf.sty" path
-                                                                  }
-                                                              ) { minted = false, epstopdf = false } filelist
+                        val { minted, epstopdf, pdfx } =
+                          List.foldl (fn ({ path, ... }, { minted, epstopdf, pdfx }) =>
+                                         { minted = minted orelse String.isSuffix "minted/minted.sty" path
+                                         , epstopdf = epstopdf orelse String.isSuffix "epstopdf.sty" path
+                                         , pdfx = pdfx orelse String.isSuffix "pdfx.sty" path
+                                         }
+                                     ) { minted = false, epstopdf = false, pdfx = false } filelist
                         val bibtex_aux_hash = case #bibtex_or_biber options of
                                                   SOME (AppOptions.BIBTEX _) =>
                                                   let val biblines = AuxFile.extractBibTeXLines { auxfile = mainauxfile, outdir = #output_directory options }
                                                   in SOME (MD5.compute (Byte.stringToBytes (String.concatWith "\n" biblines)))
                                                   end
                                                 | _ => NONE
-                    in { auxstatus, minted, epstopdf, bibtex_aux_hash }
+                    in { filelist, auxstatus, minted, epstopdf, pdfx, bibtex_aux_hash }
                     end
                 else
                     (* This is the first execution *)
                     if StringMap.isEmpty auxstatus then
-                        { auxstatus = StringMap.empty, minted = false, epstopdf = false, bibtex_aux_hash = NONE }
+                        { filelist = [], auxstatus = StringMap.empty, minted = false, epstopdf = false, pdfx = false, bibtex_aux_hash = NONE }
                     else
                         ( Message.error "Recorder file was not generated during the execution!"
                         ; raise Abort
                         )
+
+          (*
+           * Set SOURCE_DATE_EPOCH if
+           *   * --source-date-epoch=now is set, or
+           *   * --source-date-epoch is not set but `pdfx' package is used and SOURCE_DATE_EPOCH is not already set.
+           * The value will be the newer of these:
+           *   * The time when the program started (see main()).
+           *   * The time we are processing after one of the input files was modified.
+           *)
+          val () = case source_date_epoch_info of
+              NONE => () (* already set in main () *)
+            | SOME r =>
+              let val should_set_source_date_epoch = case #source_date_epoch options of
+                      SOME AppOptions.SourceDateEpoch.NOW => true
+                    | SOME (AppOptions.SourceDateEpoch.RAW _) => false (* should not occur *)
+                    | NONE => pdfx orelse #pdfx (#package_support options)
+              in if should_set_source_date_epoch then
+                     let val input_time = List.foldl (fn ({ abspath, kind = Reruncheck.INPUT, ... }, acc) =>
+                                                         (case StringMap.find (auxstatus, abspath) of
+                                                              SOME { mtime, ... } =>
+                                                                  (case (mtime, acc) of
+                                                                       (SOME mtime', SOME t) =>
+                                                                         if Time.< (t, mtime') then
+                                                                             mtime
+                                                                         else
+                                                                             acc
+                                                                     | (NONE, _) => acc
+                                                                     | (_, NONE) => mtime
+                                                                  )
+                                                            | NONE => acc
+                                                          )
+                                                       | (_, acc) => acc
+                                                     ) NONE filelist
+                         val info = case input_time of
+                                        SOME input_time => if Time.< (#time (!r), input_time) then (* input file was changed since the last run *)
+                                                               let val new_info = { time_since_epoch = getTimeSinceEpoch (), time = input_time }
+                                                               in if Message.getVerbosity () >= 1 then
+                                                                      Message.info "Input file was modified; Updating SOURCE_DATE_EPOCH..."
+                                                                  else
+                                                                      ()
+                                                                      ; r := new_info
+                                                                ; new_info
+                                                               end
+                                                           else
+                                                               !r
+                                      | NONE => !r
+                     in if Message.getVerbosity () >= 1 then
+                            Message.info ("Setting SOURCE_DATE_EPOCH to " ^ #time_since_epoch info)
+                        else
+                            ()
+                      ; OSUtil.setEnv ("SOURCE_DATE_EPOCH", #time_since_epoch info)
+                     end
+                 else
+                     ()
+              end
+
           val tex_injection = case #includeonly options of
                                   SOME io => "\\includeonly{" ^ io ^ "}"
                                 | NONE => ""
@@ -461,7 +527,7 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
 
 (* Run (La)TeX (possibly multiple times) and produce a PDF/DVI file. *)
 (*: val doTypeset : run_params -> unit *)
-fun doTypeset (run_params as { options, engine, output_extension, recorderfile, recorderfile2, ... } : run_params)
+fun doTypeset (run_params as { options, engine, output_extension, recorderfile, recorderfile2, source_date_epoch_info, ... } : run_params)
     = let fun loop (iteration, auxstatus)
               = let val iteration = iteration + 1
                 in case singleRun (run_params, auxstatus, iteration) of
@@ -875,6 +941,16 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                             end
                         else
                             NONE
+
+                  (* Set SOURCE_DATE_EPOCH if --source-date-epoch=<timestamp> is set *)
+                  val source_date_epoch_info = case #source_date_epoch options of
+                      SOME (AppOptions.SourceDateEpoch.RAW raw) =>
+                      (OSUtil.setEnv ("SOURCE_DATE_EPOCH", raw); NONE)
+                    | _ => if #source_date_epoch options = SOME AppOptions.SourceDateEpoch.NOW orelse OS.Process.getEnv "SOURCE_DATE_EPOCH" = NONE then
+                               SOME (ref { time_since_epoch = getTimeSinceEpoch (), time = Time.now () })
+                           else
+                               NONE
+
                   val tex_options : TeXEngine.run_options
                       = { engine_executable = #engine_executable options
                         , interaction = SOME (Option.getOpt (#interaction options, InteractionMode.NONSTOPMODE))
@@ -904,6 +980,7 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                         , print_output_directory = #print_output_directory options
                         , package_support = #package_support options
                         , check_driver = check_driver
+                        , source_date_epoch = #source_date_epoch options
                         , synctex = #synctex options
                         , file_line_error = #file_line_error options
                         , interaction = Option.getOpt (#interaction options, InteractionMode.NONSTOPMODE)
@@ -927,6 +1004,7 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                                    , recorderfile2 = recorderfile2
                                    , original_wd = original_wd
                                    , output_extension = output_extension
+                                   , source_date_epoch_info = source_date_epoch_info
                                    }
               in case watch of
                      NONE => (doTypeset run_params handle Abort => OS.Process.exit OS.Process.failure)

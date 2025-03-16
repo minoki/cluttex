@@ -16,6 +16,11 @@ sig
     datatype mode = datatype Message.mode
     val fromString: string -> mode option
   end
+  structure SourceDateEpoch:
+  sig
+    datatype time = NOW | RAW of string
+    val fromString: string -> time option
+  end
   type initial_options =
     { engine: string option
     , engine_executable: string option
@@ -29,8 +34,9 @@ sig
     , includeonly: string option
     , make_depends: string option
     , print_output_directory: bool (* default: false *)
-    , package_support: {minted: bool, epstopdf: bool}
+    , package_support: {minted: bool, epstopdf: bool, pdfx: bool}
     , check_driver: DviDriver.driver option (* dvipdfmx | dvips | dvisvgm *)
+    , source_date_epoch: SourceDateEpoch.time option
     , synctex: string option (* should be int? *)
     , file_line_error: bool
     , interaction: InteractionMode.interaction option (* batchmode | nonstopmode | scrollmode | errorstopmode *)
@@ -59,8 +65,9 @@ sig
     , includeonly: string option
     , make_depends: string option
     , print_output_directory: bool
-    , package_support: {minted: bool, epstopdf: bool}
+    , package_support: {minted: bool, epstopdf: bool, pdfx: bool}
     , check_driver: CheckDriver.driver option
+    , source_date_epoch: SourceDateEpoch.time option
     , synctex: string option
     , file_line_error: bool
     , interaction: InteractionMode.interaction
@@ -104,6 +111,16 @@ struct
       | fromString "never" = SOME NEVER
       | fromString _ = NONE
   end
+  structure SourceDateEpoch =
+  struct
+    datatype time = NOW | RAW of string
+    fun fromString "now" = SOME NOW
+      | fromString s =
+          if String.size s > 0 andalso CharVector.all Char.isDigit s then
+            SOME (RAW s)
+          else
+            NONE
+  end
   type initial_options =
     { engine: string option
     , engine_executable: string option
@@ -117,8 +134,9 @@ struct
     , includeonly: string option
     , make_depends: string option
     , print_output_directory: bool (* default: false *)
-    , package_support: {minted: bool, epstopdf: bool}
+    , package_support: {minted: bool, epstopdf: bool, pdfx: bool}
     , check_driver: DviDriver.driver option (* dvipdfmx | dvips | dvisvgm *)
+    , source_date_epoch: SourceDateEpoch.time option
     , synctex: string option (* should be int? *)
     , file_line_error: bool
     , interaction: InteractionMode.interaction option (* batchmode | nonstopmode | scrollmode | errorstopmode *)
@@ -147,8 +165,9 @@ struct
     , includeonly: string option
     , make_depends: string option
     , print_output_directory: bool
-    , package_support: {minted: bool, epstopdf: bool}
+    , package_support: {minted: bool, epstopdf: bool, pdfx: bool}
     , check_driver: CheckDriver.driver option
+    , source_date_epoch: SourceDateEpoch.time option
     , synctex: string option
     , file_line_error: bool
     , interaction: InteractionMode.interaction
@@ -177,8 +196,9 @@ struct
     , includeonly = NONE
     , make_depends = NONE
     , print_output_directory = false
-    , package_support = {minted = false, epstopdf = false}
+    , package_support = {minted = false, epstopdf = false, pdfx = false}
     , check_driver = NONE
+    , source_date_epoch = NONE
     , synctex = NONE
     , file_line_error = true
     , interaction = NONE

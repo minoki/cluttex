@@ -31,7 +31,7 @@
 
 \title{\ClutTeX{}マニュアル\\（バージョン0.7.0）}%VERSION
 \author{ARATA Mizuki}
-\date{2024年9月3日}
+\date{2025年3月16日}
 
 \begin{document}
 \maketitle
@@ -118,11 +118,14 @@
   \texttt{--output-directory}の値を標準出力に出力して、そのまま終了する。
 \item[\texttt{--package-support=PKG1[,PKG2,...,PKGn]}]
   外部コマンドを実行するパッケージ用の個別の対策を有効にする。
-  現在のところ、\texttt{minted}と\texttt{epstopdf}に対応している。
+  現在のところ、\texttt{minted}と\texttt{epstopdf}および\texttt{pdfx}に対応している。
 \item[\texttt{--check-driver=DRIVER}]
   いくつかのパッケージについて、正しいドライバーファイルが読み込まれていることを検査する。
   \metavar{DRIVER}は\texttt{dvipdfmx}, \texttt{dvips}, or \texttt{dvisvgm}のいずれかである。
   このオプションは\texttt{--output-format=dvi}が指定された場合にのみ指定できる。
+\item[\texttt{--source-date-epoch=TIME}]
+  このオプションを指定すると、環境変数\texttt{SOURCE\_DATE\_EPOCH}を使用してPDFの作成日時を固定する。
+  \metavar{TIME}は文字列\texttt{now}もしくは、符号なし整数（大抵の環境ではUnix時間）を指定する。
 \item[\texttt{--config-file=TOML}]
   指定された設定ファイルを使用する。\cref{sec:config-file}も参照。
 \end{description}

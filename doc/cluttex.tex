@@ -11,7 +11,7 @@
 
 \title{\ClutTeX\ manual\\(Version 0.7.0)}
 \author{ARATA Mizuki}
-\date{2024-09-03}
+\date{2025-03-16}
 
 \begin{document}
 \maketitle
@@ -96,11 +96,14 @@ Basic options:
   Print the output directory and exit.
 \item[\texttt{--package-support=PKG1[,PKG2,...,PKGn]}]
   Enable special support for shell-escaping packages.
-  Currently supported packages are `\texttt{minted}` and `\texttt{epstopdf}`.
+  Currently, supported packages are `\texttt{minted}', `\texttt{epstopdf}' and `\texttt{pdfx}'.
 \item[\texttt{--check-driver=DRIVER}]
   Check that the correct driver file is loaded for certain packages.
   \metavar{DRIVER} is one of \texttt{dvipdfmx}, \texttt{dvips}, or \texttt{dvisvgm}.
   Can only be used with \texttt{--output-format=dvi}.
+\item[\texttt{--source-date-epoch=TIME}]
+  Lock the creation time of PDF by setting the environment variable \texttt{SOURCE\_DATE\_EPOCH}.
+  \metavar{TIME} is `\texttt{now}' or an unsigned integer (typically, this value is interpreted as a Unix time).
 \item[\texttt{--config-file=FILE}]
   Use the specified config file. See \autoref{sec:config-file}.
 \end{description}
