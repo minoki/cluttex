@@ -12,7 +12,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install lua5.3 liblua5.3-dev
-          docker pull ghcr.io/minoki/lunarml:0.2.0
+          docker pull ghcr.io/minoki/lunarml:0.2.1
           sudo ln -s /usr/bin/lua /usr/local/bin/texlua
       - name: Install LuaFileSystem
         run: |
@@ -23,7 +23,7 @@ jobs:
           sudo make LUA_VERSION=5.3 install
       - name: Build
         run: |
-          make lunarml="docker run --rm --platform linux/amd64 -v \"$(pwd)\":/work -w /work ghcr.io/minoki/lunarml:0.2.0 lunarml"
+          make lunarml="docker run --rm --platform linux/amd64 -v \"$(pwd)\":/work -w /work ghcr.io/minoki/lunarml:0.2.1 lunarml"
       - name: Show version
         run: make check-version
       - name: Archive
