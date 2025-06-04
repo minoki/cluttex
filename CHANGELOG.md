@@ -1,3 +1,10 @@
+Unreleased Version
+-----
+
+Changes:
+
+* Fix `--watch=fswatch`.
+
 Version 0.7.0 (2025-03-16)
 -----
 

@@ -694,7 +694,7 @@ fun runWatchMode (watch_engine, run_params as { options, engine, recorderfile, r
                                   ()
                             ; doWatchWindows fswatcherlib
                             )
-                          | NONE => if ShellUtil.hasCommand "fswatch" andalso (watch_engine = AppOptions.WatchEngine.AUTO orelse watch_engine = AppOptions.WatchEngine.AUTO) then
+                          | NONE => if ShellUtil.hasCommand "fswatch" andalso (watch_engine = AppOptions.WatchEngine.AUTO orelse watch_engine = AppOptions.WatchEngine.FSWATCH) then
                                         ( if Message.getVerbosity () >= 2 then
                                               Message.info "Using `fswatch' command"
                                           else
