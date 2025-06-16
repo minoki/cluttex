@@ -276,7 +276,12 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
           val tex_injection = case #includeonly options of
                                   SOME io => "\\includeonly{" ^ io ^ "}"
                                 | NONE => ""
-          val tex_injection = if minted orelse #minted (#package_support options) then
+          fun isMinted3 () = let val kpse = Lua.call1 Lua.Lib.require #[Lua.fromString "kpse"]
+                                 val kpathsea = Lua.call1 (Lua.field (kpse, "new")) #[Lua.fromString (#name engine)]
+                                 val result = Lua.method1 (kpathsea, "find_file") #[Lua.fromString "minted2.sty"]
+                             in not (Lua.isNil result)
+                             end
+          val tex_injection = if (minted orelse #minted (#package_support options)) andalso not (isMinted3 ()) then
                                   let val () = if not (#minted (#package_support options)) then
                                                    Message.diag "You may want to use --package-support=minted option."
                                                else

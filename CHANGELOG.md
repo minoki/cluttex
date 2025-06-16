@@ -4,6 +4,7 @@ Unreleased Version
 Changes:
 
 * Fix `--watch=fswatch`.
+* Support minted v3.
 
 Version 0.7.0 (2025-03-16)
 -----
