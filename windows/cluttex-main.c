@@ -29,6 +29,18 @@ static int pmain(lua_State *L) {
     return 0;
 }
 
+static const char *l_error_type(int result) {
+    switch (result) {
+    case LUA_ERRRUN: return "runtime error";
+    case LUA_ERRMEM: return "memory error";
+    case LUA_ERRERR: return "message handler";
+    case LUA_ERRSYNTAX: return "syntax error";
+    case LUA_ERRFILE: return "file error";
+    case LUA_YIELD: return "yielded";
+    default: return "unknown";
+    }
+}
+
 int main(int argc, char *argv[]) {
     lua_State *L = luaL_newstate();
     if (L == NULL) {
@@ -40,7 +52,7 @@ int main(int argc, char *argv[]) {
     int result = lua_pcall(L, 2, 0, 0);
     if (result != LUA_OK) {
         const char *err = lua_tostring(L, -1);
-        fprintf(stderr, "Lua error: %s %s\n", result == LUA_ERRRUN ? "runtime error" : result == LUA_ERRMEM ? "memory error" : result == LUA_ERRERR ? "message handler" : result == LUA_ERRGCMM ? "GC metamethod" : "unknown", err);
+        fprintf(stderr, "Lua error: %s %s\n", l_error_type(result), err);
     }
     lua_close(L);
     return result == LUA_OK ? 0 : 1;
