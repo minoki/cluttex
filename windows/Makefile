@@ -16,6 +16,7 @@ LIB_EXTRA_O= \
   md5/src/md5.o md5/src/md5lib.o md5lib-luapart.o \
   loslibext.o \
   isatty/lua-isatty.o \
+  fswatcher/lua-fswatcher.o \
   custominit.o
 
 LIB_O=lauxlib.o lbaselib.o lcorolib.o ldblib.o liolib.o \
