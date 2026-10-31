@@ -34,7 +34,10 @@ struct
             case isInput (line, outdir) of
               NONE => go (did, seen)
             | SOME {subauxfile, subauxfile_abs} =>
-                if FSUtil.isFile subauxfile_abs then
+                if
+                  not (StringSet.member (seen, subauxfile_abs))
+                  andalso FSUtil.isFile subauxfile_abs
+                then
                   let
                     val (did', seen) =
                       createMissingDirectories
