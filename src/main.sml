@@ -196,7 +196,7 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
                         val auxstatus = Reruncheck.collectFileInfo (filelist, auxstatus)
                         val { minted, epstopdf, pdfx } =
                           List.foldl (fn ({ path, ... }, { minted, epstopdf, pdfx }) =>
-                                         { minted = minted orelse String.isSuffix "minted/minted.sty" path
+                                         { minted = minted orelse String.isSuffix "minted/minted.sty" path orelse String.isSuffix "minted\\minted.sty" path
                                          , epstopdf = epstopdf orelse String.isSuffix "epstopdf.sty" path
                                          , pdfx = pdfx orelse String.isSuffix "pdfx.sty" path
                                          }
