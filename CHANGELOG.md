@@ -10,6 +10,7 @@ Changes:
 * Fix the order of `--tex-extraoption(s)` and `--dvipdfmx-option(s)`.
 * Don't follow symbolic links when deleting files in `--fresh`.
 * Don't run BibTeX if there are no BibTeX lines in the aux file.
+* Don't panic on an invalid value on `--synctex`.
 
 Version 0.7.0 (2025-03-16)
 -----

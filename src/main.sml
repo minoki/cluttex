@@ -579,18 +579,24 @@ fun doTypeset (run_params as { options, engine, output_extension, recorderfile, 
                    end
              ; (* Copy SyncTeX file if necessary *)
                if #output_format options = OutputFormat.PDF then
-                   let val synctex = Lua.unsafeFromValue (Lua.call1 Lua.Lib.tonumber #[Lua.fromString (Option.getOpt (#synctex options, "0"))]) : int
-                       val synctex_ext = if synctex > 0 then
-                                             (* Compressed SyncTeX file (.synctex.gz) *)
-                                             SOME "synctex.gz"
-                                         else if synctex < 0 then
-                                             (* Uncompressed SyncTeX file (.synctex) *)
-                                             SOME "synctex"
-                                         else
-                                             NONE
-                   in case synctex_ext of
-                          SOME ext => executeCommand (FSUtil.copyCommand { from = pathInOutputDirectory (options, ext), to = PathUtil.replaceext { path = #output options, newext = ext } }, NONE)
-                        | NONE => ()
+                   let val synctex_lua = Lua.call1 Lua.Lib.tonumber #[Lua.fromString (Option.getOpt (#synctex options, "0"))]
+                   in
+                     if Lua.isNil synctex_lua then
+                       ()
+                     else
+                       let val synctex = Lua.unsafeFromValue synctex_lua : int
+                           val synctex_ext = if synctex > 0 then
+                                                 (* Compressed SyncTeX file (.synctex.gz) *)
+                                                 SOME "synctex.gz"
+                                             else if synctex < 0 then
+                                                 (* Uncompressed SyncTeX file (.synctex) *)
+                                                 SOME "synctex"
+                                             else
+                                                 NONE
+                       in case synctex_ext of
+                              SOME ext => executeCommand (FSUtil.copyCommand { from = pathInOutputDirectory (options, ext), to = PathUtil.replaceext { path = #output options, newext = ext } }, NONE)
+                            | NONE => ()
+                       end
                    end
                else
                    ()
