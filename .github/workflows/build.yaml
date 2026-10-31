@@ -3,9 +3,9 @@ name: build
 jobs:
   prepare-release:
     name: Prepare a release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Make a release
         run: |
           gh release create "${{ github.ref_name }}" --draft
@@ -16,8 +16,9 @@ jobs:
   cluttex:
     name: Build
     runs-on: ubuntu-24.04
+    needs: prepare-release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
       - name: Install dependencies
@@ -41,7 +42,7 @@ jobs:
       - name: Archive
         run: make archive
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: archive
           path: |
