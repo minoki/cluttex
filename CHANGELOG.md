@@ -1,4 +1,4 @@
-Unreleased Version
+Version 0.7.1 (2026-10-31)
 -----
 
 Changes:

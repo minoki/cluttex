@@ -1,9 +1,9 @@
 (* This file is part of ClutTeX. *)
 structure Main = struct
-val CLUTTEX_VERSION = "v0.7.0"
+val CLUTTEX_VERSION = "v0.7.1"
 
 val COPYRIGHT_NOTICE =
-"Copyright (C) 2016-2024  ARATA Mizuki\n\
+"Copyright (C) 2016-2026  ARATA Mizuki\n\
 \\n\
 \This program is free software: you can redistribute it and/or modify\n\
 \it under the terms of the GNU General Public License as published by\n\

@@ -1,7 +1,7 @@
 lua = lua
 lunarml = lunarml
 smlfmt = smlfmt
-VERSION = 0.7.0
+VERSION = 0.7.1
 
 ml_sources = \
   src/md5.sml \
