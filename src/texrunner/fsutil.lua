@@ -59,7 +59,7 @@ local function mkdir_rec(path)
 end
 
 local function remove_rec(path)
-  if isdir(path) then
+  if filesys.symlinkattributes(path, "mode") == "directory" then
     for file in filesys.dir(path) do
       if file ~= "." and file ~= ".." then
         local succ, err = remove_rec(pathutil.join(path, file))
