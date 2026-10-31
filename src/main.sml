@@ -1026,4 +1026,10 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                    | SOME watch_engine => runWatchMode (watch_engine, run_params)
               end
 end;
-val () = Main.main ();
+fun failWith message = (TextIO.output (TextIO.stdErr, message); OS.Process.exit OS.Process.failure)
+val () = Main.main ()
+  handle Lua.Error e => failWith ("unhandled Lua error: " ^ (Lua.unsafeFromValue (Lua.call1 Lua.Lib.tostring #[e]) : string) ^ "\n")
+       | Fail s => failWith ("unhandled error: " ^ s ^ "\n")
+       | OS.SysErr (s, _) => failWith ("unhandled system error: " ^ s ^ "\n")
+       | IO.Io { name, function, cause = _ } => failWith ("unhandled IO error: " ^ function ^ ", " ^ name ^ "\n")
+;

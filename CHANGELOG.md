@@ -13,6 +13,7 @@ Changes:
 * Don't panic on an invalid value on `--synctex`.
 * Use relative path to the original working directory when `--make-depends` is used with `--change-directory`.
 * Don't clear the output directory when `--fresh` is used with `--print-output-directory`.
+* Better handling of errors.
 
 Version 0.7.0 (2025-03-16)
 -----
