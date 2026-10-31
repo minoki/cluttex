@@ -49,9 +49,7 @@ struct
           case List.map Substring.string (Substring.tokens Char.isSpace line) of
             ["(epstopdf)", "Command:", command, outfile', infile'] =>
               if
-                command = "<epstopdf"
-                orelse
-                command = "<repstopdf"
+                (command = "<epstopdf" orelse command = "<repstopdf")
                 andalso String.isPrefix "--outfile=" outfile'
                 andalso String.isSuffix ">" infile'
               then
