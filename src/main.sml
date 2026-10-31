@@ -509,7 +509,7 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
                                                            PathUtil.basename (#abspath file)
                                                        ]
                                                    in executeCommand (String.concatWith " " biber_command, NONE)
-                                                    ; { path = output_bbl, abspath = output_bbl, kind = Reruncheck.AUXILIARY } :: filelist
+                                                    ; { path = output_bbl, abspath = output_bbl, kind = Reruncheck.AUXILIARY } :: filelist_acc
                                                    end
                                                else
                                                    ( FSUtil.touch output_bbl handle Lua.Error err => Message.warn ("Failed to touch " ^ output_bbl ^ " (" ^ Lua.unsafeFromValue err ^ ")")
