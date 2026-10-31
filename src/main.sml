@@ -376,7 +376,7 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
                                                   in if #1 (Reruncheck.compareFileInfo ([idxfileinfo], auxstatus)) orelse Reruncheck.compareFileTime { srcAbs = #abspath file, dst = output_ind, auxstatus = auxstatus } then
                                                          let val idx_dir = PathUtil.dirname (#abspath file)
                                                              val makeindex_command = [
-                                                                 "cd", ShellUtil.escape idx_dir, "&&",
+                                                                 ShellUtil.cd, ShellUtil.escape idx_dir, "&&",
                                                                  makeindex, (* Do not escape `makeindex` to allow additional options *)
                                                                  "-o", PathUtil.basename output_ind,
                                                                  PathUtil.basename (#abspath file)
@@ -446,7 +446,7 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
                                     in if bibtex_aux_hash <> bibtex_aux_hash2 orelse Reruncheck.compareFileTime { srcAbs = PathUtil.abspath { path = mainauxfile, cwd = NONE }, dst = output_bbl, auxstatus = auxstatus } then
                                            (* The input for BibTeX command has changed... *)
                                            let val bibtex_command = [
-                                                   "cd", ShellUtil.escape (#output_directory options), "&&",
+                                                   ShellUtil.cd, ShellUtil.escape (#output_directory options), "&&",
                                                    bibtex,
                                                    PathUtil.basename mainauxfile
                                                ]

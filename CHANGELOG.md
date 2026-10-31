@@ -16,6 +16,7 @@ Changes:
 * Better handling of errors.
 * Set return code to failure when called without arguments.
 * LuaTeX hook: Fix error on `os.execute()` (empty arguments).
+* Windows: Use `cd /d` for changing directory when running BibTeX and makeindex.
 
 Version 0.7.0 (2025-03-16)
 -----

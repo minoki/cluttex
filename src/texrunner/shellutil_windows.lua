@@ -40,4 +40,5 @@ end
 return {
   escape = escape,
   has_command = has_command,
+  cd = "cd /d",
 }
