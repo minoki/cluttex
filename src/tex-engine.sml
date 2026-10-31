@@ -57,7 +57,7 @@ fun buildCommand (engine : engine, inputline, options : run_options)
           val revCommand = ["-recorder", executable]
           val revCommand = case #fmt options of
                                NONE => revCommand
-                             | SOME fmt => "-fmt=" ^ fmt :: revCommand
+                             | SOME fmt => "-fmt=" ^ ShellUtil.escape fmt :: revCommand
           val revCommand = case #halt_on_error options of
                                false => revCommand
                              | true => "-halt-on-error" :: revCommand
