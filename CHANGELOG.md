@@ -5,6 +5,7 @@ Changes:
 
 * Fix `--watch=fswatch`.
 * Support minted v3.
+* Fix watch mode on Windows ([Issue #22](https://github.com/minoki/cluttex/issues/22)).
 
 Version 0.7.0 (2025-03-16)
 -----

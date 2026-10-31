@@ -622,7 +622,7 @@ fun doTypeset (run_params as { options, engine, output_extension, recorderfile, 
 (*: val doWatchWindows : Lua.value -> string list -> bool *)
 fun doWatchWindows fswatcherlib files
     = let val watcher = Lua.call1 Lua.Lib.assert (Lua.call (Lua.field (fswatcherlib, "new")) #[])
-          val () = List.app (fn file => Lua.call0 Lua.Lib.assert (Lua.method (watcher, "add") #[Lua.fromString file])) files
+          val () = List.app (fn file => Lua.call0 Lua.Lib.assert (Lua.method (watcher, "add_file") #[Lua.fromString file])) files
           val result = Lua.call1 Lua.Lib.assert (Lua.method (watcher, "next") #[])
           val () = if Message.getVerbosity () >= 2 then
                        Message.info (Lua.unsafeFromValue (Lua.field (result, "action")) ^ " " ^ Lua.unsafeFromValue (Lua.field (result, "path")))
