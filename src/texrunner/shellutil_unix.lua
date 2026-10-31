@@ -26,6 +26,9 @@ local os_execute = os.execute
 
 -- s: string
 local function escape(s)
+  if s == "" then
+    return "''"
+  end
   local len = #s
   local result = {}
   local t,i = string_match(s, "^([^']*)()")
