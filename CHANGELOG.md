@@ -11,6 +11,7 @@ Changes:
 * Don't follow symbolic links when deleting files in `--fresh`.
 * Don't run BibTeX if there are no BibTeX lines in the aux file.
 * Don't panic on an invalid value on `--synctex`.
+* Use relative path to the original working directory when `--make-depends` is used with `--change-directory`.
 
 Version 0.7.0 (2025-03-16)
 -----

@@ -902,17 +902,18 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                                     ":"
 
                   val original_wd = OS.FileSys.getDir ()
-                  val (output, output_directory, tex_output_directory)
+                  val (output, output_directory, tex_output_directory, make_depends)
                       = if Option.getOpt (#change_directory options, false) then
                             let val TEXINPUTS = Option.getOpt (OS.Process.getEnv "TEXINPUTS", "")
                                 val LUAINPUTS = Option.getOpt (OS.Process.getEnv "LUAINPUTS", "")
                                 val () = OS.FileSys.chDir output_directory_from_original_wd
                                 val () = OSUtil.setEnv ("TEXINPUTS", original_wd ^ pathsep ^ TEXINPUTS)
                                 val () = OSUtil.setEnv ("LUAINPUTS", original_wd ^ pathsep ^ LUAINPUTS)
-                            in (PathUtil.abspath { path = output_from_original_wd, cwd = SOME original_wd }, ".", NONE)
+                                val make_depends = Option.map (fn s => PathUtil.abspath { path = s, cwd = SOME original_wd }) (#make_depends options)
+                            in (PathUtil.abspath { path = output_from_original_wd, cwd = SOME original_wd }, ".", NONE, make_depends)
                             end
                         else
-                            (output_from_original_wd, output_directory_from_original_wd, SOME output_directory_from_original_wd)
+                            (output_from_original_wd, output_directory_from_original_wd, SOME output_directory_from_original_wd, #make_depends options)
                   val output = case #bibtex_or_biber options of
                                    SOME _ => let val BIBINPUTS = Option.getOpt (OS.Process.getEnv "BIBINPUTS", "")
                                                  val () = OSUtil.setEnv ("BIBINPUTS", original_wd ^ pathsep ^ BIBINPUTS)
@@ -990,7 +991,7 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                         , watch = #watch options
                         , change_directory = Option.getOpt (#change_directory options, false)
                         , includeonly = #includeonly options
-                        , make_depends = #make_depends options
+                        , make_depends = make_depends
                         , print_output_directory = #print_output_directory options
                         , package_support = #package_support options
                         , check_driver = check_driver
