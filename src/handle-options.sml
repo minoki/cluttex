@@ -105,7 +105,6 @@ datatype option = OPT_ENGINE of string (* -e,--engine=ENGINE *)
 val optionDescs = [(SHORT "-e", WITH_ARG OPT_ENGINE)
                   ,(LONG "--engine", WITH_ARG OPT_ENGINE)
                   ,(LONG "--engine-executable", WITH_ARG OPT_ENGINE_EXECUTABLE)
-                  ,(SHORT "-o", WITH_ARG OPT_OUTPUT)
                   ,(LONG "--output", WITH_ARG OPT_OUTPUT)
                   ,(LONG "--fresh", SIMPLE OPT_FRESH)
                   ,(LONG "--max-iterations", WITH_ARG OPT_MAX_ITERATIONS)
@@ -162,6 +161,8 @@ val optionDescs = [(SHORT "-e", WITH_ARG OPT_ENGINE)
                   ,(LONG "--biber", WITH_OPTIONAL_ARG { action = OPT_BIBER, default = "biber" })
                   ,(LONG "--makeglossaries", WITH_OPTIONAL_ARG { action = OPT_MAKEGLOSSARIES, default = "makeglossaries" })
                   ,(LONG "--config-file", WITH_ARG OPT_CONFIG_FILE)
+                   (* This one must be placed after other -output-* options *)
+                  ,(SHORT "-o", WITH_ARG OPT_OUTPUT)
                   ]
 fun parse (opts : initial_options, args)
     = case parseOption (optionDescs, args) of
@@ -299,7 +300,7 @@ fun parse (opts : initial_options, args)
         | SOME (OPT_DVIPDFMX_OPTION x, args) => let val x = ShellUtil.escape x
                                                 in parse ({ opts where dvipdfmx_extraoptions = x :: #dvipdfmx_extraoptions opts }, args)
                                                 end
-        | SOME (OPT_DVIPDFMX_OPTIONS x, args) => parse ({ opts where tex_extraoptions = x :: #dvipdfmx_extraoptions opts }, args)
+        | SOME (OPT_DVIPDFMX_OPTIONS x, args) => parse ({ opts where dvipdfmx_extraoptions = x :: #dvipdfmx_extraoptions opts }, args)
         | SOME (OPT_MAKEINDEX x, args) => (case #makeindex opts of
                                                NONE => parse ({ opts where makeindex = SOME x }, args)
                                              | SOME _ => showMessageAndFail "multiple --makeindex options"

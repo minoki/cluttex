@@ -6,6 +6,7 @@ Changes:
 * Fix `--watch=fswatch`.
 * Support minted v3.
 * Fix watch mode on Windows ([Issue #22](https://github.com/minoki/cluttex/issues/22)).
+* Fix handling of several command-line options: `--dvipdfmx-options`, `-output-directory`, `-output-format`.
 
 Version 0.7.0 (2025-03-16)
 -----
