@@ -39,7 +39,9 @@ io.open = function(fname, mode)
   return io_open(fname, mode)
 end
 os.execute = function(...)
-  texio_write_nl("log", string.format("CLUTTEX_EXEC %s", ...), "")
+  if select("#", ...) > 0 then
+    texio_write_nl("log", string.format("CLUTTEX_EXEC %s", ...), "")
+  end
   return os_execute(...)
 end
 ]==])

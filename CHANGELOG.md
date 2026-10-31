@@ -15,6 +15,7 @@ Changes:
 * Don't clear the output directory when `--fresh` is used with `--print-output-directory`.
 * Better handling of errors.
 * Set return code to failure when called without arguments.
+* LuaTeX hook: Fix error on `os.execute()` (empty arguments).
 
 Version 0.7.0 (2025-03-16)
 -----
