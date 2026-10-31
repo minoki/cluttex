@@ -966,7 +966,7 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                         , shell_escape = #shell_escape options
                         , jobname = SOME jobname
                         , fmt = #fmt options
-                        , extra_options = #tex_extraoptions options
+                        , extra_options = List.rev (#tex_extraoptions_rev options)
                         , output_format = tex_output_format
                         , draftmode = false
                         , lua_initialization_script = lua_initialization_script
@@ -995,8 +995,8 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                         , fmt = #fmt options
                         , output_directory = output_directory
                         , output_format = output_format
-                        , tex_extraoptions = #tex_extraoptions options
-                        , dvipdfmx_extraoptions = #dvipdfmx_extraoptions options
+                        , tex_extraoptions = List.rev (#tex_extraoptions_rev options)
+                        , dvipdfmx_extraoptions = List.rev (#dvipdfmx_extraoptions_rev options)
                         , makeindex = #makeindex options
                         , bibtex_or_biber = #bibtex_or_biber options
                         , makeglossaries = #makeglossaries options

@@ -294,13 +294,13 @@ fun parse (opts : initial_options, args)
                                                       | SOME _ => showMessageAndFail "multiple --output-format options"
                                                    )
         | SOME (OPT_TEX_OPTION x, args) => let val x = ShellUtil.escape x
-                                           in parse ({ opts where tex_extraoptions = x :: #tex_extraoptions opts }, args)
+                                           in parse ({ opts where tex_extraoptions_rev = x :: #tex_extraoptions_rev opts }, args)
                                            end
-        | SOME (OPT_TEX_OPTIONS x, args) => parse ({ opts where tex_extraoptions = x :: #tex_extraoptions opts }, args)
+        | SOME (OPT_TEX_OPTIONS x, args) => parse ({ opts where tex_extraoptions_rev = x :: #tex_extraoptions_rev opts }, args)
         | SOME (OPT_DVIPDFMX_OPTION x, args) => let val x = ShellUtil.escape x
-                                                in parse ({ opts where dvipdfmx_extraoptions = x :: #dvipdfmx_extraoptions opts }, args)
+                                                in parse ({ opts where dvipdfmx_extraoptions_rev = x :: #dvipdfmx_extraoptions_rev opts }, args)
                                                 end
-        | SOME (OPT_DVIPDFMX_OPTIONS x, args) => parse ({ opts where dvipdfmx_extraoptions = x :: #dvipdfmx_extraoptions opts }, args)
+        | SOME (OPT_DVIPDFMX_OPTIONS x, args) => parse ({ opts where dvipdfmx_extraoptions_rev = x :: #dvipdfmx_extraoptions_rev opts }, args)
         | SOME (OPT_MAKEINDEX x, args) => (case #makeindex opts of
                                                NONE => parse ({ opts where makeindex = SOME x }, args)
                                              | SOME _ => showMessageAndFail "multiple --makeindex options"

@@ -46,8 +46,8 @@ sig
     , fmt: string option
     , output_directory: string option
     , output_format: OutputFormat.format option (* pdf | dvi *)
-    , tex_extraoptions: string list
-    , dvipdfmx_extraoptions: string list
+    , tex_extraoptions_rev: string list
+    , dvipdfmx_extraoptions_rev: string list
     , makeindex: string option
     , bibtex_or_biber: bibtex_or_biber option
     , makeglossaries: string option
@@ -146,8 +146,8 @@ struct
     , fmt: string option
     , output_directory: string option
     , output_format: OutputFormat.format option (* pdf | dvi *)
-    , tex_extraoptions: string list
-    , dvipdfmx_extraoptions: string list
+    , tex_extraoptions_rev: string list
+    , dvipdfmx_extraoptions_rev: string list
     , makeindex: string option
     , bibtex_or_biber: bibtex_or_biber option
     , makeglossaries: string option
@@ -208,8 +208,8 @@ struct
     , fmt = NONE
     , output_directory = NONE
     , output_format = NONE
-    , tex_extraoptions = []
-    , dvipdfmx_extraoptions = []
+    , tex_extraoptions_rev = []
+    , dvipdfmx_extraoptions_rev = []
     , makeindex = NONE
     , bibtex_or_biber = NONE
     , makeglossaries = NONE
