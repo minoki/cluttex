@@ -204,7 +204,10 @@ fun singleRun ({ options, inputfile, engine, tex_options, recorderfile, recorder
                         val bibtex_aux_hash = case #bibtex_or_biber options of
                                                   SOME (AppOptions.BIBTEX _) =>
                                                   let val biblines = AuxFile.extractBibTeXLines { auxfile = mainauxfile, outdir = #output_directory options }
-                                                  in SOME (MD5.compute (Byte.stringToBytes (String.concatWith "\n" biblines)))
+                                                  in if List.null biblines then
+                                                       NONE
+                                                     else
+                                                       SOME (MD5.compute (Byte.stringToBytes (String.concatWith "\n" biblines)))
                                                   end
                                                 | _ => NONE
                     in { filelist, auxstatus, minted, epstopdf, pdfx, bibtex_aux_hash }
