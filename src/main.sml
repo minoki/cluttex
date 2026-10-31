@@ -876,7 +876,7 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                                         val output_directory = genOutputDirectory (#temporary_directory config, [inputfile_abs, jobname, Option.getOpt (#engine_executable options, #executable engine)])
                                     in if not (FSUtil.isDirectory output_directory) then
                                            FSUtil.mkDirRec output_directory
-                                       else if #fresh options then
+                                       else if #fresh options andalso not (#print_output_directory options) then
                                            ( if Message.getVerbosity () >= 1 then
                                                  Message.info ("Cleaning '" ^ output_directory ^ "'...")
                                              else
