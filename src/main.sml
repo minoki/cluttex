@@ -64,7 +64,7 @@ fun showUsage status = let val progName = CommandLine.name ()
 \      --fresh                  Clean intermediate files before running TeX.\n\
 \                                 Cannot be used with --output-directory.\n\
 \      --max-iterations=N       Maximum number of running TeX to resolve\n\
-\                                 cross-references.  [default: 3]\n\
+\                                 cross-references.  [default: 4]\n\
 \      --start-with-draft       Start with draft mode.\n\
 \      --[no-]change-directory  Change directory before running TeX.\n\
 \      --watch[=ENGINE]         Watch input files for change.  Requires fswatch\n\
@@ -92,7 +92,7 @@ fun showUsage status = let val progName = CommandLine.name ()
 \      --package-support=PKG1[,PKG2,...]\n\
 \                               Enable special support for some shell-escaping\n\
 \                                 packages.\n\
-\                               Currently supported: minted, epstopdf\n\
+\                               Currently supported: minted, epstopdf, pdfx\n\
 \      --check-driver=DRIVER    Check that the correct driver file is loaded.\n\
 \                               DRIVER is one of `dvipdfmx', `dvips', `dvisvgm'.\n\
 \      --source-date-epoch=TIME\n\
