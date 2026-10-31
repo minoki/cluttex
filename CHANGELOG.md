@@ -14,6 +14,7 @@ Changes:
 * Use relative path to the original working directory when `--make-depends` is used with `--change-directory`.
 * Don't clear the output directory when `--fresh` is used with `--print-output-directory`.
 * Better handling of errors.
+* Set return code to failure when called without arguments.
 
 Version 0.7.0 (2025-03-16)
 -----

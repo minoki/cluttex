@@ -41,8 +41,8 @@ fun genOutputDirectory (temporary_directory : string option, xs : string list)
       in OS.Path.joinDirFile { dir = tmpdir, file = "cluttex-" ^ hash }
       end
 
-fun showUsage () = let val progName = CommandLine.name ()
-                   in TextIO.output (TextIO.stdErr,
+fun showUsage status = let val progName = CommandLine.name ()
+                       in TextIO.output (TextIO.stdErr,
 "ClutTeX: Process TeX files without cluttering your working directory\n\
 \\n\
 \Usage:\n\
@@ -110,11 +110,11 @@ fun showUsage () = let val progName = CommandLine.name ()
 \      --output-directory=DIR   [default: somewhere in the temporary directory]\n\
 \      --output-format=FORMAT   FORMAT is `pdf' or `dvi'.  [default: pdf]\n\
 \\n" ^ COPYRIGHT_NOTICE)
-                    ; OS.Process.exit OS.Process.success
-                   end
+                        ; OS.Process.exit status
+                       end
 
 structure HandleOptions = HandleOptions (fun showMessageAndFail message = (TextIO.output (TextIO.stdErr, message ^ "\n"); OS.Process.exit OS.Process.failure)
-                                         val showUsage = showUsage
+                                         val showUsage = fn () => showUsage OS.Process.success
                                          fun showVersion () = (TextIO.output (TextIO.stdErr, "cluttex " ^ CLUTTEX_VERSION ^ "\n"); OS.Process.exit OS.Process.success)
                                         )
 
@@ -798,7 +798,7 @@ fun main () = let val (options, rest) = HandleOptions.parse (AppOptions.init, Co
                                NONE => Message.setColors Message.AUTO
                              | _ => ()
                   val inputfile = case rest of
-                                      [] => showUsage () (* No input file given *)
+                                      [] => showUsage OS.Process.failure (* No input file given *)
                                     | [input] => input
                                     | _ => ( Message.error "Multiple input files are not supported."
                                            ; OS.Process.exit OS.Process.failure
